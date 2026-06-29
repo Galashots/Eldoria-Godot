@@ -1,6 +1,7 @@
 extends StaticBody2D
 
 signal dialogue_requested(speaker_name: String, line: String)
+signal learning_check_requested(speaker_name: String, question: String, choices: Array, correct_answer: String)
 
 @export var display_name: String = "Elder Rowan"
 
@@ -33,8 +34,8 @@ func _interact() -> void:
     if GameState.elder_quest_completed:
         line = "Thank you again. Eldoria shines brighter today."
     elif GameState.has_item("golden_star"):
-        GameState.complete_elder_quest()
-        line = "You found it! The village is grateful."
+        _request_learning_check()
+        return
     else:
         GameState.start_elder_quest()
         if GameState.selected_profile == "grade_2_mage":
@@ -45,6 +46,15 @@ func _interact() -> void:
             line = "Please find the golden star near the old wall."
 
     dialogue_requested.emit(display_name, line)
+
+func _request_learning_check() -> void:
+    if GameState.selected_profile == "grade_2_mage":
+        learning_check_requested.emit(display_name, "Which number is bigger?", ["7", "4"], "7")
+    elif GameState.selected_profile == "grade_5_adventurer":
+        learning_check_requested.emit(display_name, "What is 6 x 7?", ["42", "36"], "42")
+    else:
+        GameState.complete_elder_quest()
+        dialogue_requested.emit(display_name, "You found it! The village is grateful.")
 
 func _on_body_entered(body: Node2D) -> void:
     if GameState.selected_profile == "":
