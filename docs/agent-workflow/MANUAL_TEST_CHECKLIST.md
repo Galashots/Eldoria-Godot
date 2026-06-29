@@ -10,7 +10,13 @@
 - [ ] The purple Elder NPC is visible.
 - [ ] The golden-star collectible is visible.
 - [ ] The objective prompt is visible.
+- [ ] Approaching the Elder shows `Press E to talk`.
+- [ ] E opens the Elder dialogue.
+- [ ] E, Enter, or Space closes the dialogue.
+- [ ] The first conversation offers the golden-star objective.
 - [ ] Touching the collectible removes it.
 - [ ] GameState records `golden_star`.
-- [ ] The objective text changes to its completed state.
+- [ ] The objective text asks the player to return to Elder Rowan.
+- [ ] Returning to the Elder completes the quest.
+- [ ] The dialogue and objective text change to their completed states.
 - [ ] Existing documentation has not been deleted.
