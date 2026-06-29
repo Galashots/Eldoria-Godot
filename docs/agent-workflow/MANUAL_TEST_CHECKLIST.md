@@ -15,17 +15,16 @@
 - [ ] Arrow-key movement works.
 - [ ] The brown obstacle blocks the player.
 - [ ] The purple Elder NPC is visible.
+- [ ] The green Mira NPC is visible.
 - [ ] The golden-star collectible is visible.
+- [ ] The glowing-herb collectible is visible.
 - [ ] The objective prompt is visible.
-- [ ] Approaching the Elder shows `Press E to talk`.
-- [ ] E opens the Elder dialogue.
-- [ ] E, Enter, or Space closes the dialogue.
-- [ ] The first conversation offers the golden-star objective (profile-aware).
-- [ ] Touching the collectible removes it.
-- [ ] GameState records `golden_star`.
-- [ ] The objective text asks the player to return to Elder Rowan.
-- [ ] Returning to the Elder opens the profile-aware learning check.
-- [ ] Wrong answer shows `Try again.` and does not complete the quest.
-- [ ] Correct answer completes the quest.
-- [ ] The dialogue and objective text change to their completed states.
+- [ ] Elder golden-star quest still completes after the learning check.
+- [ ] After Elder quest completion, HUD points to Mira.
+- [ ] Mira offers the glowing-herb objective.
+- [ ] Touching the glowing herb removes it.
+- [ ] GameState records `glowing_herb`.
+- [ ] Returning to Mira opens the profile-aware learning check.
+- [ ] Wrong answer shows `Try again.` and does not complete the Mira quest.
+- [ ] Correct answer completes the Mira quest.
 - [ ] Existing documentation has not been deleted.
