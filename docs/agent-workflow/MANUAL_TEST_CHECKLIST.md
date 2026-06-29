@@ -3,6 +3,13 @@
 - [ ] Project opens in Godot 4.x.
 - [ ] Main scene runs with F5.
 - [ ] No parser errors appear.
+- [ ] Profile selector appears at launch.
+- [ ] Grade 2 selection works.
+- [ ] Grade 5 selection works.
+- [ ] `selected_profile` is recorded in GameState.
+- [ ] HUD text changes by profile.
+- [ ] Elder offer dialogue changes by profile.
+- [ ] Movement works after profile selection.
 - [ ] The blue player is visible.
 - [ ] WASD movement works.
 - [ ] Arrow-key movement works.
@@ -13,7 +20,7 @@
 - [ ] Approaching the Elder shows `Press E to talk`.
 - [ ] E opens the Elder dialogue.
 - [ ] E, Enter, or Space closes the dialogue.
-- [ ] The first conversation offers the golden-star objective.
+- [ ] The first conversation offers the golden-star objective (profile-aware).
 - [ ] Touching the collectible removes it.
 - [ ] GameState records `golden_star`.
 - [ ] The objective text asks the player to return to Elder Rowan.
