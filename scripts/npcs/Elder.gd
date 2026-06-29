@@ -13,6 +13,8 @@ func _ready() -> void:
     $InteractionArea.body_exited.connect(_on_body_exited)
 
 func _unhandled_input(event: InputEvent) -> void:
+    if GameState.selected_profile == "":
+        return
     if not player_nearby or not event is InputEventKey:
         return
 
@@ -35,11 +37,18 @@ func _interact() -> void:
         line = "You found it! The village is grateful."
     else:
         GameState.start_elder_quest()
-        line = "Please find the golden star near the old wall."
+        if GameState.selected_profile == "grade_2_mage":
+            line = "Young mage, can you find the golden star near the wall?"
+        elif GameState.selected_profile == "grade_5_adventurer":
+            line = "Adventurer, recover the golden star near the old wall and return with your findings."
+        else:
+            line = "Please find the golden star near the old wall."
 
     dialogue_requested.emit(display_name, line)
 
 func _on_body_entered(body: Node2D) -> void:
+    if GameState.selected_profile == "":
+        return
     if body is CharacterBody2D:
         player_nearby = true
         interaction_prompt.visible = true
