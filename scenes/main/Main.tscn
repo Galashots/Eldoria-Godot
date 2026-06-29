@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://scenes/npcs/Elder.tscn" id="2_elder"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/HUD.tscn" id="4_hud"]
 [ext_resource type="PackedScene" path="res://scenes/ui/DialogueBox.tscn" id="5_dialogue"]
 [ext_resource type="PackedScene" path="res://scenes/ui/ProfileSelect.tscn" id="6_profile_select"]
+[ext_resource type="PackedScene" path="res://scenes/ui/LearningCheck.tscn" id="7_learning_check"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_obstacle"]
 size = Vector2(200, 60)
@@ -41,6 +42,10 @@ position = Vector2(860, 500)
 
 [node name="DialogueBox" parent="." instance=ExtResource("5_dialogue")]
 
+[node name="LearningCheck" parent="." instance=ExtResource("7_learning_check")]
+
 [node name="ProfileSelect" parent="." instance=ExtResource("6_profile_select")]
 
 [connection signal="dialogue_requested" from="Elder" to="DialogueBox" method="show_dialogue"]
+[connection signal="learning_check_requested" from="Elder" to="LearningCheck" method="show_check"]
+[connection signal="dialogue_requested" from="LearningCheck" to="DialogueBox" method="show_dialogue"]
