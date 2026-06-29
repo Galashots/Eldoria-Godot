@@ -17,6 +17,7 @@ func _ready() -> void:
     second_button.pressed.connect(_on_second_answer_pressed)
 
 func show_check(speaker_name: String, question: String, choices: Array, correct_answer: String) -> void:
+    GameState.start_elder_learning_check()
     _speaker_name = speaker_name
     _choices = choices
     _correct_answer = correct_answer
