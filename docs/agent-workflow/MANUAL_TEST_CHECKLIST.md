@@ -24,6 +24,8 @@
 - [ ] Touching the collectible removes it.
 - [ ] GameState records `golden_star`.
 - [ ] The objective text asks the player to return to Elder Rowan.
-- [ ] Returning to the Elder completes the quest.
+- [ ] Returning to the Elder opens the profile-aware learning check.
+- [ ] Wrong answer shows `Try again.` and does not complete the quest.
+- [ ] Correct answer completes the quest.
 - [ ] The dialogue and objective text change to their completed states.
 - [ ] Existing documentation has not been deleted.
