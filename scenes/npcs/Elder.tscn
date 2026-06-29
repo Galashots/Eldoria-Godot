@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/npcs/Elder.gd" id="1_elder"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_elder"]
+radius = 24.0
+height = 64.0
+
+[node name="Elder" type="StaticBody2D"]
+script = ExtResource("1_elder")
+
+[node name="Body" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -32, 24, -12, 20, 28, -20, 28, -24, -12)
+color = Color(0.55, 0.25, 0.7, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_elder")

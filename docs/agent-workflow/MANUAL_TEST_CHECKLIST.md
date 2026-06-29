@@ -7,5 +7,10 @@
 - [ ] WASD movement works.
 - [ ] Arrow-key movement works.
 - [ ] The brown obstacle blocks the player.
+- [ ] The purple Elder NPC is visible.
+- [ ] The golden-star collectible is visible.
+- [ ] The objective prompt is visible.
+- [ ] Touching the collectible removes it.
+- [ ] GameState records `golden_star`.
+- [ ] The objective text changes to its completed state.
 - [ ] Existing documentation has not been deleted.
-
