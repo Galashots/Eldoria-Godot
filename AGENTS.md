@@ -12,6 +12,7 @@
 - Use placeholder art first and build small vertical slices.
 - Do not touch unrelated files.
 - For the current lightweight data approach, add new quest, item, and profile display text through `scripts/core/ContentDefinitions.gd`; defer `.tres` resource migration until the pattern is proven by more content.
+- An optional, locally-installed `godot-ai` MCP editor plugin (`addons/godot_ai/`, gitignored) may add an `_mcp_game_helper` autoload and an `[editor_plugins]` entry to a contributor's local `project.godot`. Those two lines are local-only — never commit them, since `addons/godot_ai/` isn't in the repo and committing them would break the project for anyone without that addon installed.
 
 ## Required workflow
 

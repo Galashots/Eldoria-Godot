@@ -2,14 +2,14 @@
 
 ## Status
 
-Milestones 1 through 13 are complete and merged: the PR branch-sync docs rule, the `docs/design/` north-star doc set, the bonus-only realignment of the Elder/Mira/Finn learning checks, and the Python asset normalization pipeline (`tools/asset_pipeline/`).
+Milestones 1 through 14 are complete and merged: the PR branch-sync docs rule, the `docs/design/` north-star doc set, the bonus-only realignment of the Elder/Mira/Finn learning checks, the Python asset normalization pipeline (`tools/asset_pipeline/`), and a proof pass that normalizes one ChatGPT test render through the pipeline and displays it on the player in place of the flat-color placeholder.
 
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
 - `AGENTS.md`: project and agent workflow guidance, including the current `ContentDefinitions.gd` rule for lightweight quest/item/profile display text.
 - `scenes/main/Main.tscn`: green floor, brown collision obstacle, player, Elder, Mira, Finn, collectibles, HUD, dialogue, character panel, profile selector, and learning check instances.
-- `scenes/player/Player.tscn`: blue placeholder player, collision shape, and camera.
+- `scenes/player/Player.tscn`: player sprite (normalized from a ChatGPT test render via `tools/asset_pipeline`, see `assets/manifests/hero_body_idle_s.manifest.json`), collision shape, and camera.
 - `scripts/core/GameState.gd`: minimal profile, health, collected-item, reusable quest state, and Elder compatibility flags.
 - `scripts/core/ContentDefinitions.gd`: tiny lookup layer for profile labels, item labels, and quest summaries.
 - `scripts/player/Player.gd`: WASD and arrow-key movement blocked until profile selection.
@@ -28,7 +28,8 @@ Milestones 1 through 13 are complete and merged: the PR branch-sync docs rule, t
 - `assets/source/.gdignore` and `assets/source/README.md`: ignored source/reference material area.
 - `docs/art/ASSET_PIPELINE.md` and `docs/art/STYLE_GUIDE.md`: first art workflow and visual rules.
 - `tools/asset_pipeline/` (`manifest.py`, `normalize.py`, `validate.py`, `test_pipeline.py`): Python + Pillow tool that turns AI-generated source art into exact, correctly-sized, transparent PNGs via a JSON manifest. See `docs/art/ASSET_NORMALIZATION_PIPELINE.md`.
-- `assets/manifests/.gdignore` and `assets/source/generated/.gdignore`: new Godot-ignored folders for normalization manifests and raw AI source sheets.
+- `assets/manifests/.gdignore` and `assets/source/generated/.gdignore`: Godot-ignored folders for normalization manifests and raw AI source sheets.
+- `assets/manifests/hero_body_idle_s.manifest.json`, `assets/source/generated/hero_body_idle_s/source.png`, `assets/sprites/characters/hero_body_idle_s.png`: the proof-pass hero sprite (one direction, no armor, from a ChatGPT test render — not approved production art) and its manifest, proving the pipeline end-to-end. `project.godot` now sets the project-wide default texture filter to nearest, as `docs/design/VISUAL_CONTRACT.md` requires.
 
 ## How to run
 
@@ -47,7 +48,8 @@ Open `project.godot` with Godot 4.x standard and press F5.
 - [ ] HUD text changes by profile.
 - [ ] Elder offer dialogue changes by profile.
 - [ ] Movement works after profile selection.
-- [ ] Green floor, blue player, brown obstacle, Elder, Mira, Finn, golden star, glowing herb, and shimmering ore are visible.
+- [ ] Green floor, player sprite, brown obstacle, Elder, Mira, Finn, golden star, glowing herb, and shimmering ore are visible.
+- [ ] The player sprite renders crisp (nearest-neighbor, no blur) with a transparent background and feet roughly aligned with the collision shape, not floating or sunk into the ground.
 - [ ] The player cannot pass through the obstacle.
 - [ ] Elder golden-star quest completes after the learning check regardless of answer; a correct answer's dialogue includes "Bonus earned!".
 - [ ] After Elder quest completes, HUD points to Mira.
@@ -95,10 +97,10 @@ Open `project.godot` with Godot 4.x standard and press F5.
 
 A design north-star doc set lives in `docs/design/` (`NORTH_STAR.md`, `CURRICULUM_MAP.md`, `VISUAL_CONTRACT.md`, `RESEARCH_NOTES.md`) to anchor future work. The learning checks now follow its bonus-only rule: each quest completes on item return regardless of answer, and a correct answer adds a bonus via `GameState.award_quest_bonus()`.
 
-The asset normalization pipeline (`tools/asset_pipeline/`, see `docs/art/ASSET_NORMALIZATION_PIPELINE.md`) can now turn approved ChatGPT/Gemini source art into Godot-ready sprites. The first real asset replacement pass is unblocked but not started — still needed: production hero/armor source art, the Godot-side paper-doll `AnimatedSprite2D` layering for armor, and 8-direction `flip_h` mirroring.
+The asset normalization pipeline (`tools/asset_pipeline/`, see `docs/art/ASSET_NORMALIZATION_PIPELINE.md`) can now turn approved ChatGPT/Gemini source art into Godot-ready sprites, and the architecture rule's "do not scale asset replacement until one pass is proven" gate is satisfied: one hero sprite has gone source image -> manifest -> normalize -> validate -> `Player.tscn`, importing and running cleanly under Godot 4.7 headless. That sprite is a test/comparison render, not approved production art — still needed before a real asset pass: production hero/armor source art (using the Eldoria-V2 committed sprites and `docs/art/ASSET_NORMALIZATION_PIPELINE.md` prompting tips as style/process reference), the Godot-side paper-doll `AnimatedSprite2D` layering for armor, and 8-direction `flip_h` mirroring.
 
 Next decision is between:
-- the first real asset replacement pass (now that the pipeline exists);
+- the first real production asset replacement pass (pipeline now proven);
 - surfacing earned bonuses somewhere the player can see (HUD or character panel);
 - tiny Godot Resource experiment for quest/item definitions;
 - inventory/reward foundation.

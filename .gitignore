@@ -5,3 +5,7 @@ export_presets.cfg
 *.tmp
 .DS_Store
 Thumbs.db
+
+# Local editor-only MCP tooling (Claude/Codex/Antigravity <-> Godot editor bridge).
+# Not shipped game content; each contributor installs it locally if they want it.
+addons/godot_ai/
