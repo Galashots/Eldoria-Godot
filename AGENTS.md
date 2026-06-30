@@ -12,7 +12,7 @@
 
 ## Required workflow
 
-Before work, read this file, `docs/CURRENT_STATE.md`, `docs/GODOT_SPIKE_DECISIONS.md`, and the relevant files in `docs/agent-workflow/`.
+Before work, read this file, `docs/design/NORTH_STAR.md`, `docs/CURRENT_STATE.md`, `docs/GODOT_SPIKE_DECISIONS.md`, and the relevant files in `docs/agent-workflow/`.
 
 After every task, report:
 
