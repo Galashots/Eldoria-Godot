@@ -39,6 +39,12 @@ const QUEST_SUMMARIES := {
     },
 }
 
+const BADGE_LABELS := {
+    "elder_golden_star": "Elder's Wisdom Badge",
+    "mira_glowing_herb": "Mira's Garden Badge",
+    "finn_shimmering_ore": "Finn's Forge Badge",
+}
+
 static func get_profile_label(profile_id: String) -> String:
     if profile_id == "":
         return "None selected"
@@ -53,3 +59,6 @@ static func get_item_label(item_id: String) -> String:
 static func get_quest_summary(quest_id: String, state: String) -> String:
     var summaries: Dictionary = QUEST_SUMMARIES.get(quest_id, {})
     return summaries.get(state, "Unknown quest")
+
+static func get_badge_label(quest_id: String) -> String:
+    return BADGE_LABELS.get(quest_id, "Bonus Badge")

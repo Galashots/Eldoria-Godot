@@ -13,7 +13,7 @@ The player sprite is now profile-aware and direction-aware: `Player.gd` swaps it
 - `scenes/main/Main.tscn`: green floor, brown collision obstacle, player, Elder, Mira, Finn, collectibles, HUD, dialogue, character panel, profile selector, and learning check instances.
 - `scenes/player/Player.tscn`: player sprite (normalized from a ChatGPT test render via `tools/asset_pipeline`, see `assets/manifests/hero_body_idle_s.manifest.json`), collision shape, and camera.
 - `scripts/core/GameState.gd`: minimal profile, health, collected-item, reusable quest state, and Elder compatibility flags.
-- `scripts/core/ContentDefinitions.gd`: tiny lookup layer for profile labels, item labels, and quest summaries. Item labels are now resolved from `ItemDefinition` `.tres` resources (see below); profile labels and quest summaries are still plain dictionaries.
+- `scripts/core/ContentDefinitions.gd`: tiny lookup layer for profile labels, item labels, quest summaries, and badge labels (`get_badge_label(quest_id)`, a `BADGE_LABELS` dictionary keyed by quest id — deliberately not a `.tres` resource, since 3 fixed display strings don't meet the "more content, or a second consumer needing structured data" bar `AGENTS.md` sets for promoting to Resources). Item labels are resolved from `ItemDefinition` `.tres` resources (see below); profile labels, quest summaries, and badge labels are still plain dictionaries.
 - `scripts/core/ItemDefinition.gd` and `data/items/{golden_star,glowing_herb,shimmering_ore}.tres`: a tiny Resource-backed content experiment (`docs/ROADMAP.md` milestone 2) — each item's id/label now lives in its own `.tres` file instead of a hardcoded dictionary entry, proving the pattern works before it's considered for quest/profile content too.
 - `scripts/player/Player.gd`: WASD and arrow-key movement blocked until profile selection; swaps the player sprite by profile via `GameState.profile_changed`, and by movement direction (8-way, with west/south-west/north-west mirrored from east/south-east/north-east via `flip_h`) as the player moves.
 - `scenes/npcs/Elder.tscn` and `scripts/npcs/Elder.gd`: purple Elder placeholder with golden-star quest.
@@ -26,7 +26,8 @@ The player sprite is now profile-aware and direction-aware: `Player.gd` swaps it
 - `scenes/ui/DialogueBox.tscn` and `scripts/ui/DialogueBox.gd`: reusable speaker/message UI dismissed with E, Enter, or Space.
 - `scenes/ui/ProfileSelect.tscn` and `scripts/ui/ProfileSelect.gd`: profile selector overlay UI and logic.
 - `scenes/ui/LearningCheck.tscn` and `scripts/ui/LearningCheck.gd`: reusable profile-aware two-choice learning check.
-- `scenes/ui/CharacterPanel.tscn` and `scripts/ui/CharacterPanel.gd`: placeholder character/inventory popup opened with C or I and backed by content definitions. Now also shows a "Bonuses earned: X/3" count across the three quests.
+- `scenes/ui/CharacterPanel.tscn` and `scripts/ui/CharacterPanel.gd`: placeholder character/inventory popup opened with C or I and backed by content definitions. `Items:` now lists every collected item generically (any id in `GameState.collected_items`, with an "x2" suffix for counts above 1) instead of three hardcoded checks. `Bonuses earned:` now lists earned badge names (e.g. "Elder's Wisdom Badge") instead of a bare count.
+- `scripts/ui/LearningCheck.gd`: a correct answer's completion dialogue now names the earned badge (e.g. "Bonus earned! You've received the Elder's Wisdom Badge.") instead of a generic "Bonus earned!" line.
 - `assets/README.md` and `assets/sprites/README.md`: asset folder structure guidance.
 - `assets/source/.gdignore` and `assets/source/README.md`: ignored source/reference material area.
 - `docs/art/ASSET_PIPELINE.md` and `docs/art/STYLE_GUIDE.md`: first art workflow and visual rules.
@@ -85,7 +86,9 @@ Open `project.godot` with Godot 4.x standard and press F5.
 - [ ] Character panel shows current quest summary.
 - [ ] Character panel shows collected items after the golden star, glowing herb, and shimmering ore are collected.
 - [ ] Character panel shows equipment coming soon.
-- [ ] Character panel shows "Bonuses earned: 0/3" before any bonus is earned, and the count increases as correct learning-check answers are given.
+- [ ] Character panel shows "Bonuses earned: none yet" before any bonus is earned, and lists the earned badge name(s) (e.g. "Elder's Wisdom Badge") as correct learning-check answers are given.
+- [ ] A correct learning-check answer's completion dialogue names the earned badge (e.g. "...You've received the Elder's Wisdom Badge.").
+- [ ] Character panel's Items line lists every collected item by name (not just the original three), with an "x2" suffix if the same item is collected more than once.
 - [ ] Existing Elder, Mira, and Finn quest flows still work while the character panel is opened and closed.
 
 ### Finn quest regression
@@ -119,7 +122,12 @@ The tiny Resource experiment (`docs/ROADMAP.md` milestone 2) is done: item displ
 now come from `ItemDefinition` `.tres` resources under `data/items/`. Quest summaries and
 profile labels are deliberately left as dictionaries — no concrete need to migrate those yet.
 
+The inventory/reward foundation (`docs/ROADMAP.md` milestone 4) is done: the character
+panel's item list is now generic (any collected item, not a hardcoded three), and learning
+check bonuses are named badges the player can see, both in the completion dialogue and in
+the character panel, instead of an anonymous flag/count.
+
 Next decision is between:
-- inventory/reward foundation (`docs/ROADMAP.md` milestone 4);
 - walk-cycle animation or armor/paper-doll layering, as a further extension of the art work;
-- local save/load (`docs/ROADMAP.md` milestone 5).
+- local save/load (`docs/ROADMAP.md` milestone 5);
+- more story/quest content (`docs/ROADMAP.md` milestone 6).
