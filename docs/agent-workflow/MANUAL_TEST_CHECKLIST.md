@@ -1,5 +1,15 @@
 # Manual Test Checklist
 
+## Pre-flight: sync branch before testing
+
+- [ ] Run `git fetch origin`.
+- [ ] Check out the target branch.
+- [ ] Confirm `git diff origin/<branch>` is empty unless intentionally testing local uncommitted changes.
+- [ ] Confirm `git status --short` is clean except for explicitly acknowledged local artifacts.
+- [ ] If the branch is stale or dirty, stop and report before continuing.
+
+## Gameplay checklist
+
 - [ ] Project opens in Godot 4.x.
 - [ ] Main scene runs with F5.
 - [ ] No parser errors appear.
