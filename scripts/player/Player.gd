@@ -2,7 +2,8 @@ extends CharacterBody2D
 
 @export var speed: float = 160.0
 
-@onready var body: Sprite2D = $Body
+@onready var body: AnimatedSprite2D = $Body
+@onready var armor: AnimatedSprite2D = $Armor
 
 const DIRECTION_TEXTURES := {
 	"grade_2_mage": {
@@ -38,23 +39,38 @@ const DIRECTION_MIRRORS := {
 const COMPASS_DIRECTIONS := ["e", "se", "s", "sw", "w", "nw", "n", "ne"]
 
 var facing: String = "s"
+var _profile_frames: Dictionary = {}
 
 func _ready() -> void:
+	for profile_id: String in DIRECTION_TEXTURES.keys():
+		_profile_frames[profile_id] = _build_sprite_frames(DIRECTION_TEXTURES[profile_id])
+
 	GameState.profile_changed.connect(_on_profile_changed)
 	_update_sprite()
+
+func _build_sprite_frames(directions: Dictionary) -> SpriteFrames:
+	var frames := SpriteFrames.new()
+	for dir_key: String in directions.keys():
+		var anim_name := "idle_%s" % dir_key
+		frames.add_animation(anim_name)
+		frames.set_animation_loop(anim_name, false)
+		frames.add_frame(anim_name, directions[dir_key])
+	return frames
 
 func _on_profile_changed(_profile_id: String) -> void:
 	_update_sprite()
 
 func _update_sprite() -> void:
-	var directions: Variant = DIRECTION_TEXTURES.get(GameState.selected_profile)
-	if not directions:
+	var frames: SpriteFrames = _profile_frames.get(GameState.selected_profile)
+	if not frames:
 		return
 	var mirror: Array = DIRECTION_MIRRORS[facing]
-	var texture: Texture2D = directions.get(mirror[0])
-	if texture:
-		body.texture = texture
-		body.flip_h = mirror[1]
+	var anim_name := "idle_%s" % mirror[0]
+	if not frames.has_animation(anim_name):
+		return
+	body.sprite_frames = frames
+	body.play(anim_name)
+	body.flip_h = mirror[1]
 
 func _direction_from_vector(v: Vector2) -> String:
 	var index := int(round(v.angle() / (PI / 4.0)))
