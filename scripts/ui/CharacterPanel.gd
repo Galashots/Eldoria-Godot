@@ -47,12 +47,14 @@ func _refresh() -> void:
 
 func _get_items_summary() -> String:
     var items: Array[String] = []
-    if GameState.has_item("golden_star"):
-        items.append(ContentDefinitions.get_item_label("golden_star"))
-    if GameState.has_item("glowing_herb"):
-        items.append(ContentDefinitions.get_item_label("glowing_herb"))
-    if GameState.has_item("shimmering_ore"):
-        items.append(ContentDefinitions.get_item_label("shimmering_ore"))
+    for item_id in GameState.collected_items.keys():
+        var count: int = GameState.collected_items[item_id]
+        if count <= 0:
+            continue
+        var label := ContentDefinitions.get_item_label(item_id)
+        if count > 1:
+            label = "%s x%d" % [label, count]
+        items.append(label)
 
     if items.is_empty():
         return "none yet"
@@ -64,11 +66,14 @@ func _get_bonuses_summary() -> String:
         GameState.QUEST_MIRA_GLOWING_HERB,
         GameState.QUEST_FINN_SHIMMERING_ORE,
     ]
-    var earned := 0
+    var badges: Array[String] = []
     for quest_id in quest_ids:
         if GameState.has_quest_bonus(quest_id):
-            earned += 1
-    return "%d/%d" % [earned, quest_ids.size()]
+            badges.append(ContentDefinitions.get_badge_label(quest_id))
+
+    if badges.is_empty():
+        return "none yet"
+    return ", ".join(badges)
 
 func _get_current_quest_summary() -> String:
     var elder_state := GameState.get_quest_state(GameState.QUEST_ELDER_GOLDEN_STAR)

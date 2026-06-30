@@ -62,7 +62,7 @@ func _select_answer(index: int) -> void:
     var line := _completion_line
     if selected_answer == _correct_answer:
         GameState.award_quest_bonus(_quest_id)
-        line = "%s Bonus earned!" % _completion_line
+        line = "%s Bonus earned! You've received the %s." % [_completion_line, ContentDefinitions.get_badge_label(_quest_id)]
 
     GameState.complete_quest(_quest_id)
     visible = false

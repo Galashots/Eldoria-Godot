@@ -17,7 +17,10 @@
    runs cleanly), so this is now about generating approved hero/armor art, not the tool.
    See `docs/art/ASSET_NORMALIZATION_PIPELINE.md`. Both Grade 2 Mage and Grade 5
    Adventurer now have production art with 8-direction movement-facing.
-4. Add inventory/reward foundation.
+4. ~~Add inventory/reward foundation.~~ Done — the character panel's item list is generic
+   (any `GameState.collected_items` entry, with quantity), and learning-check bonuses are
+   named badges (`ContentDefinitions.BADGE_LABELS`) shown in both the completion dialogue
+   and the character panel, instead of an anonymous flag/count.
 5. Add local save/load.
 6. Add more story/quest content.
 7. Plan iPad/web playtest/export path.
