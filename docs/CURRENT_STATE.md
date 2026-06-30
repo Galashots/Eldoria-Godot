@@ -2,7 +2,7 @@
 
 ## Status
 
-Milestones 1 through 12 are complete and merged: the PR branch-sync docs rule, the `docs/design/` north-star doc set, and the bonus-only realignment of the Elder/Mira/Finn learning checks.
+Milestones 1 through 13 are complete and merged: the PR branch-sync docs rule, the `docs/design/` north-star doc set, the bonus-only realignment of the Elder/Mira/Finn learning checks, and the Python asset normalization pipeline (`tools/asset_pipeline/`).
 
 ## Implemented files
 
@@ -27,6 +27,8 @@ Milestones 1 through 12 are complete and merged: the PR branch-sync docs rule, t
 - `assets/README.md` and `assets/sprites/README.md`: asset folder structure guidance.
 - `assets/source/.gdignore` and `assets/source/README.md`: ignored source/reference material area.
 - `docs/art/ASSET_PIPELINE.md` and `docs/art/STYLE_GUIDE.md`: first art workflow and visual rules.
+- `tools/asset_pipeline/` (`manifest.py`, `normalize.py`, `validate.py`, `test_pipeline.py`): Python + Pillow tool that turns AI-generated source art into exact, correctly-sized, transparent PNGs via a JSON manifest. See `docs/art/ASSET_NORMALIZATION_PIPELINE.md`.
+- `assets/manifests/.gdignore` and `assets/source/generated/.gdignore`: new Godot-ignored folders for normalization manifests and raw AI source sheets.
 
 ## How to run
 
@@ -93,8 +95,10 @@ Open `project.godot` with Godot 4.x standard and press F5.
 
 A design north-star doc set lives in `docs/design/` (`NORTH_STAR.md`, `CURRICULUM_MAP.md`, `VISUAL_CONTRACT.md`, `RESEARCH_NOTES.md`) to anchor future work. The learning checks now follow its bonus-only rule: each quest completes on item return regardless of answer, and a correct answer adds a bonus via `GameState.award_quest_bonus()`.
 
+The asset normalization pipeline (`tools/asset_pipeline/`, see `docs/art/ASSET_NORMALIZATION_PIPELINE.md`) can now turn approved ChatGPT/Gemini source art into Godot-ready sprites. The first real asset replacement pass is unblocked but not started — still needed: production hero/armor source art, the Godot-side paper-doll `AnimatedSprite2D` layering for armor, and 8-direction `flip_h` mirroring.
+
 Next decision is between:
+- the first real asset replacement pass (now that the pipeline exists);
 - surfacing earned bonuses somewhere the player can see (HUD or character panel);
 - tiny Godot Resource experiment for quest/item definitions;
-- first real asset replacement pass;
 - inventory/reward foundation.

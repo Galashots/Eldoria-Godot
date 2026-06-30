@@ -17,8 +17,20 @@ Source/reference material goes in `assets/source/`:
 
 - `assets/source/prompts/`
 - `assets/source/references/`
+- `assets/source/generated/<asset_id>/` — raw AI-generated source sheets, before normalization
 
-The `assets/source/` tree contains `.gdignore` files so Godot does not import prompts/reference material as game assets.
+Manifests for the normalization pipeline (see below) go in `assets/manifests/`.
+
+The `assets/source/` and `assets/manifests/` trees contain `.gdignore` files so Godot does
+not import prompts, reference material, or manifests as game assets.
+
+## Normalizing AI-generated source art
+
+Raw ChatGPT/Gemini output is source art, not a final asset — it needs resizing,
+background cleanup, and exact dimensions before it belongs in `assets/sprites/`. That
+workflow (the manifest format, the `normalize`/`validate` commands, naming, and the
+8-direction/mirroring and armor-layering conventions) is documented in
+[`ASSET_NORMALIZATION_PIPELINE.md`](ASSET_NORMALIZATION_PIPELINE.md).
 
 ## Naming rules
 
