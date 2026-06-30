@@ -59,9 +59,11 @@ func _select_answer(index: int) -> void:
         return
 
     var selected_answer := str(_choices[index])
+    var line := _completion_line
     if selected_answer == _correct_answer:
-        GameState.complete_quest(_quest_id)
-        visible = false
-        dialogue_requested.emit(_speaker_name, _completion_line)
-    else:
-        feedback_label.text = "Try again."
+        GameState.award_quest_bonus(_quest_id)
+        line = "%s Bonus earned!" % _completion_line
+
+    GameState.complete_quest(_quest_id)
+    visible = false
+    dialogue_requested.emit(_speaker_name, line)

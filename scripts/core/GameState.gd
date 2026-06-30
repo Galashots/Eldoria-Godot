@@ -23,6 +23,7 @@ var quest_states: Dictionary = {
     QUEST_MIRA_GLOWING_HERB: QUEST_NOT_STARTED,
     QUEST_FINN_SHIMMERING_ORE: QUEST_NOT_STARTED,
 }
+var quest_bonuses: Dictionary = {}
 
 var elder_quest_started: bool = false
 var elder_quest_completed: bool = false
@@ -86,6 +87,12 @@ func complete_quest(quest_id: String) -> void:
         return
 
     set_quest_state(quest_id, QUEST_COMPLETED)
+
+func award_quest_bonus(quest_id: String) -> void:
+    quest_bonuses[quest_id] = true
+
+func has_quest_bonus(quest_id: String) -> bool:
+    return quest_bonuses.get(quest_id, false)
 
 func start_elder_quest() -> void:
     start_quest(QUEST_ELDER_GOLDEN_STAR)
