@@ -13,7 +13,8 @@ The player sprite is now profile-aware and direction-aware: `Player.gd` swaps it
 - `scenes/main/Main.tscn`: green floor, brown collision obstacle, player, Elder, Mira, Finn, collectibles, HUD, dialogue, character panel, profile selector, and learning check instances.
 - `scenes/player/Player.tscn`: player sprite (normalized from a ChatGPT test render via `tools/asset_pipeline`, see `assets/manifests/hero_body_idle_s.manifest.json`), collision shape, and camera.
 - `scripts/core/GameState.gd`: minimal profile, health, collected-item, reusable quest state, and Elder compatibility flags.
-- `scripts/core/ContentDefinitions.gd`: tiny lookup layer for profile labels, item labels, and quest summaries.
+- `scripts/core/ContentDefinitions.gd`: tiny lookup layer for profile labels, item labels, and quest summaries. Item labels are now resolved from `ItemDefinition` `.tres` resources (see below); profile labels and quest summaries are still plain dictionaries.
+- `scripts/core/ItemDefinition.gd` and `data/items/{golden_star,glowing_herb,shimmering_ore}.tres`: a tiny Resource-backed content experiment (`docs/ROADMAP.md` milestone 2) — each item's id/label now lives in its own `.tres` file instead of a hardcoded dictionary entry, proving the pattern works before it's considered for quest/profile content too.
 - `scripts/player/Player.gd`: WASD and arrow-key movement blocked until profile selection; swaps the player sprite by profile via `GameState.profile_changed`, and by movement direction (8-way, with west/south-west/north-west mirrored from east/south-east/north-east via `flip_h`) as the player moves.
 - `scenes/npcs/Elder.tscn` and `scripts/npcs/Elder.gd`: purple Elder placeholder with golden-star quest.
 - `scenes/npcs/Mira.tscn` and `scripts/npcs/Mira.gd`: green gardener NPC with glowing-herb quest.
@@ -114,7 +115,11 @@ Earned learning-check bonuses are now visible to the player via the character pa
 "Bonuses earned: X/3" line (see above), closing the gap left by the earlier bonus-only
 learning-check rework.
 
+The tiny Resource experiment (`docs/ROADMAP.md` milestone 2) is done: item display labels
+now come from `ItemDefinition` `.tres` resources under `data/items/`. Quest summaries and
+profile labels are deliberately left as dictionaries — no concrete need to migrate those yet.
+
 Next decision is between:
-- tiny Godot Resource experiment for quest/item definitions (`docs/ROADMAP.md` milestone 2);
 - inventory/reward foundation (`docs/ROADMAP.md` milestone 4);
-- walk-cycle animation or armor/paper-doll layering, as a further extension of the art work.
+- walk-cycle animation or armor/paper-doll layering, as a further extension of the art work;
+- local save/load (`docs/ROADMAP.md` milestone 5).
