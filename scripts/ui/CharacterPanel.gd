@@ -38,24 +38,17 @@ func _on_quest_changed(_quest_id: String, _state: String) -> void:
     _refresh()
 
 func _refresh() -> void:
-    profile_label.text = "Profile: " + _get_profile_label()
+    profile_label.text = "Profile: " + ContentDefinitions.get_profile_label(GameState.selected_profile)
     quest_label.text = "Current quest: " + _get_current_quest_summary()
     items_label.text = "Items: " + _get_items_summary()
     equipment_label.text = "Equipment: coming soon"
 
-func _get_profile_label() -> String:
-    if GameState.selected_profile == "grade_2_mage":
-        return "Grade 2 Mage"
-    if GameState.selected_profile == "grade_5_adventurer":
-        return "Grade 5 Adventurer"
-    return "None selected"
-
 func _get_items_summary() -> String:
     var items: Array[String] = []
     if GameState.has_item("golden_star"):
-        items.append("Golden Star")
+        items.append(ContentDefinitions.get_item_label("golden_star"))
     if GameState.has_item("glowing_herb"):
-        items.append("Glowing Herb")
+        items.append(ContentDefinitions.get_item_label("glowing_herb"))
 
     if items.is_empty():
         return "none yet"
@@ -64,29 +57,7 @@ func _get_items_summary() -> String:
 func _get_current_quest_summary() -> String:
     var elder_state := GameState.get_quest_state(GameState.QUEST_ELDER_GOLDEN_STAR)
     if elder_state != GameState.QUEST_COMPLETED:
-        return _describe_elder_quest(elder_state)
+        return ContentDefinitions.get_quest_summary(GameState.QUEST_ELDER_GOLDEN_STAR, elder_state)
 
     var mira_state := GameState.get_quest_state(GameState.QUEST_MIRA_GLOWING_HERB)
-    return _describe_mira_quest(mira_state)
-
-func _describe_elder_quest(state: String) -> String:
-    if state == GameState.QUEST_NOT_STARTED:
-        return "Talk to Elder Rowan"
-    if state == GameState.QUEST_STARTED:
-        return "Find the golden star"
-    if state == GameState.QUEST_READY_TO_TURN_IN:
-        return "Return the golden star to Elder Rowan"
-    if state == GameState.QUEST_LEARNING_CHECK:
-        return "Answer Elder Rowan's question"
-    return "Elder Rowan quest complete"
-
-func _describe_mira_quest(state: String) -> String:
-    if state == GameState.QUEST_NOT_STARTED:
-        return "Talk to Mira the Gardener"
-    if state == GameState.QUEST_STARTED:
-        return "Find the glowing herb"
-    if state == GameState.QUEST_READY_TO_TURN_IN:
-        return "Return the glowing herb to Mira"
-    if state == GameState.QUEST_LEARNING_CHECK:
-        return "Answer Mira's question"
-    return "Mira's garden quest complete"
+    return ContentDefinitions.get_quest_summary(GameState.QUEST_MIRA_GLOWING_HERB, mira_state)
