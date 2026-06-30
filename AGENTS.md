@@ -8,6 +8,7 @@
 - Do not attempt a full Eldoria-V2 port yet; treat V2 as read-only reference.
 - Use placeholder art first and build small vertical slices.
 - Do not touch unrelated files.
+- For the current lightweight data approach, add new quest, item, and profile display text through `scripts/core/ContentDefinitions.gd`; defer `.tres` resource migration until the pattern is proven by more content.
 
 ## Required workflow
 
@@ -20,4 +21,3 @@ After every task, report:
 - assumptions;
 - risks;
 - the exact next step.
-
