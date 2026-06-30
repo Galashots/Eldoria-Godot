@@ -2,20 +2,23 @@
 
 ## Status
 
-Milestones 1 through 9 are complete and pushed. Milestone 10, tiny content definitions foundation, is implemented in a PR and ready for review/QA.
+Milestones 1 through 10 are complete and pushed. Milestone 11, third tiny quest using the content definitions pattern, is implemented in a PR and ready for review/QA.
 
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
-- `scenes/main/Main.tscn`: green floor, brown collision obstacle, player, Elder, Mira, collectibles, HUD, dialogue, character panel, profile selector, and learning check instances.
+- `AGENTS.md`: project and agent workflow guidance, including the current `ContentDefinitions.gd` rule for lightweight quest/item/profile display text.
+- `scenes/main/Main.tscn`: green floor, brown collision obstacle, player, Elder, Mira, Finn, collectibles, HUD, dialogue, character panel, profile selector, and learning check instances.
 - `scenes/player/Player.tscn`: blue placeholder player, collision shape, and camera.
 - `scripts/core/GameState.gd`: minimal profile, health, collected-item, reusable quest state, and Elder compatibility flags.
 - `scripts/core/ContentDefinitions.gd`: tiny lookup layer for profile labels, item labels, and quest summaries.
 - `scripts/player/Player.gd`: WASD and arrow-key movement blocked until profile selection.
 - `scenes/npcs/Elder.tscn` and `scripts/npcs/Elder.gd`: purple Elder placeholder with golden-star quest.
 - `scenes/npcs/Mira.tscn` and `scripts/npcs/Mira.gd`: green gardener NPC with glowing-herb quest.
+- `scenes/npcs/Finn.tscn` and `scripts/npcs/Finn.gd`: brown blacksmith placeholder with shimmering-ore quest gated after Mira completion.
 - `scenes/items/Collectible.tscn` and `scripts/items/Collectible.gd`: reusable pickup logic.
 - `scenes/items/GlowingHerb.tscn`: glowing-herb pickup for Mira's quest.
+- `scenes/items/ShimmeringOre.tscn`: shimmering-ore pickup for Finn's quest.
 - `scripts/ui/HUD.gd`: visible objective text that updates based on selected profile and active quest state.
 - `scenes/ui/DialogueBox.tscn` and `scripts/ui/DialogueBox.gd`: reusable speaker/message UI dismissed with E, Enter, or Space.
 - `scenes/ui/ProfileSelect.tscn` and `scripts/ui/ProfileSelect.gd`: profile selector overlay UI and logic.
@@ -42,7 +45,7 @@ Open `project.godot` with Godot 4.x standard and press F5.
 - [ ] HUD text changes by profile.
 - [ ] Elder offer dialogue changes by profile.
 - [ ] Movement works after profile selection.
-- [ ] Green floor, blue player, brown obstacle, Elder, Mira, golden star, and glowing herb are visible.
+- [ ] Green floor, blue player, brown obstacle, Elder, Mira, Finn, golden star, glowing herb, and shimmering ore are visible.
 - [ ] The player cannot pass through the obstacle.
 - [ ] Elder golden-star quest still completes after the learning check.
 - [ ] After Elder quest completes, HUD points to Mira.
@@ -59,18 +62,33 @@ Open `project.godot` with Godot 4.x standard and press F5.
 - [ ] Character panel still shows `Grade 5 Adventurer` for the Grade 5 profile.
 - [ ] Character panel still shows current quest summary during Elder quest states.
 - [ ] Character panel still shows current quest summary during Mira quest states.
+- [ ] Character panel shows current quest summary during Finn quest states after Mira is completed.
 - [ ] Character panel still shows `Golden Star` after collection.
 - [ ] Character panel still shows `Glowing Herb` after collection.
+- [ ] Character panel shows `Shimmering Ore` after collection.
 
 ### Character panel regression
 
 - [ ] Pressing C or I after profile selection opens/closes the character panel.
 - [ ] Character panel shows selected profile.
 - [ ] Character panel shows current quest summary.
-- [ ] Character panel shows collected items after the golden star and glowing herb are collected.
+- [ ] Character panel shows collected items after the golden star, glowing herb, and shimmering ore are collected.
 - [ ] Character panel shows equipment coming soon.
-- [ ] Existing Elder and Mira quest flows still work while the character panel is opened and closed.
+- [ ] Existing Elder, Mira, and Finn quest flows still work while the character panel is opened and closed.
+
+### Finn quest regression
+
+- [ ] Finn appears as a brown blacksmith placeholder.
+- [ ] Interacting with Finn before Mira is complete tells the player to help Mira first.
+- [ ] After Mira is complete, HUD points to Finn.
+- [ ] Finn offers the shimmering-ore quest.
+- [ ] Touching shimmering ore removes it and records `shimmering_ore` in GameState.
+- [ ] Returning to Finn opens the profile-aware learning check.
+- [ ] Grade 2 Finn question accepts `fish` as the correct answer.
+- [ ] Grade 5 Finn question accepts `2/4` as the correct answer.
+- [ ] Wrong answer shows `Try again.` and does not complete the Finn quest.
+- [ ] Correct answer completes the Finn quest.
 
 ## Next milestone
 
-Begin first real asset replacement pass or add a third tiny quest using the content definitions pattern.
+Extract quest/item definitions into a small Godot Resource experiment or begin the first real asset replacement pass.

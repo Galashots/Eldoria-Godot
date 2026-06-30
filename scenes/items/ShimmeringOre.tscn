@@ -1,0 +1,21 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/items/Collectible.gd" id="1_collectible"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_collectible"]
+radius = 18.0
+
+[node name="ShimmeringOre" type="Area2D"]
+script = ExtResource("1_collectible")
+item_id = "shimmering_ore"
+
+[node name="Body" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -22, 16, -8, 20, 8, 6, 20, -12, 16, -22, 0, -12, -14)
+color = Color(0.65, 0.82, 1, 1)
+
+[node name="Spark" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -12, 4, -2, 14, 0, 4, 2, 0, 12, -4, 2, -14, 0, -4, -2)
+color = Color(1, 1, 0.6, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_collectible")

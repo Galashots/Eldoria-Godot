@@ -49,6 +49,8 @@ func _get_items_summary() -> String:
         items.append(ContentDefinitions.get_item_label("golden_star"))
     if GameState.has_item("glowing_herb"):
         items.append(ContentDefinitions.get_item_label("glowing_herb"))
+    if GameState.has_item("shimmering_ore"):
+        items.append(ContentDefinitions.get_item_label("shimmering_ore"))
 
     if items.is_empty():
         return "none yet"
@@ -60,4 +62,8 @@ func _get_current_quest_summary() -> String:
         return ContentDefinitions.get_quest_summary(GameState.QUEST_ELDER_GOLDEN_STAR, elder_state)
 
     var mira_state := GameState.get_quest_state(GameState.QUEST_MIRA_GLOWING_HERB)
-    return ContentDefinitions.get_quest_summary(GameState.QUEST_MIRA_GLOWING_HERB, mira_state)
+    if mira_state != GameState.QUEST_COMPLETED:
+        return ContentDefinitions.get_quest_summary(GameState.QUEST_MIRA_GLOWING_HERB, mira_state)
+
+    var finn_state := GameState.get_quest_state(GameState.QUEST_FINN_SHIMMERING_ORE)
+    return ContentDefinitions.get_quest_summary(GameState.QUEST_FINN_SHIMMERING_ORE, finn_state)

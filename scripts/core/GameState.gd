@@ -7,6 +7,7 @@ signal quest_changed(quest_id: String, state: String)
 
 const QUEST_ELDER_GOLDEN_STAR := "elder_golden_star"
 const QUEST_MIRA_GLOWING_HERB := "mira_glowing_herb"
+const QUEST_FINN_SHIMMERING_ORE := "finn_shimmering_ore"
 
 const QUEST_NOT_STARTED := "not_started"
 const QUEST_STARTED := "started"
@@ -20,6 +21,7 @@ var collected_items: Dictionary = {}
 var quest_states: Dictionary = {
     QUEST_ELDER_GOLDEN_STAR: QUEST_NOT_STARTED,
     QUEST_MIRA_GLOWING_HERB: QUEST_NOT_STARTED,
+    QUEST_FINN_SHIMMERING_ORE: QUEST_NOT_STARTED,
 }
 
 var elder_quest_started: bool = false
@@ -37,6 +39,8 @@ func add_item(item_id: String, amount: int = 1) -> void:
         mark_quest_ready_to_turn_in(QUEST_ELDER_GOLDEN_STAR)
     elif item_id == "glowing_herb" and get_quest_state(QUEST_MIRA_GLOWING_HERB) == QUEST_STARTED:
         mark_quest_ready_to_turn_in(QUEST_MIRA_GLOWING_HERB)
+    elif item_id == "shimmering_ore" and get_quest_state(QUEST_FINN_SHIMMERING_ORE) == QUEST_STARTED:
+        mark_quest_ready_to_turn_in(QUEST_FINN_SHIMMERING_ORE)
 
 func has_item(item_id: String) -> bool:
     return collected_items.get(item_id, 0) > 0
