@@ -2,7 +2,7 @@
 
 ## Status
 
-Milestones 1 through 10 are complete and pushed. Milestone 11, third tiny quest using the content definitions pattern, is implemented in a PR and ready for review/QA.
+Milestones 1 through 11 are complete and merged. The PR branch-sync docs rule is also merged.
 
 ## Implemented files
 
@@ -91,4 +91,7 @@ Open `project.godot` with Godot 4.x standard and press F5.
 
 ## Next milestone
 
-Extract quest/item definitions into a small Godot Resource experiment or begin the first real asset replacement pass.
+Next decision is between:
+- tiny Godot Resource experiment for quest/item definitions;
+- first real asset replacement pass;
+- inventory/reward foundation.
