@@ -37,4 +37,13 @@
 - [ ] Returning to Mira opens the profile-aware learning check.
 - [ ] Wrong answer shows `Try again.` and does not complete the Mira quest.
 - [ ] Correct answer completes the Mira quest.
+- [ ] Finn is visible.
+- [ ] Finn is gated until Mira completion.
+- [ ] HUD points to Finn after Mira.
+- [ ] Shimmering Ore is visible and collectible.
+- [ ] CharacterPanel shows Shimmering Ore.
+- [ ] Grade 2 Finn answer is `fish`.
+- [ ] Grade 5 Finn answer is `2/4`.
+- [ ] Wrong answer shows `Try again.` and does not complete the Finn quest.
+- [ ] Correct answer completes the Finn quest.
 - [ ] Existing documentation has not been deleted.
