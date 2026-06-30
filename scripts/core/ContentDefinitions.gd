@@ -9,6 +9,7 @@ const PROFILE_LABELS := {
 const ITEM_LABELS := {
     "golden_star": "Golden Star",
     "glowing_herb": "Glowing Herb",
+    "shimmering_ore": "Shimmering Ore",
 }
 
 const QUEST_SUMMARIES := {
@@ -25,6 +26,13 @@ const QUEST_SUMMARIES := {
         "ready_to_turn_in": "Return the glowing herb to Mira",
         "learning_check": "Answer Mira's question",
         "completed": "Mira's garden quest complete",
+    },
+    "finn_shimmering_ore": {
+        "not_started": "Talk to Finn the Blacksmith",
+        "started": "Find the shimmering ore",
+        "ready_to_turn_in": "Return the shimmering ore to Finn",
+        "learning_check": "Answer Finn's question",
+        "completed": "Finn's forge quest complete",
     },
 }
 
