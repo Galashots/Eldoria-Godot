@@ -30,18 +30,36 @@ Open `project.godot` with Godot 4.x standard and press F5.
 
 ## Manual test checklist
 
+### Baseline regression
+
 - [ ] Project opens without parser errors.
 - [ ] F5 runs `Main.tscn`.
 - [ ] Profile selector appears at launch, blocking movement and interaction.
 - [ ] Grade 2 selection works (Button or Key 2).
 - [ ] Grade 5 selection works (Button or Key 5).
+- [ ] `selected_profile` is recorded in GameState.
+- [ ] HUD text changes by profile.
+- [ ] Elder offer dialogue changes by profile.
+- [ ] Movement works after profile selection.
+- [ ] Green floor, blue player, brown obstacle, Elder, Mira, golden star, and glowing herb are visible.
+- [ ] The player cannot pass through the obstacle.
+- [ ] Elder golden-star quest still completes after the learning check.
+- [ ] After Elder quest completes, HUD points to Mira.
+- [ ] Mira offers the glowing-herb quest.
+- [ ] Touching the glowing herb removes it and records `glowing_herb` in GameState.
+- [ ] Returning to Mira opens the profile-aware learning check.
+- [ ] Wrong answer shows `Try again.` and does not complete the Mira quest.
+- [ ] Correct answer completes the Mira quest.
+- [ ] Existing documentation remains present.
+
+### Character panel regression
+
 - [ ] Pressing C or I after profile selection opens/closes the character panel.
 - [ ] Character panel shows selected profile.
 - [ ] Character panel shows current quest summary.
 - [ ] Character panel shows collected items after the golden star and glowing herb are collected.
 - [ ] Character panel shows equipment coming soon.
-- [ ] Existing Elder and Mira quest flows still work.
-- [ ] Existing documentation remains present.
+- [ ] Existing Elder and Mira quest flows still work while the character panel is opened and closed.
 
 ## Next milestone
 
