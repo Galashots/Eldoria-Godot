@@ -5,7 +5,7 @@ extends CharacterBody2D
 @onready var body: Sprite2D = $Body
 
 const PROFILE_TEXTURES := {
-	"grade_2_mage": preload("res://assets/sprites/characters/hero_body_idle_s.png"),
+	"grade_2_mage": preload("res://assets/sprites/characters/mage_body_idle_s.png"),
 	"grade_5_adventurer": preload("res://assets/sprites/characters/adventurer_body_idle_s.png"),
 }
 
