@@ -2,7 +2,7 @@
 
 ## Status
 
-Milestones 1 through 11 are complete and merged. The PR branch-sync docs rule is also merged.
+Milestones 1 through 12 are complete and merged: the PR branch-sync docs rule, the `docs/design/` north-star doc set, and the bonus-only realignment of the Elder/Mira/Finn learning checks.
 
 ## Implemented files
 
@@ -47,13 +47,13 @@ Open `project.godot` with Godot 4.x standard and press F5.
 - [ ] Movement works after profile selection.
 - [ ] Green floor, blue player, brown obstacle, Elder, Mira, Finn, golden star, glowing herb, and shimmering ore are visible.
 - [ ] The player cannot pass through the obstacle.
-- [ ] Elder golden-star quest still completes after the learning check.
+- [ ] Elder golden-star quest completes after the learning check regardless of answer; a correct answer's dialogue includes "Bonus earned!".
 - [ ] After Elder quest completes, HUD points to Mira.
 - [ ] Mira offers the glowing-herb quest.
 - [ ] Touching the glowing herb removes it and records `glowing_herb` in GameState.
 - [ ] Returning to Mira opens the profile-aware learning check.
-- [ ] Wrong answer shows `Try again.` and does not complete the Mira quest.
-- [ ] Correct answer completes the Mira quest.
+- [ ] Wrong answer still completes the Mira quest, with no bonus.
+- [ ] Correct answer completes the Mira quest and the dialogue line includes "Bonus earned!".
 - [ ] Existing documentation remains present.
 
 ### Content definitions regression
@@ -86,13 +86,15 @@ Open `project.godot` with Godot 4.x standard and press F5.
 - [ ] Returning to Finn opens the profile-aware learning check.
 - [ ] Grade 2 Finn question accepts `fish` as the correct answer.
 - [ ] Grade 5 Finn question accepts `2/4` as the correct answer.
-- [ ] Wrong answer shows `Try again.` and does not complete the Finn quest.
-- [ ] Correct answer completes the Finn quest.
+- [ ] Wrong answer still completes the Finn quest, with no bonus.
+- [ ] Correct answer completes the Finn quest and the dialogue line includes "Bonus earned!".
 
 ## Next milestone
 
-A design north-star doc set now lives in `docs/design/` (`NORTH_STAR.md`, `CURRICULUM_MAP.md`, `VISUAL_CONTRACT.md`, `RESEARCH_NOTES.md`) to anchor future work.
+A design north-star doc set lives in `docs/design/` (`NORTH_STAR.md`, `CURRICULUM_MAP.md`, `VISUAL_CONTRACT.md`, `RESEARCH_NOTES.md`) to anchor future work. The learning checks now follow its bonus-only rule: each quest completes on item return regardless of answer, and a correct answer adds a bonus via `GameState.award_quest_bonus()`.
 
-The recommended next gameplay change is the **bonus-only realignment** of the learning checks: keep the explicit two-choice quiz, but let a wrong or skipped answer still complete the quest, with a correct answer granting a bonus (per `docs/design/NORTH_STAR.md` core rule).
-
-After that, remaining backlog candidates are: a tiny Godot Resource experiment for quest/item definitions, the first real asset replacement pass, or an inventory/reward foundation.
+Next decision is between:
+- surfacing earned bonuses somewhere the player can see (HUD or character panel);
+- tiny Godot Resource experiment for quest/item definitions;
+- first real asset replacement pass;
+- inventory/reward foundation.
