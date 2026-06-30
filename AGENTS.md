@@ -31,3 +31,12 @@ Before auditing, validating, or playtesting a PR branch:
 3. Compare the local branch against `origin/<branch>` and confirm `git diff origin/<branch>` is empty unless intentionally testing local uncommitted changes.
 4. Confirm `git status --short` is clean except for explicitly acknowledged local artifacts.
 5. If the branch is stale or dirty, stop and report before continuing.
+
+## Branch hygiene
+
+Multiple AI tools work on this repo independently, so the same milestone can get started on more than one branch without anyone noticing. Before starting new work:
+
+1. Run `git fetch origin` and check `gh pr list --state all` (or `git branch -r`) for an existing branch or PR already covering the same change.
+2. Base new branches on current `origin/main`, not on an older local branch.
+
+After a branch's PR merges, or its work is confirmed superseded by something already on `main`, delete the branch (`git push origin --delete <branch>`) so the branch list stays current.
