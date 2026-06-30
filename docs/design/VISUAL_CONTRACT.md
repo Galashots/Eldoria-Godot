@@ -41,8 +41,11 @@ yet** — they pay off only with a large asset count, and the project is still m
 placeholder polygons:
 
 - texture **atlas families** (characters / fx / per-biome / ui);
-- per-asset **JSON metadata sidecars** (canonical IDs, pivots, hitbox/hurtbox metadata);
-- asset / palette / animation **registries** and manifests;
+- per-asset **JSON metadata sidecars** *loaded by the game at runtime* (canonical IDs,
+  pivots, hitbox/hurtbox metadata) — distinct from the build-time normalization manifests
+  in `assets/manifests/` (see `docs/art/ASSET_NORMALIZATION_PIPELINE.md`), which are a
+  dev-tooling input never loaded by Godot and are already in use;
+- asset / palette / animation **registries**;
 - skeletal / cutout rigs (stay **frame-by-frame** for now).
 
 When real art volume arrives, revisit these via the Visual Design Guide (see

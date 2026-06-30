@@ -2,7 +2,10 @@
 
 ## Project boundaries
 
-- Use Godot 4.x standard, GDScript, and Godot-native scenes and nodes.
+- Use Godot 4.x standard, GDScript, and Godot-native scenes and nodes for the shipped game.
+  Offline dev tooling that never ships in the Godot project (e.g. `tools/asset_pipeline/`)
+  may use another language where it's a clearly better fit; see
+  `docs/art/ASSET_NORMALIZATION_PIPELINE.md` for the precedent.
 - Build a single-player, local-first game.
 - Do not add accounts, analytics, ads, external APIs, cloud saves, or personal data.
 - Do not attempt a full Eldoria-V2 port yet; treat V2 as read-only reference.
