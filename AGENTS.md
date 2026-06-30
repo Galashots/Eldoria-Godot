@@ -21,3 +21,13 @@ After every task, report:
 - assumptions;
 - risks;
 - the exact next step.
+
+## PR audit and playtest
+
+Before auditing, validating, or playtesting a PR branch:
+
+1. Run `git fetch origin`.
+2. Check out the target branch.
+3. Compare the local branch against `origin/<branch>` and confirm `git diff origin/<branch>` is empty unless intentionally testing local uncommitted changes.
+4. Confirm `git status --short` is clean except for explicitly acknowledged local artifacts.
+5. If the branch is stale or dirty, stop and report before continuing.
