@@ -6,11 +6,14 @@ const PROFILE_LABELS := {
     "grade_5_adventurer": "Grade 5 Adventurer",
 }
 
-const ITEM_LABELS := {
-    "golden_star": "Golden Star",
-    "glowing_herb": "Glowing Herb",
-    "shimmering_ore": "Shimmering Ore",
-}
+## Item display labels are loaded from ItemDefinition .tres resources under
+## data/items/ -- a small proof of the Resource-backed content pattern before
+## it's considered for quest summaries or profile labels (see docs/ROADMAP.md).
+const ITEM_DEFINITIONS: Array[ItemDefinition] = [
+    preload("res://data/items/golden_star.tres"),
+    preload("res://data/items/glowing_herb.tres"),
+    preload("res://data/items/shimmering_ore.tres"),
+]
 
 const QUEST_SUMMARIES := {
     "elder_golden_star": {
@@ -42,7 +45,10 @@ static func get_profile_label(profile_id: String) -> String:
     return PROFILE_LABELS.get(profile_id, profile_id)
 
 static func get_item_label(item_id: String) -> String:
-    return ITEM_LABELS.get(item_id, item_id)
+    for item in ITEM_DEFINITIONS:
+        if item.id == item_id:
+            return item.label
+    return item_id
 
 static func get_quest_summary(quest_id: String, state: String) -> String:
     var summaries: Dictionary = QUEST_SUMMARIES.get(quest_id, {})
