@@ -4,6 +4,8 @@
 
 Milestones 1 through 14 are complete and merged: the PR branch-sync docs rule, the `docs/design/` north-star doc set, the bonus-only realignment of the Elder/Mira/Finn learning checks, the Python asset normalization pipeline (`tools/asset_pipeline/`), and a proof pass that normalizes one ChatGPT test render through the pipeline and displays it on the player in place of the flat-color placeholder.
 
+The player sprite is now profile-aware: `Player.gd` swaps its texture based on `GameState.selected_profile`. Grade 5 Adventurer has a production 5-direction idle set (south/south-east/east/north-east/north, generated from a user-approved ChatGPT design and normalized through the pipeline); Grade 2 Mage still shows the earlier ChatGPT test render pending production Mage art. Only the south-facing frame of each is wired into the running game — the other 4 directions are normalized and committed but not yet used, since `Player.gd` has no movement-direction-driven sprite switching yet (that's the in-engine paper-doll/`flip_h` work, still not started).
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
@@ -12,7 +14,7 @@ Milestones 1 through 14 are complete and merged: the PR branch-sync docs rule, t
 - `scenes/player/Player.tscn`: player sprite (normalized from a ChatGPT test render via `tools/asset_pipeline`, see `assets/manifests/hero_body_idle_s.manifest.json`), collision shape, and camera.
 - `scripts/core/GameState.gd`: minimal profile, health, collected-item, reusable quest state, and Elder compatibility flags.
 - `scripts/core/ContentDefinitions.gd`: tiny lookup layer for profile labels, item labels, and quest summaries.
-- `scripts/player/Player.gd`: WASD and arrow-key movement blocked until profile selection.
+- `scripts/player/Player.gd`: WASD and arrow-key movement blocked until profile selection; swaps the player sprite by profile via `GameState.profile_changed`.
 - `scenes/npcs/Elder.tscn` and `scripts/npcs/Elder.gd`: purple Elder placeholder with golden-star quest.
 - `scenes/npcs/Mira.tscn` and `scripts/npcs/Mira.gd`: green gardener NPC with glowing-herb quest.
 - `scenes/npcs/Finn.tscn` and `scripts/npcs/Finn.gd`: brown blacksmith placeholder with shimmering-ore quest gated after Mira completion.
@@ -30,6 +32,7 @@ Milestones 1 through 14 are complete and merged: the PR branch-sync docs rule, t
 - `tools/asset_pipeline/` (`manifest.py`, `normalize.py`, `validate.py`, `test_pipeline.py`): Python + Pillow tool that turns AI-generated source art into exact, correctly-sized, transparent PNGs via a JSON manifest. See `docs/art/ASSET_NORMALIZATION_PIPELINE.md`.
 - `assets/manifests/.gdignore` and `assets/source/generated/.gdignore`: Godot-ignored folders for normalization manifests and raw AI source sheets.
 - `assets/manifests/hero_body_idle_s.manifest.json`, `assets/source/generated/hero_body_idle_s/source.png`, `assets/sprites/characters/hero_body_idle_s.png`: the proof-pass hero sprite (one direction, no armor, from a ChatGPT test render — not approved production art) and its manifest, proving the pipeline end-to-end. `project.godot` now sets the project-wide default texture filter to nearest, as `docs/design/VISUAL_CONTRACT.md` requires.
+- `assets/manifests/adventurer_body_idle_{s,se,e,ne,n}.manifest.json`, matching `assets/source/generated/adventurer_body_idle_*/source.png`, and `assets/sprites/characters/adventurer_body_idle_*.png`: the first production art for Grade 5 Adventurer — a user-approved "practical traveler" design, 5 directions covering all 8 facings via future `flip_h` mirroring of the SE/E/NE renders. Only `_s` (south) is currently used in `Player.tscn`.
 
 ## How to run
 
@@ -50,6 +53,7 @@ Open `project.godot` with Godot 4.x standard and press F5.
 - [ ] Movement works after profile selection.
 - [ ] Green floor, player sprite, brown obstacle, Elder, Mira, Finn, golden star, glowing herb, and shimmering ore are visible.
 - [ ] The player sprite renders crisp (nearest-neighbor, no blur) with a transparent background and feet roughly aligned with the collision shape, not floating or sunk into the ground.
+- [ ] Grade 2 selection shows the blue-tunic test sprite; Grade 5 selection shows the distinct golden-haired Adventurer sprite.
 - [ ] The player cannot pass through the obstacle.
 - [ ] Elder golden-star quest completes after the learning check regardless of answer; a correct answer's dialogue includes "Bonus earned!".
 - [ ] After Elder quest completes, HUD points to Mira.
@@ -99,8 +103,16 @@ A design north-star doc set lives in `docs/design/` (`NORTH_STAR.md`, `CURRICULU
 
 The asset normalization pipeline (`tools/asset_pipeline/`, see `docs/art/ASSET_NORMALIZATION_PIPELINE.md`) can now turn approved ChatGPT/Gemini source art into Godot-ready sprites, and the architecture rule's "do not scale asset replacement until one pass is proven" gate is satisfied: one hero sprite has gone source image -> manifest -> normalize -> validate -> `Player.tscn`, importing and running cleanly under Godot 4.7 headless. That sprite is a test/comparison render, not approved production art — still needed before a real asset pass: production hero/armor source art (using the Eldoria-V2 committed sprites and `docs/art/ASSET_NORMALIZATION_PIPELINE.md` prompting tips as style/process reference), the Godot-side paper-doll `AnimatedSprite2D` layering for armor, and 8-direction `flip_h` mirroring.
 
+Grade 5 Adventurer now has production art (see above); Grade 2 Mage still needs it — the
+prompt is ready (built from the V2 mage design the user approved as style reference) but
+not yet generated. Once both south-facing sprites are production-grade, the next visual
+step is using the 4 already-normalized-but-unused directions per character (SE/E/NE/N) to
+build real 8-direction movement-facing in `Player.gd`, which does not exist yet.
+
 Next decision is between:
-- the first real production asset replacement pass (pipeline now proven);
+- generating production Grade 2 Mage art to match Grade 5's now-complete set;
+- wiring movement-direction-driven sprite switching (`Player.gd` currently always shows the
+  south-facing frame regardless of movement direction);
 - surfacing earned bonuses somewhere the player can see (HUD or character panel);
 - tiny Godot Resource experiment for quest/item definitions;
 - inventory/reward foundation.
