@@ -3,6 +3,7 @@ extends CanvasLayer
 @onready var profile_label: Label = $PanelContainer/VBoxContainer/ProfileLabel
 @onready var quest_label: Label = $PanelContainer/VBoxContainer/QuestLabel
 @onready var items_label: Label = $PanelContainer/VBoxContainer/ItemsLabel
+@onready var bonuses_label: Label = $PanelContainer/VBoxContainer/BonusesLabel
 @onready var equipment_label: Label = $PanelContainer/VBoxContainer/EquipmentLabel
 
 func _ready() -> void:
@@ -41,6 +42,7 @@ func _refresh() -> void:
     profile_label.text = "Profile: " + ContentDefinitions.get_profile_label(GameState.selected_profile)
     quest_label.text = "Current quest: " + _get_current_quest_summary()
     items_label.text = "Items: " + _get_items_summary()
+    bonuses_label.text = "Bonuses earned: " + _get_bonuses_summary()
     equipment_label.text = "Equipment: coming soon"
 
 func _get_items_summary() -> String:
@@ -55,6 +57,18 @@ func _get_items_summary() -> String:
     if items.is_empty():
         return "none yet"
     return ", ".join(items)
+
+func _get_bonuses_summary() -> String:
+    var quest_ids: Array[String] = [
+        GameState.QUEST_ELDER_GOLDEN_STAR,
+        GameState.QUEST_MIRA_GLOWING_HERB,
+        GameState.QUEST_FINN_SHIMMERING_ORE,
+    ]
+    var earned := 0
+    for quest_id in quest_ids:
+        if GameState.has_quest_bonus(quest_id):
+            earned += 1
+    return "%d/%d" % [earned, quest_ids.size()]
 
 func _get_current_quest_summary() -> String:
     var elder_state := GameState.get_quest_state(GameState.QUEST_ELDER_GOLDEN_STAR)
