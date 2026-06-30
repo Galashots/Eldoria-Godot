@@ -25,7 +25,7 @@ The player sprite is now profile-aware and direction-aware: `Player.gd` swaps it
 - `scenes/ui/DialogueBox.tscn` and `scripts/ui/DialogueBox.gd`: reusable speaker/message UI dismissed with E, Enter, or Space.
 - `scenes/ui/ProfileSelect.tscn` and `scripts/ui/ProfileSelect.gd`: profile selector overlay UI and logic.
 - `scenes/ui/LearningCheck.tscn` and `scripts/ui/LearningCheck.gd`: reusable profile-aware two-choice learning check.
-- `scenes/ui/CharacterPanel.tscn` and `scripts/ui/CharacterPanel.gd`: placeholder character/inventory popup opened with C or I and backed by content definitions.
+- `scenes/ui/CharacterPanel.tscn` and `scripts/ui/CharacterPanel.gd`: placeholder character/inventory popup opened with C or I and backed by content definitions. Now also shows a "Bonuses earned: X/3" count across the three quests.
 - `assets/README.md` and `assets/sprites/README.md`: asset folder structure guidance.
 - `assets/source/.gdignore` and `assets/source/README.md`: ignored source/reference material area.
 - `docs/art/ASSET_PIPELINE.md` and `docs/art/STYLE_GUIDE.md`: first art workflow and visual rules.
@@ -84,6 +84,7 @@ Open `project.godot` with Godot 4.x standard and press F5.
 - [ ] Character panel shows current quest summary.
 - [ ] Character panel shows collected items after the golden star, glowing herb, and shimmering ore are collected.
 - [ ] Character panel shows equipment coming soon.
+- [ ] Character panel shows "Bonuses earned: 0/3" before any bonus is earned, and the count increases as correct learning-check answers are given.
 - [ ] Existing Elder, Mira, and Finn quest flows still work while the character panel is opened and closed.
 
 ### Finn quest regression
@@ -109,8 +110,11 @@ Both Grade 5 Adventurer and Grade 2 Mage now have production art with real 8-dir
 movement-facing wired into `Player.gd` (see above). Remaining visual gaps: no walk-cycle
 animation (still a single idle pose per direction) and no armor/paper-doll layering yet.
 
+Earned learning-check bonuses are now visible to the player via the character panel's
+"Bonuses earned: X/3" line (see above), closing the gap left by the earlier bonus-only
+learning-check rework.
+
 Next decision is between:
-- surfacing earned bonuses somewhere the player can see (HUD or character panel);
 - tiny Godot Resource experiment for quest/item definitions (`docs/ROADMAP.md` milestone 2);
 - inventory/reward foundation (`docs/ROADMAP.md` milestone 4);
 - walk-cycle animation or armor/paper-doll layering, as a further extension of the art work.
