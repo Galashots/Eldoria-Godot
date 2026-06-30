@@ -1,5 +1,9 @@
 # Ready-to-Paste Milestone 2 Prompt
 
+**Illustrative template only.** Milestone 2 (NPC/collectible/objective) is long since
+complete; this file is kept as an example of how to phrase a milestone prompt for another
+tool, not as the literal next step. For what's actually next, see `docs/CURRENT_STATE.md`.
+
 ```text
 Objective: Implement one NPC, one collectible, and one objective prompt in Eldoria-Godot.
 
