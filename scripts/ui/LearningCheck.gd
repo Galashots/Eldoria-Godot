@@ -10,17 +10,21 @@ signal dialogue_requested(speaker_name: String, line: String)
 var _speaker_name: String = "Elder Rowan"
 var _correct_answer: String = ""
 var _choices: Array = []
+var _quest_id: String = "elder_golden_star"
+var _completion_line: String = "You found it! The village is grateful."
 
 func _ready() -> void:
     visible = false
     first_button.pressed.connect(_on_first_answer_pressed)
     second_button.pressed.connect(_on_second_answer_pressed)
 
-func show_check(speaker_name: String, question: String, choices: Array, correct_answer: String) -> void:
-    GameState.start_elder_learning_check()
+func show_check(speaker_name: String, question: String, choices: Array, correct_answer: String, quest_id: String = "elder_golden_star", completion_line: String = "You found it! The village is grateful.") -> void:
+    GameState.start_learning_check(quest_id)
     _speaker_name = speaker_name
     _choices = choices
     _correct_answer = correct_answer
+    _quest_id = quest_id
+    _completion_line = completion_line
     question_label.text = question
     feedback_label.text = "Choose an answer."
     first_button.text = str(choices[0])
@@ -56,8 +60,8 @@ func _select_answer(index: int) -> void:
 
     var selected_answer := str(_choices[index])
     if selected_answer == _correct_answer:
-        GameState.complete_elder_quest()
+        GameState.complete_quest(_quest_id)
         visible = false
-        dialogue_requested.emit(_speaker_name, "You found it! The village is grateful.")
+        dialogue_requested.emit(_speaker_name, _completion_line)
     else:
         feedback_label.text = "Try again."
