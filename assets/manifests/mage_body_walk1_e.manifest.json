@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "id": "mage_body_walk1_e",
+  "target": {
+    "outputPath": "../sprites/characters/mage_body_walk1_e.png",
+    "cellPx": [
+      32,
+      48
+    ],
+    "cols": 1,
+    "rows": 1,
+    "inherits": null,
+    "expectedEmptyCells": []
+  },
+  "sources": {
+    "source_sheet": {
+      "path": "../source/generated/mage_body_walk_sheet/source.png",
+      "grid": {
+        "cols": 5,
+        "rows": 2
+      },
+      "background": {
+        "mode": "color_key",
+        "color": "#ff00ff",
+        "tolerance": 32
+      }
+    }
+  },
+  "frames": [
+    {
+      "sourceRef": "source_sheet",
+      "sourceCell": [
+        2,
+        0
+      ],
+      "destCell": [
+        0,
+        0
+      ],
+      "trim": "alpha",
+      "fit": "contain",
+      "anchor": "center_bottom"
+    }
+  ]
+}
