@@ -29,14 +29,14 @@
 - [ ] The golden-star collectible is visible.
 - [ ] The glowing-herb collectible is visible.
 - [ ] The objective prompt is visible.
-- [ ] Elder golden-star quest still completes after the learning check.
+- [ ] Elder golden-star quest completes after the learning check regardless of answer; a correct answer's dialogue includes "Bonus earned!".
 - [ ] After Elder quest completion, HUD points to Mira.
 - [ ] Mira offers the glowing-herb objective.
 - [ ] Touching the glowing herb removes it.
 - [ ] GameState records `glowing_herb`.
 - [ ] Returning to Mira opens the profile-aware learning check.
-- [ ] Wrong answer shows `Try again.` and does not complete the Mira quest.
-- [ ] Correct answer completes the Mira quest.
+- [ ] Wrong answer still completes the Mira quest, with no bonus.
+- [ ] Correct answer completes the Mira quest and the dialogue line includes "Bonus earned!".
 - [ ] Finn is visible.
 - [ ] Finn is gated until Mira completion.
 - [ ] HUD points to Finn after Mira.
@@ -44,6 +44,6 @@
 - [ ] CharacterPanel shows Shimmering Ore.
 - [ ] Grade 2 Finn answer is `fish`.
 - [ ] Grade 5 Finn answer is `2/4`.
-- [ ] Wrong answer shows `Try again.` and does not complete the Finn quest.
-- [ ] Correct answer completes the Finn quest.
+- [ ] Wrong answer still completes the Finn quest, with no bonus.
+- [ ] Correct answer completes the Finn quest and the dialogue line includes "Bonus earned!".
 - [ ] Existing documentation has not been deleted.

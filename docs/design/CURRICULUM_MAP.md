@@ -27,17 +27,18 @@ Every educational quest is authored on three layers:
 
 …wrapped in a **non-punitive, bonus-only feedback loop** (see below).
 
-## Feedback rule (bonus-only)
+## Feedback rule (bonus-only) — implemented
 
-Per the North Star core rule:
+Per the North Star core rule, and now live in `scripts/ui/LearningCheck.gd`:
 
-- A quest **always completes** once the fiction action is done (item returned, route
-  chosen), regardless of the learning-check answer.
-- A **correct** answer grants a **bonus** (extra reward, cosmetic, or a per-skill mastery
-  mark). A wrong/skipped answer is fine — gentle "not quite, here's why," then continue.
-- Explicit two-choice quiz format is kept **for now** (user decision this session). The
-  bonus-only realignment is a *gameplay* change tracked in `docs/CURRENT_STATE.md`; this
-  doc defines the target behavior.
+- A quest **always completes** once the fiction action is done (item returned), regardless
+  of the learning-check answer.
+- A **correct** answer calls `GameState.award_quest_bonus()` and the completion dialogue
+  says "Bonus earned!" — today that's the entire bonus (a flag plus a line of text), not
+  yet a tangible extra reward, cosmetic, or per-skill mastery mark. Turning the bonus into
+  something the player can see/keep is open design work (see `docs/CURRENT_STATE.md`
+  "Next milestone").
+- Explicit two-choice quiz format is kept **for now** (user decision this session).
 
 ## Proposed subject scope — CONFIRM/ADJUST
 
@@ -64,8 +65,8 @@ The current Elder → Mira → Finn checks already fit this scheme:
 | **Mira — glowing herb** | Restore the garden | Phonemic awareness / word choice | "Rhymes with star?" / "Which verb is stronger?" |
 | **Finn — shimmering ore** | Supply the forge (gated after Mira) | Phonics / fractions | "Starts like *forge*?" / "Equal to 1/2?" |
 
-**Realignment note:** today these checks gate completion. Under the bonus-only target,
-each quest completes on item return; the check becomes the bonus step.
+**Realignment note:** implemented — each quest completes on item return; the check is the
+bonus step, not a gate.
 
 ## Stealth assessment (future direction, not now)
 

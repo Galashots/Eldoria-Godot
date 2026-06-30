@@ -10,7 +10,9 @@
 ## Near milestones
 1. Keep current-state docs truthful after each merge.
 2. Run a tiny Resource experiment for quest/item definitions.
-3. Run the first real asset replacement pass.
+3. Run the first real asset replacement pass — unblocked: `tools/asset_pipeline/` now
+   normalizes AI-generated source art into Godot-ready sprites, see
+   `docs/art/ASSET_NORMALIZATION_PIPELINE.md`.
 4. Add inventory/reward foundation.
 5. Add local save/load.
 6. Add more story/quest content.

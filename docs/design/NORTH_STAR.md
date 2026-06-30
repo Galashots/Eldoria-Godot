@@ -34,12 +34,13 @@ curriculum research (`docs/design/RESEARCH_NOTES.md`):
 > Learning creates **bonuses only** — extra reward, cosmetics, convenience. Players can
 > always explore, talk, retry, and finish quests **without answering correctly**.
 
-**Current build does not yet follow this rule.** The Elder/Mira/Finn learning checks
-*gate* quest completion (a wrong answer stalls the quest on "Try again."). The agreed next
-gameplay change is to **realign to bonus-only**: keep the explicit two-choice quiz format,
-but let a wrong or skipped answer still complete the quest, with a **correct answer
-granting a bonus** (e.g. extra item, cosmetic, or a mastery mark). See
-`docs/design/CURRICULUM_MAP.md` for how this maps onto the existing quests.
+**The build now follows this rule.** The Elder/Mira/Finn learning checks complete the
+quest on item return regardless of answer; a correct answer additionally calls
+`GameState.award_quest_bonus()` and the completion dialogue says "Bonus earned!" — a wrong
+or skipped answer no longer stalls anything. The bonus itself is currently just that flag
+plus the dialogue line, not yet a tangible reward, cosmetic, or mastery-mark system; richer
+bonus payoffs remain open design work. See `docs/design/CURRICULUM_MAP.md` for how this
+maps onto the existing quests.
 
 ## Vertical-slice target (staged, medium-term)
 
