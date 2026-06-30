@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://scenes/npcs/Elder.tscn" id="2_elder"]
@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/LearningCheck.tscn" id="7_learning_check"]
 [ext_resource type="PackedScene" path="res://scenes/npcs/Mira.tscn" id="8_mira"]
 [ext_resource type="PackedScene" path="res://scenes/items/GlowingHerb.tscn" id="9_herb"]
+[ext_resource type="PackedScene" path="res://scenes/ui/CharacterPanel.tscn" id="10_character_panel"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_obstacle"]
 size = Vector2(200, 60)
@@ -49,6 +50,8 @@ position = Vector2(980, 650)
 [node name="HUD" parent="." instance=ExtResource("4_hud")]
 
 [node name="DialogueBox" parent="." instance=ExtResource("5_dialogue")]
+
+[node name="CharacterPanel" parent="." instance=ExtResource("10_character_panel")]
 
 [node name="LearningCheck" parent="." instance=ExtResource("7_learning_check")]
 
