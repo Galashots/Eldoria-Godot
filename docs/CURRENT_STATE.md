@@ -91,7 +91,8 @@ Open `project.godot` with Godot 4.x standard and press F5.
 
 ## Next milestone
 
-Next decision is between:
-- tiny Godot Resource experiment for quest/item definitions;
-- first real asset replacement pass;
-- inventory/reward foundation.
+A design north-star doc set now lives in `docs/design/` (`NORTH_STAR.md`, `CURRICULUM_MAP.md`, `VISUAL_CONTRACT.md`, `RESEARCH_NOTES.md`) to anchor future work.
+
+The recommended next gameplay change is the **bonus-only realignment** of the learning checks: keep the explicit two-choice quiz, but let a wrong or skipped answer still complete the quest, with a correct answer granting a bonus (per `docs/design/NORTH_STAR.md` core rule).
+
+After that, remaining backlog candidates are: a tiny Godot Resource experiment for quest/item definitions, the first real asset replacement pass, or an inventory/reward foundation.
