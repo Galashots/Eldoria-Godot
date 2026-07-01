@@ -7,6 +7,7 @@ signal quest_changed(quest_id: String, state: String)
 signal armor_equipped(tier: int)
 
 const SAVE_PATH := "user://savegame.json"
+const SAVE_VERSION := 1
 
 const QUEST_ELDER_GOLDEN_STAR := "elder_golden_star"
 const QUEST_MIRA_GLOWING_HERB := "mira_glowing_herb"
@@ -148,6 +149,7 @@ func _check_and_grant_tier1_armor() -> void:
 
 func save_game() -> void:
     var data := {
+        "version": SAVE_VERSION,
         "selected_profile": selected_profile,
         "player_hp": player_hp,
         "collected_items": collected_items,
@@ -172,6 +174,8 @@ func load_game() -> void:
     if typeof(data) != TYPE_DICTIONARY:
         return
 
+    data = _migrate(data)
+
     selected_profile = data.get("selected_profile", selected_profile)
     player_hp = data.get("player_hp", player_hp)
     quest_states = data.get("quest_states", quest_states)
@@ -187,6 +191,11 @@ func load_game() -> void:
         collected_items[item_id] = int(loaded_items[item_id])
 
     _refresh_elder_quest_flags()
+
+func _migrate(data: Dictionary) -> Dictionary:
+    # No-op for now: version 0 (pre-versioning saves, missing the key entirely) and
+    # version 1 have the same shape. Future schema changes add a step per version here.
+    return data
 
 func reset_progress() -> void:
     reset_state()
