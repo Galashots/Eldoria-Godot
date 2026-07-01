@@ -65,10 +65,10 @@
 The vertical slice above (4 quests, save/load, equip, tests) is done; the user has since
 approved a Phase 2 roadmap toward a real game (combat, pets, bigger maps, farm/home-base,
 mobile). Milestone order: **M1 world/map foundation** (done) → **M2 combat + first monster**
-(done) → **M3 gear/rarity/inventory + shop** (done, next below) → M4 pets → M5 bigger world &
-traversal → M6 farm + home base → M7 mobile → M8 UI/theme polish. Architecture (EventBus,
-component nodes, `.tres`-driven stats) is introduced feature-by-feature, not upfront. Full
-plan context in project memory (`phase2-roadmap`).
+(done) → **M3 gear/rarity/inventory + shop** (done) → **M4 pets** (done, next below) → M5
+bigger world & traversal → M6 farm + home base → M7 mobile → M8 UI/theme polish. Architecture
+(EventBus, component nodes, `.tres`-driven stats) is introduced feature-by-feature, not
+upfront. Full plan context in project memory (`phase2-roadmap`).
 
 10. ~~M1 — World/map foundation.~~ Done — `scenes/main/Main.tscn`'s flat `World/Floor`
     Polygon2D + single `Obstacle` replaced with a `World/Ground` `TileMapLayer` over a
@@ -133,6 +133,26 @@ plan context in project memory (`phase2-roadmap`).
     bonus). Explicitly deferred (flagged in `GEAR_AND_ECONOMY.md`, not forced by the code):
     armor as buyable gear, sell-back, multi-slot loadouts, consumables, real coin/gear icon
     art, and gear stat axes beyond `damage_bonus`.
+
+13. ~~M4 — Pets.~~ Done — a deliberately narrow first slice (one species, follow-only AI, no
+    pet combat) per `docs/design/NORTH_STAR.md`'s "cohesion over volume" pillar; see
+    `docs/design/PETS.md` for the locked rules. `PetDefinition` (mirroring `GearDefinition`)
+    backs the pet roster under `data/pets/`; the first pet is **Mossy** (Rare, +2 Max HP,
+    placeholder polygon art). `Pet.gd` is a `CharacterBody2D` with follow-only AI (no
+    `HealthComponent`) — moves toward the player at speed 220 whenever farther than 24px
+    away, stops inside that ring. Unlocking reuses the exact same all-four-quests gate as the
+    Tier 1 armor grant (`GameState._check_and_grant_first_pet()`, called from
+    `complete_quest()`); it grants Mossy once, auto-equips it, and heals the player by the
+    bonus so the new max hp arrives full. `GameState` gained `owned_pets`/`equipped_pet`,
+    `pet_unlocked`/`pet_changed` signals, `equip_pet(id)` (requires ownership, clamps
+    `player_hp` to the new effective max, never auto-heals on equip/unequip), and
+    `get_effective_max_hp()`, now used by `take_player_damage()`/`heal_player_to_full()`/the
+    HUD. `Player.gd` spawns/despawns the pet as a sibling on `pet_changed`. The character
+    panel gained a Pets section (owned pets with Equip/Unequip buttons). Save schema bumped
+    to version 3 (`owned_pets`/`equipped_pet`); `_migrate()` stays a no-op since `load_game()`
+    already reads every field via `.get()` with defaults. Test suite grew to 28 (5 new, in a
+    new isolated `tests/pet_tests.gd`). Explicitly deferred (see `docs/design/PETS.md`): pet
+    combat, multiple species/a real roster, buying pets, evolution/leveling, real art.
 
 ## Cleanup backlog (from the repo audit, deliberately deferred)
 

@@ -10,11 +10,11 @@ y_sort_enabled = true
 script = ExtResource("1_pet")
 
 [node name="Body" type="Polygon2D" parent="."]
-color = Color(0.42, 0.72, 0.38, 1)
+color = Color(0.4, 0.85, 0.68, 1)
 polygon = PackedVector2Array(-7, 2, -5, -4, 0, -7, 5, -4, 7, 2, 4, 6, -4, 6)
 
 [node name="Leaf" type="Polygon2D" parent="."]
-color = Color(0.25, 0.5, 0.22, 1)
+color = Color(0.16, 0.45, 0.3, 1)
 polygon = PackedVector2Array(-1, -7, 3, -12, 4, -6)
 
 [node name="EyeLeft" type="Polygon2D" parent="."]
