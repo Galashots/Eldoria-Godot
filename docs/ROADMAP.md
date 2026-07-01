@@ -16,7 +16,11 @@
    (one test sprite went source -> manifest -> normalize -> validate -> `Player.tscn` and
    runs cleanly), so this is now about generating approved hero/armor art, not the tool.
    See `docs/art/ASSET_NORMALIZATION_PIPELINE.md`. Both Grade 2 Mage and Grade 5
-   Adventurer now have production art with 8-direction movement-facing.
+   Adventurer now have production art with 8-direction movement-facing, walk-cycle
+   animation, and Tier 1 (Leather) armor art (`docs/design/ARMOR_TIERS.md`) normalized as
+   full replacement idle sprite sets. No equip/inventory system exists yet to grant or wear
+   that armor in-game, and only idle poses exist for Tier 1 (no walk-cycle armor frames) —
+   both are open follow-up work, not yet scheduled as their own milestone here.
 4. ~~Add inventory/reward foundation.~~ Done — the character panel's item list is generic
    (any `GameState.collected_items` entry, with quantity), and learning-check bonuses are
    named badges (`ContentDefinitions.BADGE_LABELS`) shown in both the completion dialogue

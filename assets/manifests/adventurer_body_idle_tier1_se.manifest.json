@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "id": "adventurer_body_idle_tier1_se",
+  "target": {
+    "outputPath": "../sprites/characters/adventurer_body_idle_tier1_se.png",
+    "cellPx": [
+      32,
+      48
+    ],
+    "cols": 1,
+    "rows": 1,
+    "inherits": null,
+    "expectedEmptyCells": []
+  },
+  "sources": {
+    "source_sheet": {
+      "path": "../source/generated/adventurer_body_idle_tier1_sheet/source.png",
+      "grid": {
+        "cols": 5,
+        "rows": 1
+      },
+      "background": {
+        "mode": "color_key",
+        "color": "#ff00ff",
+        "tolerance": 32
+      }
+    }
+  },
+  "frames": [
+    {
+      "sourceRef": "source_sheet",
+      "sourceCell": [
+        1,
+        0
+      ],
+      "destCell": [
+        0,
+        0
+      ],
+      "trim": "alpha",
+      "fit": "contain",
+      "anchor": "center_bottom"
+    }
+  ]
+}

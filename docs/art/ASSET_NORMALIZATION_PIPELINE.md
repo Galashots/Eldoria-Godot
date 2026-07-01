@@ -85,10 +85,10 @@ transparent edges), then un-premultiplies.
 - `target.cellPx` / `cols` / `rows` — output sheet is `cellPx[0]*cols` x `cellPx[1]*rows`.
 - `target.inherits` (optional) — a relative path to another manifest. The armor layer's
   `cellPx`/`cols`/`rows` must match the inherited body manifest's exactly, or validation
-  fails. This is how an armor overlay is guaranteed to line up frame-for-frame with the
-  body it's drawn over — without a separate metadata-sidecar file (those stay deferred
-  per `docs/design/VISUAL_CONTRACT.md`; this manifest is a build-time input to our own
-  offline tool, never loaded by the game at runtime).
+  fails. This only checks that the two manifests declare the same *output grid* — it does
+  not verify the underlying source art is pixel-registered (see the prompting tips below;
+  cross-generation renders drift, sometimes a lot). Useful as a schema-level sanity check,
+  not a guarantee of visual alignment.
 - `sources.<ref>.grid` — for a sheet source, lets frames address cells via `sourceCell`
   instead of an explicit `sourceRect`.
 - `frames[].trim` — `alpha` (default, crop to non-transparent bounds) or `none`.
@@ -132,6 +132,15 @@ assets/sprites/<category>/<asset_id>.png
   it toward bold simple shapes over fine detail that would be lost anyway.
 - For armor/equipment layers, edit the *same* base character image in-place in the same
   chat thread ("using the exact same character, pose, and framing... add X") rather than
-  prompting a fresh image — both ChatGPT and Gemini held pose/proportions stable (a few
-  pixels of drift) when editing in-place, which is what makes the `inherits` alignment
-  check in this pipeline meaningful.
+  prompting a fresh image — this keeps the character's identity (hair, palette, proportions)
+  consistent, which matters more than pixel alignment (see below).
+- **Do not rely on cross-generation pixel alignment, even for in-place edits.** Tier 1 armor
+  (`docs/design/ARMOR_TIERS.md`) confirmed that an armored re-render is not pixel-aligned
+  with its source idle sheet — canvas size and framing can shift noticeably between
+  generations, and a *new chat thread* (no shared in-place-edit context) can shift them a
+  lot. The `target.inherits` alignment check in this schema (below) only validates that two
+  manifests declare the *same target grid*; it does not and cannot guarantee the underlying
+  art is pixel-registered. Don't build a pipeline step that diffs two separately-generated
+  renders expecting clean alignment — normalize each as an independent full sprite/sheet
+  instead (this is what Tier 1 armor does: full replacement idle sprites, not a diffed
+  transparent overlay).
