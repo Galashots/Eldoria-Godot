@@ -45,6 +45,10 @@ const BADGE_LABELS := {
     "finn_shimmering_ore": "Finn's Forge Badge",
 }
 
+const ARMOR_TIER_LABELS := {
+    1: "Leather Armor",
+}
+
 static func get_profile_label(profile_id: String) -> String:
     if profile_id == "":
         return "None selected"
@@ -62,3 +66,6 @@ static func get_quest_summary(quest_id: String, state: String) -> String:
 
 static func get_badge_label(quest_id: String) -> String:
     return BADGE_LABELS.get(quest_id, "Bonus Badge")
+
+static func get_armor_tier_label(tier: int) -> String:
+    return ARMOR_TIER_LABELS.get(tier, "Tier %d Armor" % tier)

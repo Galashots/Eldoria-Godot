@@ -4,6 +4,7 @@ signal item_added(item_id: String, amount: int)
 signal elder_quest_changed
 signal profile_changed(profile_id: String)
 signal quest_changed(quest_id: String, state: String)
+signal armor_equipped(tier: int)
 
 const QUEST_ELDER_GOLDEN_STAR := "elder_golden_star"
 const QUEST_MIRA_GLOWING_HERB := "mira_glowing_herb"
@@ -24,6 +25,7 @@ var quest_states: Dictionary = {
     QUEST_FINN_SHIMMERING_ORE: QUEST_NOT_STARTED,
 }
 var quest_bonuses: Dictionary = {}
+var equipped_armor_tier: int = 0
 
 var elder_quest_started: bool = false
 var elder_quest_completed: bool = false
@@ -87,6 +89,7 @@ func complete_quest(quest_id: String) -> void:
         return
 
     set_quest_state(quest_id, QUEST_COMPLETED)
+    _check_and_grant_tier1_armor()
 
 func award_quest_bonus(quest_id: String) -> void:
     quest_bonuses[quest_id] = true
@@ -113,3 +116,15 @@ func _refresh_elder_quest_flags() -> void:
     var state := get_quest_state(QUEST_ELDER_GOLDEN_STAR)
     elder_quest_started = state != QUEST_NOT_STARTED
     elder_quest_completed = state == QUEST_COMPLETED
+
+func _check_and_grant_tier1_armor() -> void:
+    if equipped_armor_tier > 0:
+        return
+
+    var required_quests := [QUEST_ELDER_GOLDEN_STAR, QUEST_MIRA_GLOWING_HERB, QUEST_FINN_SHIMMERING_ORE]
+    for quest_id in required_quests:
+        if get_quest_state(quest_id) != QUEST_COMPLETED:
+            return
+
+    equipped_armor_tier = 1
+    armor_equipped.emit(1)

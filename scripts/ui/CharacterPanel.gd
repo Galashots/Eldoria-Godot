@@ -11,6 +11,7 @@ func _ready() -> void:
     GameState.profile_changed.connect(_on_profile_changed)
     GameState.item_added.connect(_on_item_added)
     GameState.quest_changed.connect(_on_quest_changed)
+    GameState.armor_equipped.connect(_on_armor_equipped)
     _refresh()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -38,12 +39,15 @@ func _on_item_added(_item_id: String, _amount: int) -> void:
 func _on_quest_changed(_quest_id: String, _state: String) -> void:
     _refresh()
 
+func _on_armor_equipped(_tier: int) -> void:
+    _refresh()
+
 func _refresh() -> void:
     profile_label.text = "Profile: " + ContentDefinitions.get_profile_label(GameState.selected_profile)
     quest_label.text = "Current quest: " + _get_current_quest_summary()
     items_label.text = "Items: " + _get_items_summary()
     bonuses_label.text = "Bonuses earned: " + _get_bonuses_summary()
-    equipment_label.text = "Equipment: coming soon"
+    equipment_label.text = "Equipment: " + _get_equipment_summary()
 
 func _get_items_summary() -> String:
     var items: Array[String] = []
@@ -74,6 +78,11 @@ func _get_bonuses_summary() -> String:
     if badges.is_empty():
         return "none yet"
     return ", ".join(badges)
+
+func _get_equipment_summary() -> String:
+    if GameState.equipped_armor_tier <= 0:
+        return "none yet"
+    return ContentDefinitions.get_armor_tier_label(GameState.equipped_armor_tier)
 
 func _get_current_quest_summary() -> String:
     var elder_state := GameState.get_quest_state(GameState.QUEST_ELDER_GOLDEN_STAR)
