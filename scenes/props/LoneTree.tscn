@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+; Placeholder wayfinding landmark (bootstrap-polygon art). Purely visual: no collision, no
+; script. A distinctive silhouette (trunk + big round canopy) so it reads as a *different*
+; landmark than the StandingStone. Authored from the node origin (trunk base at y~0) upward.
+
+[node name="LoneTree" type="Node2D"]
+y_sort_enabled = true
+
+[node name="Trunk" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-8, 0, -6, -48, 6, -48, 8, 0)
+color = Color(0.45, 0.3, 0.18, 1)
+
+[node name="Canopy" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -128, 26, -118, 40, -92, 36, -66, 12, -50, -14, -52, -38, -68, -42, -94, -28, -118)
+color = Color(0.32, 0.72, 0.36, 1)

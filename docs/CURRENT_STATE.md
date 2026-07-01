@@ -161,6 +161,7 @@ coin overspend guard, buy/ownership idempotency, equip-requires-ownership + dama
 - `scripts/npcs/Merchant.gd` / `scenes/npcs/Merchant.tscn`: the gear vendor NPC. Interacting opens `ShopUI` directly (no dialogue box needed).
 - `scripts/ui/ShopUI.gd` / `scenes/ui/ShopUI.tscn`: the shop panel, built from `ContentDefinitions.GEAR_DEFINITIONS` at runtime (no per-item scene nodes to maintain). Buy buttons disable once owned or unaffordable.
 - `docs/design/GEAR_AND_ECONOMY.md`: locks the M3 rarity list and weapon roster (id/rarity/damage/price) for future gear additions.
+- `scenes/props/StandingStone.tscn` and `scenes/props/LoneTree.tscn`: two placeholder-polygon wayfinding landmark props (no collision, no script), instanced once each in `Main.tscn` beside the north village fork and the west garden fork so the two main paths are distinguishable from a distance. Added by the expansion loop (map-readability slice).
 
 ## How to run
 
@@ -304,6 +305,13 @@ diagnosed; skip it for now and expect the suite to touch your local save file tr
       above/below them (y-sort).
 - [ ] All 4 NPC quests (Elder, Mira, Finn, Yarrow) are still reachable and completable in
       their new positions, in the same gated order as before (Elder → Mira → Finn → Yarrow).
+- [ ] Two wayfinding landmark props are visible from the spawn area (a screen or so away):
+      a tall grey **Standing Stone** with a gold cap to the north (marking the Elder / Merchant
+      / Finn village cluster) and a green **Lone Tree** to the west (marking Mira's garden
+      path). A first-time player can tell, from the landmarks alone, that the northern fork
+      leads to the quest-givers/shop and the western fork leads toward the garden. The props
+      are purely visual (no collision — the player passes them as background scenery) and no
+      existing NPC/collectible/path moved.
 
 ### Combat regression
 
