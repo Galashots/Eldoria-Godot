@@ -65,7 +65,7 @@
 The vertical slice above (4 quests, save/load, equip, tests) is done; the user has since
 approved a Phase 2 roadmap toward a real game (combat, pets, bigger maps, farm/home-base,
 mobile). Milestone order: **M1 world/map foundation** (done) → **M2 combat + first monster**
-(done, next below) → M3 gear/rarity/inventory + shop → M4 pets → M5 bigger world &
+(done) → **M3 gear/rarity/inventory + shop** (done, next below) → M4 pets → M5 bigger world &
 traversal → M6 farm + home base → M7 mobile → M8 UI/theme polish. Architecture (EventBus,
 component nodes, `.tres`-driven stats) is introduced feature-by-feature, not upfront. Full
 plan context in project memory (`phase2-roadmap`).
@@ -113,6 +113,26 @@ plan context in project memory (`phase2-roadmap`).
     auto-discovery in `_ready()` instead); and setting `monitorable`/`monitoring` directly
     from inside a hit-reaction callback raised a Godot engine error, fixed via
     `set_deferred()`.
+
+12. ~~M3 — Gear, rarity, coins & shop.~~ Done — deliberately a **tight vertical slice**
+    (weapons only, one gear slot, one vendor, manual equip) per `docs/design/NORTH_STAR.md`'s
+    "cohesion over volume" pillar, rather than the full gear/armor/inventory/shop surface the
+    milestone name implies. The first real stats `.tres` lands here as flagged in M2's note:
+    `GearDefinition` (`scripts/core/GearDefinition.gd`, mirroring `ItemDefinition`) backs three
+    weapons under `data/gear/` (Worn Dagger, Iron Sword, Oakheart Blade — rarity/damage/price
+    locked in `docs/design/GEAR_AND_ECONOMY.md`). Meadow Slimes drop a coin on death
+    (`CoinPickup`, mirroring `Collectible`), tying the new economy to the existing M2 combat
+    loop rather than to quest rewards. A `Merchant` NPC opens a `ShopUI` panel (built the same
+    CanvasLayer/PanelContainer way as `CharacterPanel`) to spend coins on gear; equipping an
+    owned weapon happens in the character panel, which now also shows a coins readout and an
+    owned-weapons list. `Player._swing_attack()`'s damage formula gained one term
+    (`GameState.get_equipped_weapon_bonus()`), so gear and the M2 math-streak multiplier stack
+    multiplicatively. Save schema bumped to version 2 (`coins`/`owned_gear`/`equipped_weapon`);
+    `_migrate()` stays a no-op since `load_game()` already reads every field via `.get()` with
+    defaults. Test suite grew to 16 (3 new: overspend guard, buy/ownership, equip + damage
+    bonus). Explicitly deferred (flagged in `GEAR_AND_ECONOMY.md`, not forced by the code):
+    armor as buyable gear, sell-back, multi-slot loadouts, consumables, real coin/gear icon
+    art, and gear stat axes beyond `damage_bonus`.
 
 ## Cleanup backlog (from the repo audit, deliberately deferred)
 

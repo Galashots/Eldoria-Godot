@@ -123,12 +123,18 @@ func test_save_and_load_round_trip() -> Dictionary:
     # complete_quest, not after, or this assertion would read stale disk content.
     GameState.award_quest_bonus(GameState.QUEST_MIRA_GLOWING_HERB)
     GameState.complete_quest(GameState.QUEST_MIRA_GLOWING_HERB)
+    GameState.add_coins(10)
+    GameState.buy_gear("worn_dagger")
+    GameState.equip_weapon("worn_dagger")
 
     var saved_profile := GameState.selected_profile
     var saved_items := GameState.collected_items.duplicate(true)
     var saved_quests := GameState.quest_states.duplicate(true)
     var saved_bonuses := GameState.quest_bonuses.duplicate(true)
     var saved_armor := GameState.equipped_armor_tier
+    var saved_coins := GameState.coins
+    var saved_owned_gear := GameState.owned_gear.duplicate(true)
+    var saved_weapon := GameState.equipped_weapon
 
     # Simulate a fresh process: wipe in-memory state, then load whatever autosave wrote.
     GameState.selected_profile = ""
@@ -141,6 +147,9 @@ func test_save_and_load_round_trip() -> Dictionary:
     }
     GameState.quest_bonuses = {}
     GameState.equipped_armor_tier = 0
+    GameState.coins = 0
+    GameState.owned_gear = []
+    GameState.equipped_weapon = ""
 
     GameState.load_game()
 
@@ -149,6 +158,62 @@ func test_save_and_load_round_trip() -> Dictionary:
     _check(failures, GameState.quest_states == saved_quests, "quest_states mismatch after load")
     _check(failures, GameState.quest_bonuses == saved_bonuses, "quest_bonuses mismatch after load")
     _check(failures, GameState.equipped_armor_tier == saved_armor, "equipped_armor_tier mismatch after load")
+    _check(failures, GameState.coins == saved_coins, "coins mismatch after load")
+    _check(failures, GameState.owned_gear == saved_owned_gear, "owned_gear mismatch after load")
+    _check(failures, GameState.equipped_weapon == saved_weapon, "equipped_weapon mismatch after load")
+
+    return {"ok": failures.is_empty(), "failures": failures}
+
+func test_coins_add_and_spend_guard_against_overspend() -> Dictionary:
+    var failures: Array[String] = []
+
+    _check(failures, GameState.coins == 0, "expected 0 coins at start")
+
+    GameState.add_coins(5)
+    _check(failures, GameState.coins == 5, "expected 5 coins after add_coins(5)")
+
+    var overspend_ok := GameState.spend_coins(10)
+    _check(failures, not overspend_ok, "expected spend_coins to fail when amount exceeds balance")
+    _check(failures, GameState.coins == 5, "expected coins untouched after a failed overspend")
+
+    var spend_ok := GameState.spend_coins(5)
+    _check(failures, spend_ok, "expected spend_coins to succeed for an exact balance spend")
+    _check(failures, GameState.coins == 0, "expected 0 coins after spending all of them")
+
+    return {"ok": failures.is_empty(), "failures": failures}
+
+func test_buy_gear_deducts_coins_and_grants_ownership_once() -> Dictionary:
+    var failures: Array[String] = []
+
+    var too_poor := GameState.buy_gear("worn_dagger")
+    _check(failures, not too_poor, "expected buy_gear to fail with insufficient coins")
+
+    GameState.add_coins(3)
+    var bought := GameState.buy_gear("worn_dagger")
+    _check(failures, bought, "expected buy_gear to succeed with exact price in coins")
+    _check(failures, GameState.coins == 0, "expected coins deducted by the gear's price")
+    _check(failures, GameState.owns_gear("worn_dagger"), "expected owned_gear to contain the purchased id")
+
+    GameState.add_coins(3)
+    var bought_again := GameState.buy_gear("worn_dagger")
+    _check(failures, not bought_again, "expected buy_gear to refuse buying an already-owned item")
+    _check(failures, GameState.coins == 3, "expected coins untouched by a refused repeat purchase")
+
+    return {"ok": failures.is_empty(), "failures": failures}
+
+func test_equip_weapon_requires_ownership_and_applies_damage_bonus() -> Dictionary:
+    var failures: Array[String] = []
+
+    _check(failures, GameState.get_equipped_weapon_bonus() == 0, "expected 0 bonus with nothing equipped")
+
+    GameState.equip_weapon("iron_sword")
+    _check(failures, GameState.equipped_weapon == "", "expected equip to be refused for unowned gear")
+
+    GameState.add_coins(8)
+    GameState.buy_gear("iron_sword")
+    GameState.equip_weapon("iron_sword")
+    _check(failures, GameState.equipped_weapon == "iron_sword", "expected iron_sword to be equipped once owned")
+    _check(failures, GameState.get_equipped_weapon_bonus() == 2, "expected iron_sword's +2 damage_bonus to apply")
 
     return {"ok": failures.is_empty(), "failures": failures}
 
@@ -178,6 +243,9 @@ func test_reset_state_clears_all_state_and_deletes_save_file() -> Dictionary:
     GameState.add_item("golden_star")
     GameState.complete_quest(GameState.QUEST_ELDER_GOLDEN_STAR)
     GameState.equipped_armor_tier = 1
+    GameState.add_coins(10)
+    GameState.buy_gear("worn_dagger")
+    GameState.equip_weapon("worn_dagger")
     GameState.save_game()
     _check(failures, FileAccess.file_exists(GameState.SAVE_PATH), "expected a save file to exist before reset")
 
@@ -188,6 +256,9 @@ func test_reset_state_clears_all_state_and_deletes_save_file() -> Dictionary:
     _check(failures, GameState.get_quest_state(GameState.QUEST_ELDER_GOLDEN_STAR) == GameState.QUEST_NOT_STARTED,
         "expected elder quest reset to not_started")
     _check(failures, GameState.equipped_armor_tier == 0, "expected armor tier reset to 0")
+    _check(failures, GameState.coins == 0, "expected coins reset to 0")
+    _check(failures, GameState.owned_gear.is_empty(), "expected owned_gear cleared after reset")
+    _check(failures, GameState.equipped_weapon == "", "expected equipped_weapon cleared after reset")
     _check(failures, not FileAccess.file_exists(GameState.SAVE_PATH), "expected save file deleted after reset")
 
     return {"ok": failures.is_empty(), "failures": failures}

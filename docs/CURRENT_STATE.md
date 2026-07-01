@@ -91,6 +91,31 @@ tests covering the new pure-logic combat math (streak stacking/capping, the wron
 no-penalty rule, the question cooldown, player damage/heal/death signal firing) - see "How
 to run the GDScript test suite" below, now 13 tests total.
 
+**Gear, rarity, coins & shop (M3 of the Phase 2 roadmap): done.** Deliberately a **tight
+vertical slice** rather than the full "gear/rarity/inventory + shop" surface the milestone
+name implies, per `docs/design/NORTH_STAR.md`'s "cohesion over volume" pillar: weapons only
+(one gear slot), one rarity axis, one vendor NPC, manual equip — see
+`docs/design/GEAR_AND_ECONOMY.md` for the locked rarity list and price scale. The first real
+stats `.tres` (flagged as likely in M2's writeup above) lands here: `GearDefinition.gd`
+(mirroring `ItemDefinition.gd`) backs three weapons under `data/gear/` (Worn Dagger/Common/
++1, Iron Sword/Uncommon/+2, Oakheart Blade/Rare/+3). Meadow Slimes now drop exactly 1 coin on
+death (`CoinPickup.tscn`/`.gd`, mirroring `Collectible.gd`), tying the new economy directly to
+the M2 combat loop rather than to quest rewards. A new `Merchant` NPC (`scripts/npcs/
+Merchant.gd`/`.tscn`) opens a `ShopUI` panel on interact — no dialogue box, since the shop
+panel itself is the interaction surface — listing every `GearDefinition` with its rarity
+color, damage bonus, and a Buy button that disables once owned or unaffordable. Equipping an
+owned weapon happens in the character panel (not the shop), which gained a `Coins:` readout
+and an owned-weapons list with per-weapon Equip buttons; `Equipment:` now lists armor and
+weapon together. `Player._swing_attack()`'s damage formula gained one term
+(`GameState.get_equipped_weapon_bonus()`), so gear and the M2 math-streak multiplier stack
+multiplicatively — live-verified via `game_eval` (base 1 + iron_sword's +2 = 3 damage on the
+real `AttackHitbox`, matching the formula exactly). Save schema bumped to version 2
+(`coins`/`owned_gear`/`equipped_weapon`); `_migrate()` stays a no-op since `load_game()`
+already reads every field via `.get()` with an in-code default, so old saves missing these
+keys load cleanly. No EventBus, no sell-back, no armor-as-buyable-gear — all explicitly
+deferred in `GEAR_AND_ECONOMY.md`, not forced by the code. Test suite grew to 16 (3 new:
+coin overspend guard, buy/ownership idempotency, equip-requires-ownership + damage bonus).
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
@@ -130,7 +155,12 @@ to run the GDScript test suite" below, now 13 tests total.
 - `assets/manifests/mage_body_idle_{s,se,e,ne,n}.manifest.json`, `assets/source/generated/mage_body_idle_sheet/source.png` (a single shared 5-panel source sheet, generated in one ChatGPT response and addressed per direction via `sourceCell` on a 5-col grid), and `assets/sprites/characters/mage_body_idle_*.png`: production art for Grade 2 Mage, matching the brown-haired, navy/gold-tunic design from the V2 style reference. Only `_s` (south) is currently wired into `Player.gd`.
 - `assets/manifests/{mage,adventurer}_body_walk{1,2}_{s,se,e,ne,n}.manifest.json` (20 manifests), `assets/source/generated/{mage,adventurer}_body_walk_sheet/source.png` (one shared 5-direction x 2-pose grid sheet per character, generated in one ChatGPT response each, addressed via `sourceCell` on a 5-col x 2-row grid), and `assets/sprites/characters/{mage,adventurer}_body_walk{1,2}_*.png`: the two new mid-stride poses per direction per character that drive the walk-cycle animation (see `Player.gd` above). `walk1`/`walk2` combine with the existing `idle` pose at runtime — no third pose was generated for "neutral", since idle already serves that role.
 - `assets/manifests/{mage,adventurer}_body_idle_tier1_{s,se,e,ne,n}.manifest.json` (10 manifests), `assets/source/generated/{mage,adventurer}_body_idle_tier1_sheet/source.png` (one shared 5-direction grid sheet per character, a ChatGPT in-place edit of the base idle sheet adding leather armor), and `assets/sprites/characters/{mage,adventurer}_body_idle_tier1_*.png`: Tier 1 (Leather) armor art, see `docs/design/ARMOR_TIERS.md`. Normalized as full replacement body sprite sets (not a transparent overlay — see that doc for why the original diff-based overlay plan was dropped). Now wired into `Player.gd`/`GameState.gd`: completing all three quests auto-equips it (see above); no manual equip/unequip UI exists.
-- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 13 tests as of M2 (4 new: combat multiplier stacking/capping, the wrong-answer no-penalty rule, the question cooldown, player damage/heal/death signal firing). See "How to run the GDScript test suite" below.
+- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 16 tests as of M3 (3 new: coin overspend guard, buy/ownership idempotency, equip-requires-ownership + damage bonus). See "How to run the GDScript test suite" below.
+- `scripts/core/GearDefinition.gd` and `data/gear/{worn_dagger,iron_sword,oakheart_blade}.tres`: the M3 gear-stats Resource, mirroring `ItemDefinition.gd` — id/label/rarity/damage_bonus/price per weapon.
+- `scripts/items/CoinPickup.gd` / `scenes/items/CoinPickup.tscn`: coin pickup, mirroring `Collectible.gd`; spawned (deferred) by `MeadowSlime._on_died()`.
+- `scripts/npcs/Merchant.gd` / `scenes/npcs/Merchant.tscn`: the gear vendor NPC. Interacting opens `ShopUI` directly (no dialogue box needed).
+- `scripts/ui/ShopUI.gd` / `scenes/ui/ShopUI.tscn`: the shop panel, built from `ContentDefinitions.GEAR_DEFINITIONS` at runtime (no per-item scene nodes to maintain). Buy buttons disable once owned or unaffordable.
+- `docs/design/GEAR_AND_ECONOMY.md`: locks the M3 rarity list and weapon roster (id/rarity/damage/price) for future gear additions.
 
 ## How to run
 
@@ -296,6 +326,26 @@ diagnosed; skip it for now and expect the suite to touch your local save file tr
       HP and a brief friendly message.
 - [ ] All 4 NPC quests still complete normally with Meadow Slimes present in the zone.
 
+### Gear & shop regression
+
+- [ ] Defeating a Meadow Slime drops a small coin pickup; walking over it increases the
+      coin count.
+- [ ] Approaching the Merchant NPC and pressing E opens the shop panel, listing all three
+      weapons with their rarity color, damage bonus, and price.
+- [ ] Buying a weapon deducts the exact price from coins and its button switches to
+      "Owned"; buying again is not possible.
+- [ ] Attempting to buy a weapon costing more than the current coin balance is blocked (its
+      Buy button stays disabled).
+- [ ] Opening the character panel shows the current coin count and lists every owned
+      weapon with an Equip button; equipping one updates the `Equipment:` line and the
+      button switches to "Equipped".
+- [ ] Equipping a weapon visibly increases attack damage (a Meadow Slime dies in fewer
+      hits than with no weapon equipped).
+- [ ] Coins, owned gear, and the equipped weapon all survive a save/reload (relaunching the
+      game resumes with the same values).
+- [ ] All 4 NPC quests and Meadow Slime combat still work normally with the Merchant and
+      shop present in the zone.
+
 ## Next milestone
 
 A design north-star doc set lives in `docs/design/` (`NORTH_STAR.md`, `CURRICULUM_MAP.md`, `VISUAL_CONTRACT.md`, `RESEARCH_NOTES.md`) to anchor future work. The learning checks now follow its bonus-only rule: each quest completes on item return regardless of answer, and a correct answer adds a bonus via `GameState.award_quest_bonus()`.
@@ -385,14 +435,14 @@ the placeholder vertical slice is done, and the project is moving toward a real 
 tileset. **M2 (combat + first monster) is done** (see above): the `HealthComponent`/
 `HitboxComponent`/`HurtboxComponent` architecture, a real-time hack-and-slash player attack,
 the Meadow Slime as the first monster, and the user's math-question damage-multiplier/streak
-idea. No stats `.tres` was introduced yet — M2's numbers (hp, damage, speed) are still plain
+idea. No stats `.tres` was introduced in M2 — its numbers (hp, damage, speed) stayed plain
 `@export` vars on `HealthComponent`/`MeadowSlime.gd`, since a single monster and the
-player's fixed stats don't yet meet the "more content, or a second consumer needing
-structured data" bar; the first real stats `.tres` is more likely to land with M3 (gear that
-modifies these numbers) or a second monster, whichever comes first — flag this rather than
-promoting it speculatively now.
+player's fixed stats didn't yet meet the "more content, or a second consumer needing
+structured data" bar. **M3 (gear, rarity, coins & shop) is done** (see above): the first real
+stats `.tres`, `GearDefinition`, landed as flagged, backing a tight three-weapon vertical
+slice (one gear slot, one vendor, manual equip) rather than the full gear/inventory surface —
+see `docs/design/GEAR_AND_ECONOMY.md`.
 
-Next up: **M3 — gear, rarity & inventory + shop**, per the Phase 2 plan. Real tile art to
-replace the placeholder tileset, Tier 1 walk-cycle armor art, and Tier 2 (Bronze) armor
-remain open art backlog items, lower priority than the Phase 2 milestone chain. (Real
-Meadow Slime art landed the same session as M2 — see above.)
+Next up: **M4 — pets**, per the Phase 2 plan. Real tile art to replace the placeholder
+tileset, Tier 1 walk-cycle armor art, Tier 2 (Bronze) armor, and real coin/gear icon art all
+remain open art backlog items, lower priority than the Phase 2 milestone chain.

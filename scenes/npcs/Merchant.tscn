@@ -1,0 +1,39 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/npcs/Merchant.gd" id="1_merchant"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_merchant"]
+radius = 24.0
+height = 64.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_interaction"]
+radius = 84.0
+
+[node name="Merchant" type="StaticBody2D"]
+script = ExtResource("1_merchant")
+
+[node name="Body" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -32, 24, -12, 20, 28, -20, 28, -24, -12)
+color = Color(0.85, 0.65, 0.15, 1)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_merchant")
+
+[node name="InteractionArea" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea"]
+shape = SubResource("CircleShape2D_interaction")
+
+[node name="InteractionPrompt" type="Label" parent="."]
+visible = false
+offset_left = -76.0
+offset_top = -72.0
+offset_right = 76.0
+offset_bottom = -42.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 18
+text = "Press E to shop"
+horizontal_alignment = 1
