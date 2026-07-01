@@ -4,7 +4,7 @@
 
 Milestones 1 through 14 are complete and merged: the PR branch-sync docs rule, the `docs/design/` north-star doc set, the bonus-only realignment of the Elder/Mira/Finn learning checks, the Python asset normalization pipeline (`tools/asset_pipeline/`), and a proof pass that normalizes one ChatGPT test render through the pipeline and displays it on the player in place of the flat-color placeholder.
 
-The player sprite is now profile-aware and direction-aware: `Player.gd` swaps its texture based on `GameState.selected_profile` and the player's current movement direction. Both Grade 5 Adventurer and Grade 2 Mage have production 5-direction idle sets (south/south-east/east/north-east/north, generated from user-approved ChatGPT designs and normalized through the pipeline). The Mage set was generated as a single 5-panel sheet in one ChatGPT response (rather than 5 separate generations like the Adventurer) and cropped into a shared source image addressed by grid cell per direction — proving that approach also works. All 8 facings are now live: west/south-west/north-west mirror east/south-east/north-east via `flip_h`, matching the 5-render-plus-mirroring convention. The player's `Body` node is now an `AnimatedSprite2D` (was a plain `Sprite2D`), with one `SpriteFrames` resource per profile built in code from the existing idle textures (each direction is a single-frame animation, e.g. `idle_s`) — this is a zero-visual-change engine migration that gets the architecture ready for real multi-frame walk animations later, since adding walk frames will just mean calling `add_frame()` more times on the same `SpriteFrames`. A hidden, empty sibling `Armor` `AnimatedSprite2D` node also now exists, reserved for a future paper-doll equipment layer; no armor art exists yet, so `Armor` stays invisible. Walk-cycle animation is now live for both characters: each direction has a 4-frame loop (idle -> walk1 -> idle -> walk2, reusing the existing idle pose as the neutral "passing" frame rather than commissioning a full frame-by-frame cycle) that plays automatically while the player is moving, and reverts to the static idle pose the instant movement stops. Tier 1 (Leather) armor art now exists for both characters as full replacement idle sprite sets (see `docs/design/ARMOR_TIERS.md`), normalized through the same pipeline as base body art, but nothing in-game equips it yet.
+The player sprite is now profile-aware and direction-aware: `Player.gd` swaps its texture based on `GameState.selected_profile` and the player's current movement direction. Both Grade 5 Adventurer and Grade 2 Mage have production 5-direction idle sets (south/south-east/east/north-east/north, generated from user-approved ChatGPT designs and normalized through the pipeline). The Mage set was generated as a single 5-panel sheet in one ChatGPT response (rather than 5 separate generations like the Adventurer) and cropped into a shared source image addressed by grid cell per direction — proving that approach also works. All 8 facings are now live: west/south-west/north-west mirror east/south-east/north-east via `flip_h`, matching the 5-render-plus-mirroring convention. The player's `Body` node is now an `AnimatedSprite2D` (was a plain `Sprite2D`), with one `SpriteFrames` resource per profile built in code from the existing idle textures (each direction is a single-frame animation, e.g. `idle_s`) — this is a zero-visual-change engine migration that gets the architecture ready for real multi-frame walk animations later, since adding walk frames will just mean calling `add_frame()` more times on the same `SpriteFrames`. A hidden, empty sibling `Armor` `AnimatedSprite2D` node also now exists, reserved for a future paper-doll equipment layer; no armor art exists yet, so `Armor` stays invisible. Walk-cycle animation is now live for both characters: each direction has a 4-frame loop (idle -> walk1 -> idle -> walk2, reusing the existing idle pose as the neutral "passing" frame rather than commissioning a full frame-by-frame cycle) that plays automatically while the player is moving, and reverts to the static idle pose the instant movement stops. Tier 1 (Leather) armor art now exists for both characters as full replacement idle sprite sets (see `docs/design/ARMOR_TIERS.md`), normalized through the same pipeline as base body art, and is now reachable in-game: completing all three existing quests (Elder, Mira, Finn) auto-equips it via `GameState.equipped_armor_tier`, `Player.gd` swaps the player's `SpriteFrames` to the tier1 set, and the character panel's equipment line shows "Equipment: Leather Armor". There is no manual equip/unequip UI (auto-equip only), and armored walking shows a static pose since no tier1 walk-cycle art exists yet.
 
 ## Implemented files
 
@@ -12,10 +12,10 @@ The player sprite is now profile-aware and direction-aware: `Player.gd` swaps it
 - `AGENTS.md`: project and agent workflow guidance, including the current `ContentDefinitions.gd` rule for lightweight quest/item/profile display text.
 - `scenes/main/Main.tscn`: green floor, brown collision obstacle, player, Elder, Mira, Finn, collectibles, HUD, dialogue, character panel, profile selector, and learning check instances.
 - `scenes/player/Player.tscn`: player `Body` (`AnimatedSprite2D`, `sprite_frames` built in code per profile — see `Player.gd`), a hidden empty `Armor` (`AnimatedSprite2D`) scaffold for a future equipment layer, collision shape, and camera.
-- `scripts/core/GameState.gd`: minimal profile, health, collected-item, reusable quest state, and Elder compatibility flags.
-- `scripts/core/ContentDefinitions.gd`: tiny lookup layer for profile labels, item labels, quest summaries, and badge labels (`get_badge_label(quest_id)`, a `BADGE_LABELS` dictionary keyed by quest id — deliberately not a `.tres` resource, since 3 fixed display strings don't meet the "more content, or a second consumer needing structured data" bar `AGENTS.md` sets for promoting to Resources). Item labels are resolved from `ItemDefinition` `.tres` resources (see below); profile labels, quest summaries, and badge labels are still plain dictionaries.
+- `scripts/core/GameState.gd`: minimal profile, health, collected-item, reusable quest state, and Elder compatibility flags. Also owns the equip system: `equipped_armor_tier` (0 = none) and an `armor_equipped(tier)` signal, granted automatically by `_check_and_grant_tier1_armor()` once all three quests reach `QUEST_COMPLETED` (called from `complete_quest()`).
+- `scripts/core/ContentDefinitions.gd`: tiny lookup layer for profile labels, item labels, quest summaries, badge labels, and armor tier labels (`get_badge_label(quest_id)`/`BADGE_LABELS`, `get_armor_tier_label(tier)`/`ARMOR_TIER_LABELS` — both deliberately plain dictionaries, not `.tres` resources, since neither meets the "more content, or a second consumer needing structured data" bar `AGENTS.md` sets for promoting to Resources). Item labels are resolved from `ItemDefinition` `.tres` resources (see below); profile labels, quest summaries, badge labels, and armor tier labels are still plain dictionaries.
 - `scripts/core/ItemDefinition.gd` and `data/items/{golden_star,glowing_herb,shimmering_ore}.tres`: a tiny Resource-backed content experiment (`docs/ROADMAP.md` milestone 2) — each item's id/label now lives in its own `.tres` file instead of a hardcoded dictionary entry, proving the pattern works before it's considered for quest/profile content too.
-- `scripts/player/Player.gd`: WASD and arrow-key movement blocked until profile selection; swaps the player sprite by profile via `GameState.profile_changed`, and by movement direction (8-way, with west/south-west/north-west mirrored from east/south-east/north-east via `flip_h`) as the player moves. Builds one `SpriteFrames` per profile in `_ready()` (cached in `_profile_frames`) containing both an `idle_<direction>` animation (1 frame) and a `walk_<direction>` animation (4-frame loop: idle, walk1, idle, walk2) per direction, and plays the matching one on the `AnimatedSprite2D` `body` node based on whether the player is currently moving.
+- `scripts/player/Player.gd`: WASD and arrow-key movement blocked until profile selection; swaps the player sprite by profile via `GameState.profile_changed`, and by movement direction (8-way, with west/south-west/north-west mirrored from east/south-east/north-east via `flip_h`) as the player moves. Builds one `SpriteFrames` per profile in `_ready()` (cached in `_profile_frames`) containing both an `idle_<direction>` animation (1 frame) and a `walk_<direction>` animation (4-frame loop: idle, walk1, idle, walk2) per direction, and plays the matching one on the `AnimatedSprite2D` `body` node based on whether the player is currently moving. Also builds a second per-profile cache (`_profile_armor_frames`) from the Tier 1 armor textures, reusing the same builder with no walk poses (so armored walking falls back to a static armored idle pose); `_update_sprite()` picks that cache whenever `GameState.equipped_armor_tier > 0`, refreshed on `GameState.armor_equipped`.
 - `scenes/npcs/Elder.tscn` and `scripts/npcs/Elder.gd`: purple Elder placeholder with golden-star quest.
 - `scenes/npcs/Mira.tscn` and `scripts/npcs/Mira.gd`: green gardener NPC with glowing-herb quest.
 - `scenes/npcs/Finn.tscn` and `scripts/npcs/Finn.gd`: brown blacksmith placeholder with shimmering-ore quest gated after Mira completion.
@@ -37,7 +37,7 @@ The player sprite is now profile-aware and direction-aware: `Player.gd` swaps it
 - `assets/manifests/adventurer_body_idle_{s,se,e,ne,n}.manifest.json`, matching `assets/source/generated/adventurer_body_idle_*/source.png`, and `assets/sprites/characters/adventurer_body_idle_*.png`: the first production art for Grade 5 Adventurer — a user-approved "practical traveler" design, 5 directions covering all 8 facings via future `flip_h` mirroring of the SE/E/NE renders. Only `_s` (south) is currently used in `Player.tscn`.
 - `assets/manifests/mage_body_idle_{s,se,e,ne,n}.manifest.json`, `assets/source/generated/mage_body_idle_sheet/source.png` (a single shared 5-panel source sheet, generated in one ChatGPT response and addressed per direction via `sourceCell` on a 5-col grid), and `assets/sprites/characters/mage_body_idle_*.png`: production art for Grade 2 Mage, matching the brown-haired, navy/gold-tunic design from the V2 style reference. Only `_s` (south) is currently wired into `Player.gd`.
 - `assets/manifests/{mage,adventurer}_body_walk{1,2}_{s,se,e,ne,n}.manifest.json` (20 manifests), `assets/source/generated/{mage,adventurer}_body_walk_sheet/source.png` (one shared 5-direction x 2-pose grid sheet per character, generated in one ChatGPT response each, addressed via `sourceCell` on a 5-col x 2-row grid), and `assets/sprites/characters/{mage,adventurer}_body_walk{1,2}_*.png`: the two new mid-stride poses per direction per character that drive the walk-cycle animation (see `Player.gd` above). `walk1`/`walk2` combine with the existing `idle` pose at runtime — no third pose was generated for "neutral", since idle already serves that role.
-- `assets/manifests/{mage,adventurer}_body_idle_tier1_{s,se,e,ne,n}.manifest.json` (10 manifests), `assets/source/generated/{mage,adventurer}_body_idle_tier1_sheet/source.png` (one shared 5-direction grid sheet per character, a ChatGPT in-place edit of the base idle sheet adding leather armor), and `assets/sprites/characters/{mage,adventurer}_body_idle_tier1_*.png`: Tier 1 (Leather) armor art, see `docs/design/ARMOR_TIERS.md`. Normalized as full replacement body sprite sets (not a transparent overlay — see that doc for why the original diff-based overlay plan was dropped). Not yet wired into `Player.gd`/`Player.tscn`; no equip logic or UI exists yet.
+- `assets/manifests/{mage,adventurer}_body_idle_tier1_{s,se,e,ne,n}.manifest.json` (10 manifests), `assets/source/generated/{mage,adventurer}_body_idle_tier1_sheet/source.png` (one shared 5-direction grid sheet per character, a ChatGPT in-place edit of the base idle sheet adding leather armor), and `assets/sprites/characters/{mage,adventurer}_body_idle_tier1_*.png`: Tier 1 (Leather) armor art, see `docs/design/ARMOR_TIERS.md`. Normalized as full replacement body sprite sets (not a transparent overlay — see that doc for why the original diff-based overlay plan was dropped). Now wired into `Player.gd`/`GameState.gd`: completing all three quests auto-equips it (see above); no manual equip/unequip UI exists.
 
 ## How to run
 
@@ -108,6 +108,18 @@ Open `project.godot` with Godot 4.x standard and press F5.
 - [ ] Wrong answer still completes the Finn quest, with no bonus.
 - [ ] Correct answer completes the Finn quest and the dialogue line includes "Bonus earned!".
 
+### Equip system regression
+
+- [ ] Before completing all three quests, character panel shows "Equipment: none yet".
+- [ ] The instant the third quest (Elder, Mira, or Finn, in any order) completes, the player
+      sprite immediately shows Tier 1 (Leather) armor for both Grade 2 Mage and Grade 5
+      Adventurer, without needing to reopen the character panel or restart.
+- [ ] Character panel shows "Equipment: Leather Armor" after all three quests complete.
+- [ ] Walking in any direction while armored shows a static armored pose (no leg animation)
+      instead of the unarmored walk-cycle.
+- [ ] Switching profiles (if applicable) shows the correct character's own armored sprite,
+      not the other character's.
+
 ## Next milestone
 
 A design north-star doc set lives in `docs/design/` (`NORTH_STAR.md`, `CURRICULUM_MAP.md`, `VISUAL_CONTRACT.md`, `RESEARCH_NOTES.md`) to anchor future work. The learning checks now follow its bonus-only rule: each quest completes on item return regardless of answer, and a correct answer adds a bonus via `GameState.award_quest_bonus()`.
@@ -141,12 +153,21 @@ iron, gold, diamond, ninja, dragon, cosmic, dark, applied identically across bot
 characters with character-appropriate silhouettes). Tier 1 (Leather) art has been generated
 and normalized for both characters as full replacement body sprite sets (see above and
 `docs/design/ARMOR_TIERS.md` for why the diff-based transparent-overlay plan was dropped in
-favor of reusing the existing body-art pipeline unmodified). The `Armor` node remains
-hidden/empty; nothing yet grants or equips armor in-game.
+favor of reusing the existing body-art pipeline unmodified).
+
+The equip system (`docs/ROADMAP.md` milestone 5) is done: completing all three quests
+auto-equips Tier 1 armor via `GameState.equipped_armor_tier` / `armor_equipped` signal, the
+player sprite updates immediately, and the character panel shows what's equipped (see above
+and `docs/design/ARMOR_TIERS.md`). The `Armor` `AnimatedSprite2D` node remains
+hidden/empty — this milestone used the full-body-swap approach on `Body` instead, not that
+scaffold; it may still suit small separable accessories (capes, masks) later. There is no
+manual equip/unequip UI, and armored walking is a static pose (no tier1 walk-cycle art
+exists yet) — both are accepted limitations of this deliberately minimal slice, not bugs.
 
 Next decision is between:
-- building an equip/inventory system so Tier 1 armor is actually reachable in-game
-  (swap `Body`'s `sprite_frames` to the tier1 set), including a source for players to earn
-  it;
-- local save/load (`docs/ROADMAP.md` milestone 5);
-- more story/quest content (`docs/ROADMAP.md` milestone 6).
+- local save/load (`docs/ROADMAP.md` milestone 6) — `GameState` is entirely in-memory
+  today, so nothing (including the newly-equipped armor) survives a restart;
+- a small headless GDScript test harness for `GameState`'s quest logic, ahead of adding
+  more content, since only the Python pipeline has automated tests today;
+- more story/quest content (`docs/ROADMAP.md` milestone 7);
+- generating Tier 1 walk-cycle armor art, or designing Tier 2 (Bronze).

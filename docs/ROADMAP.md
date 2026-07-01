@@ -18,22 +18,18 @@
    See `docs/art/ASSET_NORMALIZATION_PIPELINE.md`. Both Grade 2 Mage and Grade 5
    Adventurer now have production art with 8-direction movement-facing, walk-cycle
    animation, and Tier 1 (Leather) armor art (`docs/design/ARMOR_TIERS.md`) normalized as
-   full replacement idle sprite sets. No equip/inventory system exists yet to grant or wear
-   that armor in-game, and only idle poses exist for Tier 1 (no walk-cycle armor frames) —
-   both are open follow-up work, not yet scheduled as their own milestone here.
+   full replacement idle sprite sets, reachable in-game via the equip system (milestone 5).
+   Only idle poses exist for Tier 1 (no walk-cycle armor frames) — open follow-up work.
 4. ~~Add inventory/reward foundation.~~ Done — the character panel's item list is generic
    (any `GameState.collected_items` entry, with quantity), and learning-check bonuses are
    named badges (`ContentDefinitions.BADGE_LABELS`) shown in both the completion dialogue
    and the character panel, instead of an anonymous flag/count.
-5. **Equip system (next active milestone).** Make the already-generated Tier 1 (Leather)
-   armor art reachable in-game — right now the art exists but nothing grants, equips, or
-   renders it. Minimal loop: add `equipped_armor` state + an `equip_armor()` path to
-   `GameState`, a way to *earn* leather (simplest: completing a quest / earning a badge
-   grants it), swap `Body`'s per-profile `SpriteFrames` to a tier-1 variant in `Player.gd`
-   (reusing `_build_sprite_frames`), and replace the character panel's "Equipment: coming
-   soon" line with the equipped item. Known limitation to decide up front: Tier 1 has
-   **idle poses only** (no walk frames), so armored walking either falls back to armored-idle
-   (ship this first, zero new art) or needs `tier1_walk1/walk2` art generated as a follow-up.
+5. ~~Add an equip system.~~ Done — completing all three existing quests (Elder, Mira, Finn)
+   auto-equips Tier 1 (Leather) armor via `GameState.equipped_armor_tier` /
+   `_check_and_grant_tier1_armor()`, `Player.gd` swaps `Body`'s `SpriteFrames` to the tier1
+   set, and the character panel's equipment line shows it. No manual equip/unequip UI, no
+   new quest — the simplest possible slice, per `docs/design/ARMOR_TIERS.md`. Armored
+   walking is a static pose (no tier1 walk-cycle art exists yet) — an accepted limitation.
 6. Add local save/load. `GameState` is entirely in-memory today; nothing survives a restart.
 7. Add more story/quest content. Slot a small headless GDScript test harness for
    `GameState`'s quest state machine in *before* this, so growing quest logic lands on a
@@ -51,10 +47,10 @@ work — pick up opportunistically:
 - **Orphaned proof asset.** `hero_body_idle_s.*` (manifest + source + sprite + `.import`) is
   the one-off pipeline proof render, referenced by no scene/script and explicitly not
   production art — safe to delete.
-- **`Armor` node fate.** The hidden `Armor` `AnimatedSprite2D` (PR #23) is unused, and the
-  Tier 1 full-body-swap decision means it won't carry body armor after all. Keep it only if a
-  future accessory layer (capes/masks) will use it; otherwise remove to avoid confusion. The
-  equip milestone above is the natural point to decide.
+- **`Armor` node fate.** The hidden `Armor` `AnimatedSprite2D` (PR #23) is still unused after
+  the equip system (milestone 5) shipped — that milestone deliberately used the full-body-swap
+  approach on `Body` instead, per `docs/design/ARMOR_TIERS.md`. Keep it only if a future
+  accessory layer (capes/masks) will use it; otherwise remove to avoid confusion.
 
 ## Architecture rules
 - Every milestone must preserve the playable slice.

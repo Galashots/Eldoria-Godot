@@ -20,11 +20,13 @@ helm).
 | 8 | Cosmic | starry deep purple/blue, otherworldly |
 | 9 | Dark | shadowy black/violet, ultimate tier — kept friendly, not scary, per `NORTH_STAR.md`'s tone |
 
-Status: Tier 1 (Leather) art has been generated and normalized into full sprite sets for
-both characters (`assets/sprites/characters/{mage,adventurer}_body_idle_tier1_*.png`).
-Equip/unequip logic and UI do not exist yet — no quest or inventory system currently grants
-armor, so the `Player.gd`/`Player.tscn` swap point for these sprites is not yet wired. See
-`docs/CURRENT_STATE.md` for current status.
+Status: Tier 1 (Leather) art is generated, normalized, and now reachable in-game. Completing
+all three existing quests (Elder, Mira, Finn) auto-equips it via `GameState.
+_check_and_grant_tier1_armor()` — no manual equip UI, no new quest, no new art. `Player.gd`
+swaps `Body`'s `SpriteFrames` to the tier1 set whenever `GameState.equipped_armor_tier > 0`.
+Tier 1 has idle poses only (no walk-cycle frames), so armored walking shows a static armored
+pose rather than animating — an accepted limitation, not a bug. See `docs/CURRENT_STATE.md`
+for current status.
 
 ## Production approach
 
@@ -45,3 +47,17 @@ transparent overlay) and the `Armor` node staying unused for body-level gear; it
 be useful later for small decorative accessories (capes, masks, auras) that genuinely are
 separable overlays. Future tiers should follow the same full-body-swap approach unless a
 future generation proves reliably pixel-aligned enough to revisit diffing.
+
+## Equip system
+
+`GameState.equipped_armor_tier` (0 = none) is granted automatically the moment all three
+existing quests reach `QUEST_COMPLETED` (checked at the end of `complete_quest()`, order
+-independent). There is no manual equip/unequip UI — this is deliberately the simplest
+possible slice, reusing the existing 3-quest completion rather than adding a dedicated
+grant trigger. `Player.gd` reuses its existing `_build_sprite_frames()` builder to build a
+second per-profile `SpriteFrames` cache from the tier1 textures, and `_update_sprite()`
+picks that cache whenever armor is equipped. `ContentDefinitions.get_armor_tier_label()`
+(mirroring the existing `BADGE_LABELS` pattern) supplies the display name shown in the
+character panel's "Equipment:" line. Future tiers plug into the same mechanism: add the
+tier's textures to `Player.gd`, a label entry to `ContentDefinitions.ARMOR_TIER_LABELS`, and
+extend (or replace) the grant trigger in `GameState._check_and_grant_tier1_armor()`.

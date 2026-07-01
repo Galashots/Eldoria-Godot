@@ -60,15 +60,39 @@ const COMPASS_DIRECTIONS := ["e", "se", "s", "sw", "w", "nw", "n", "ne"]
 
 const WALK_FPS := 8.0
 
+# Tier 1 (Leather) armor idle art only exists as idle poses (no walk-cycle frames yet), so
+# armored walking falls back to a static armored idle pose via _build_sprite_frames' existing
+# "no walk poses" branch.
+const ARMOR_TIER1_TEXTURES := {
+	"grade_2_mage": {
+		"s": preload("res://assets/sprites/characters/mage_body_idle_tier1_s.png"),
+		"se": preload("res://assets/sprites/characters/mage_body_idle_tier1_se.png"),
+		"e": preload("res://assets/sprites/characters/mage_body_idle_tier1_e.png"),
+		"ne": preload("res://assets/sprites/characters/mage_body_idle_tier1_ne.png"),
+		"n": preload("res://assets/sprites/characters/mage_body_idle_tier1_n.png"),
+	},
+	"grade_5_adventurer": {
+		"s": preload("res://assets/sprites/characters/adventurer_body_idle_tier1_s.png"),
+		"se": preload("res://assets/sprites/characters/adventurer_body_idle_tier1_se.png"),
+		"e": preload("res://assets/sprites/characters/adventurer_body_idle_tier1_e.png"),
+		"ne": preload("res://assets/sprites/characters/adventurer_body_idle_tier1_ne.png"),
+		"n": preload("res://assets/sprites/characters/adventurer_body_idle_tier1_n.png"),
+	},
+}
+
 var facing: String = "s"
 var _is_moving: bool = false
 var _profile_frames: Dictionary = {}
+var _profile_armor_frames: Dictionary = {}
 
 func _ready() -> void:
 	for profile_id: String in DIRECTION_TEXTURES.keys():
 		_profile_frames[profile_id] = _build_sprite_frames(DIRECTION_TEXTURES[profile_id], WALK_TEXTURES.get(profile_id, {}))
+	for profile_id: String in ARMOR_TIER1_TEXTURES.keys():
+		_profile_armor_frames[profile_id] = _build_sprite_frames(ARMOR_TIER1_TEXTURES[profile_id], {})
 
 	GameState.profile_changed.connect(_on_profile_changed)
+	GameState.armor_equipped.connect(_on_armor_equipped)
 	_update_sprite()
 
 func _build_sprite_frames(idle_directions: Dictionary, walk_directions: Dictionary) -> SpriteFrames:
@@ -98,8 +122,12 @@ func _build_sprite_frames(idle_directions: Dictionary, walk_directions: Dictiona
 func _on_profile_changed(_profile_id: String) -> void:
 	_update_sprite()
 
+func _on_armor_equipped(_tier: int) -> void:
+	_update_sprite()
+
 func _update_sprite() -> void:
-	var frames: SpriteFrames = _profile_frames.get(GameState.selected_profile)
+	var frames_dict := _profile_armor_frames if GameState.equipped_armor_tier > 0 else _profile_frames
+	var frames: SpriteFrames = frames_dict.get(GameState.selected_profile)
 	if not frames:
 		return
 	var mirror: Array = DIRECTION_MIRRORS[facing]
