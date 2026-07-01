@@ -139,7 +139,7 @@ coin overspend guard, buy/ownership idempotency, equip-requires-ownership + dama
 - `scenes/items/GlowingHerb.tscn`: glowing-herb pickup for Mira's quest.
 - `scenes/items/ShimmeringOre.tscn`: shimmering-ore pickup for Finn's quest.
 - `scenes/items/Silverleaf.tscn`: silverleaf pickup for Yarrow's quest.
-- `scripts/ui/HUD.gd`: visible objective text that updates based on selected profile and active quest state; chains through all four quests in order (Elder → Mira → Finn → Yarrow), falling through to the next once the current one completes. Now also shows an "HP: 5/5" readout and an "On Fire! x1.5"-style combat streak label (hidden at streak 0), reading `GameState.player_damaged`/`combat_streak_changed`.
+- `scripts/ui/HUD.gd`: visible objective text that updates based on selected profile and active quest state; chains through all four quests in order (Elder → Mira → Finn → Yarrow), falling through to the next once the current one completes. Now also shows an "HP: 5/5" readout, a gold "Coins: N" readout (reading `GameState.coins_changed`, added by the expansion loop so the player always sees their spendable coins while fighting/earning, not only in the shop/panel), and an "On Fire! x1.5"-style combat streak label (hidden at streak 0), reading `GameState.player_damaged`/`combat_streak_changed`.
 - `scenes/ui/DialogueBox.tscn` and `scripts/ui/DialogueBox.gd`: reusable speaker/message UI dismissed with E, Enter, or Space.
 - `scenes/ui/ProfileSelect.tscn` and `scripts/ui/ProfileSelect.gd`: profile selector overlay UI and logic.
 - `scenes/ui/LearningCheck.tscn` and `scripts/ui/LearningCheck.gd`: reusable profile-aware two-choice learning check.

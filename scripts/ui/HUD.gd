@@ -2,6 +2,7 @@ extends CanvasLayer
 
 @onready var objective_label: Label = $MarginContainer/ObjectiveLabel
 @onready var hp_label: Label = $CombatMarginContainer/CombatVBox/HPLabel
+@onready var coins_label: Label = $CombatMarginContainer/CombatVBox/CoinsLabel
 @onready var streak_label: Label = $CombatMarginContainer/CombatVBox/StreakLabel
 
 func _ready() -> void:
@@ -11,12 +12,20 @@ func _ready() -> void:
     GameState.quest_changed.connect(_on_quest_changed)
     GameState.player_damaged.connect(_on_player_damaged)
     GameState.combat_streak_changed.connect(_on_combat_streak_changed)
+    GameState.coins_changed.connect(_on_coins_changed)
     _update_objective()
     _update_hp_label(GameState.player_hp, GameState.PLAYER_MAX_HP)
+    _update_coins_label(GameState.coins)
     _update_streak_label(GameState.combat_streak, GameState.get_combat_multiplier())
 
 func _on_player_damaged(current_hp: int, max_hp: int) -> void:
     _update_hp_label(current_hp, max_hp)
+
+func _on_coins_changed(coins: int) -> void:
+    _update_coins_label(coins)
+
+func _update_coins_label(coins: int) -> void:
+    coins_label.text = "Coins: %d" % coins
 
 func _update_hp_label(current_hp: int, max_hp: int) -> void:
     hp_label.text = "HP: %d/%d" % [current_hp, max_hp]
