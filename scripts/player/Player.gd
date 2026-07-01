@@ -110,6 +110,12 @@ var _spawn_position: Vector2
 var _attack_active_remaining: float = 0.0
 var _attack_cooldown_remaining: float = 0.0
 
+# Player-hurt "juice": a brief soft-red tint + pop when the player is hit, reusing
+# HealthComponent's tested hit-reaction easing so player and enemy feedback share timing.
+const HURT_FLASH_COLOR := Color(1.0, 0.45, 0.45)
+var _body_base_scale: Vector2 = Vector2.ONE
+var _hurt_flash_remaining: float = 0.0
+
 func _ready() -> void:
 	add_to_group("player")
 
@@ -124,6 +130,7 @@ func _ready() -> void:
 	_update_sprite()
 
 	_spawn_position = position
+	_body_base_scale = body.scale
 	attack_hitbox.landed.connect(_on_attack_landed)
 	player_hurtbox.hit_received.connect(_on_player_hurtbox_hit)
 
@@ -199,9 +206,18 @@ func _physics_process(delta: float) -> void:
 
 	_update_sprite()
 	_process_attack(delta)
+	_process_hurt_flash(delta)
 
 	velocity = input_vec * speed
 	move_and_slide()
+
+func _process_hurt_flash(delta: float) -> void:
+	if _hurt_flash_remaining <= 0.0:
+		return
+	_hurt_flash_remaining = maxf(0.0, _hurt_flash_remaining - delta)
+	var intensity := HealthComponent.hit_reaction_intensity(_hurt_flash_remaining, HealthComponent.FLASH_DURATION_SEC)
+	body.modulate = Color.WHITE.lerp(HURT_FLASH_COLOR, intensity)
+	body.scale = _body_base_scale * (1.0 + HealthComponent.FLASH_POP_SCALE * intensity)
 
 func _process_attack(delta: float) -> void:
 	if _attack_cooldown_remaining > 0.0:
@@ -235,7 +251,11 @@ func _on_attack_landed(_hurtbox: Area2D) -> void:
 	combat_question_requested.emit()
 
 func _on_player_hurtbox_hit(_damage: int, _hitbox: Area2D) -> void:
+	var before := GameState.player_hp
 	GameState.take_player_damage(_damage)
+	# Only flash on a real hit (take_player_damage ignores hits during the immunity window).
+	if GameState.player_hp < before:
+		_hurt_flash_remaining = HealthComponent.FLASH_DURATION_SEC
 
 func _on_player_died() -> void:
 	position = _spawn_position

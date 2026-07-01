@@ -179,3 +179,65 @@ minimalist, bonus-only, placeholder-art-first posture.
 These are web-search summaries of secondary sources, not primary game-design texts read in
 full; treat specifics (e.g. exact drop-rate percentages) as illustrative ranges to tune
 in-engine, not numbers to hardcode without playtesting.
+
+## 7. Live web research for the second expansion pass (2026-07-01, orchestrator refill)
+
+Gathered while refilling the backlog after the first expansion cycles shipped (Legendary
+weapon, landmark props). Same caveat as §6 applies.
+
+### 7.1 Game feel / "juice" — hit feedback
+
+- ["Where Does Game Feel Come From: Flash, Shake, Floating Text, Sound, Particle Feedback" —
+  BetterLink Blog](https://eastondev.com/blog/en/posts/dev/20260521-game-feedback-feel/) and
+  ["Game Feel: A Beginner's Guide" — Game Design Skills](https://gamedesignskills.com/game-design/game-feel/),
+  plus ["7 Game Feel Tricks" — Dawnosaur](https://dawnosaur.substack.com/p/7-game-feel-tricks-to-improve-your) —
+  the cheapest, highest-impact hit feedback is a brief **white flash** on the struck sprite
+  (~50-100ms), optionally a short **hit-stop** (~0.05-0.1s freeze) and a *subtle* camera
+  shake (0.1-0.3s, small amplitude). These come from the canonical "Juice it or lose it"
+  (Jonasson/Purho, GDC 2012) lineage.
+- Counterpoint: ["The Juice Problem" — Wayline](https://www.wayline.io/blog/the-juice-problem-how-exaggerated-feedback-is-harming-game-design) —
+  over-juicing (big shakes, heavy flashes) harms readability and can overwhelm; keep it
+  subtle. **Especially important for a Grade 2/5 audience** — a gentle flash reads as "I hit
+  it!" without the screen-thrash that would distract a young player.
+- **Use for this project:** a small, reusable **hit-flash** on `HealthComponent` damage
+  (flash the owner's sprite white briefly) is the smallest game-feel slice — it deepens the
+  existing M2 combat (readability of a landed hit) without a new system, and directly
+  supports the deferred Elder Slime mini-boss's telegraph. Skip screen shake for now (the
+  "juice problem" caution + young audience) unless a playtest asks for it.
+
+### 7.2 Enemy respawn / repeatable faucet pacing
+
+- ["Respawning On-Map Enemies" — The Official RPG Maker Blog](https://www.rpgmakerweb.com/blog/respawning-on-map-enemies) —
+  the two standard patterns are **map-based** (enemies return only after the player leaves &
+  re-enters the area — lets a player clear an area and explore safely) and **time-based**
+  (enemies return after a delay — keeps an area alive/dangerous and *lets a player grind if
+  they choose*). Respawn cadence is the direct control over how grindy an area feels.
+- **Use for this project:** this is the fix for the faucet bottleneck flagged in
+  `GEAR_AND_ECONOMY.md` (3 non-respawning Meadow Slimes = ~3 coins/session). Eldoria has one
+  persistent zone with no map transitions, so **time-based** is the fit: a gentle respawn
+  cadence at each slime spawn point makes the coin faucet *repeatable* without forcing a
+  grind. Keep the cadence slow and the count capped (respawn to at most the original 3) so it
+  stays gentle for a young audience — do NOT make the zone feel crowded or dangerous. Cleanest
+  implementation is a small standalone `Spawner` node (disjoint from `MeadowSlime.gd`), not a
+  rewrite of the slime.
+
+### 7.3 Collection / codex loops (permanent-progress payoff)
+
+- ["Monster Compendium" — TV Tropes](https://tvtropes.org/pmwiki/pmwiki.php/Main/MonsterCompendium) —
+  a bestiary/compendium filled by *encountering or defeating* creatures is a classic,
+  low-cost collection loop; examples (Kingdom of Loathing's "Monster Manuel", Kirby 64's
+  monster cards) pair each entry with a short friendly factoid, and a completed compendium
+  can itself be a soft reward. ["Creating Monsters: Three Ingredients of Great Bestiaries" —
+  The Ugly Monster](https://medium.com/theuglymonster/creating-monsters-the-three-ingredients-of-great-bestiaries-6bc017a51436) —
+  a good entry gives a creature a bit of character/story, not just stats.
+- **Use for this project:** directly serves NORTH_STAR pillar 5 ("every short session yields
+  permanent progress — world knowledge, a keepsake, a codex entry"). A tiny **"Creatures
+  met"** list in the character panel — populated the first time the player defeats each
+  monster type, with a one-line friendly factoid — turns combat into permanent, collectible
+  world-knowledge. Bonus-only and non-punitive by construction (you only ever *gain* entries).
+  Keep it text-only (no new art) and reuse the existing character-panel UI.
+
+### General caveat (applies to §7 as §6)
+
+Same as §6: these are secondary-source web summaries; treat timings/percentages as tunable
+starting ranges, confirm feel in-engine.

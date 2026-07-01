@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+; Placeholder wayfinding landmark (bootstrap-polygon art, matching the NPC/prop convention).
+; Purely visual: no collision body, no script. Tall + bright so it reads as a beacon from a
+; screen away. Polygons are authored from the node origin (base at y~0) upward so y_sort uses
+; the base as the sort key, like the NPCs.
+
+[node name="StandingStone" type="Node2D"]
+y_sort_enabled = true
+
+[node name="Pillar" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-22, 0, -18, -96, -10, -112, 12, -112, 20, -96, 24, 0)
+color = Color(0.74, 0.76, 0.82, 1)
+
+[node name="Cap" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-18, -96, -10, -112, 12, -112, 20, -96)
+color = Color(0.95, 0.78, 0.28, 1)
