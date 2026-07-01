@@ -68,9 +68,8 @@ work — pick up opportunistically:
 - **Mixed indentation.** `Player.gd` uses tabs; `GameState.gd`, `ContentDefinitions.gd`,
   `CharacterPanel.gd`, `LearningCheck.gd` use spaces. Godot's style guide is tabs. Harmless
   (GDScript tolerates either per-file) but complicates diffs/`script_patch`.
-- **Orphaned proof asset.** `hero_body_idle_s.*` (manifest + source + sprite + `.import`) is
-  the one-off pipeline proof render, referenced by no scene/script and explicitly not
-  production art — safe to delete.
+- ~~**Orphaned proof asset.**~~ Done — `hero_body_idle_s.*` (manifest + source + sprite +
+  `.import`) deleted; it was the one-off pipeline proof render, referenced by no scene/script.
 - **`Armor` node fate.** The hidden `Armor` `AnimatedSprite2D` (PR #23) is still unused after
   the equip system (milestone 5) shipped — that milestone deliberately used the full-body-swap
   approach on `Body` instead, per `docs/design/ARMOR_TIERS.md`. Keep it only if a future
