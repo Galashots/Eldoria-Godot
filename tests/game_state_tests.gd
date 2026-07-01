@@ -66,6 +66,18 @@ func test_add_item_marks_matching_started_quest_ready() -> Dictionary:
 
     return {"ok": failures.is_empty(), "failures": failures}
 
+func test_add_item_marks_yarrow_quest_ready() -> Dictionary:
+    var failures: Array[String] = []
+
+    GameState.start_quest(GameState.QUEST_YARROW_SILVERLEAF)
+    GameState.add_item("silverleaf")
+
+    _check(failures, GameState.get_quest_state(GameState.QUEST_YARROW_SILVERLEAF) == GameState.QUEST_READY_TO_TURN_IN,
+        "expected yarrow quest ready_to_turn_in after collecting silverleaf")
+    _check(failures, GameState.has_item("silverleaf"), "expected has_item(silverleaf) true after add_item")
+
+    return {"ok": failures.is_empty(), "failures": failures}
+
 func test_quest_bonus_tracking() -> Dictionary:
     var failures: Array[String] = []
 
@@ -80,20 +92,23 @@ func test_completing_all_quests_grants_armor_exactly_once_regardless_of_order() 
 
     _check(failures, GameState.equipped_armor_tier == 0, "expected no armor before any quest completes")
 
-    # Deliberately not the "natural" Elder -> Mira -> Finn order, to prove the grant
-    # check is order-independent.
+    # Deliberately not the "natural" Elder -> Mira -> Finn -> Yarrow order, to prove the
+    # grant check is order-independent.
     GameState.complete_quest(GameState.QUEST_FINN_SHIMMERING_ORE)
-    _check(failures, GameState.equipped_armor_tier == 0, "expected no armor after only 1/3 quests")
+    _check(failures, GameState.equipped_armor_tier == 0, "expected no armor after only 1/4 quests")
+
+    GameState.complete_quest(GameState.QUEST_YARROW_SILVERLEAF)
+    _check(failures, GameState.equipped_armor_tier == 0, "expected no armor after only 2/4 quests")
 
     GameState.complete_quest(GameState.QUEST_MIRA_GLOWING_HERB)
-    _check(failures, GameState.equipped_armor_tier == 0, "expected no armor after only 2/3 quests")
+    _check(failures, GameState.equipped_armor_tier == 0, "expected no armor after only 3/4 quests")
 
     _armor_signal_count = 0
     GameState.armor_equipped.connect(_on_armor_probe)
     GameState.complete_quest(GameState.QUEST_ELDER_GOLDEN_STAR)
     GameState.armor_equipped.disconnect(_on_armor_probe)
 
-    _check(failures, GameState.equipped_armor_tier == 1, "expected tier 1 armor after all 3 quests complete")
+    _check(failures, GameState.equipped_armor_tier == 1, "expected tier 1 armor after all 4 quests complete")
     _check(failures, _armor_signal_count == 1, "expected armor_equipped to fire exactly once, fired %d time(s)" % _armor_signal_count)
 
     return {"ok": failures.is_empty(), "failures": failures}
@@ -122,6 +137,7 @@ func test_save_and_load_round_trip() -> Dictionary:
         GameState.QUEST_ELDER_GOLDEN_STAR: GameState.QUEST_NOT_STARTED,
         GameState.QUEST_MIRA_GLOWING_HERB: GameState.QUEST_NOT_STARTED,
         GameState.QUEST_FINN_SHIMMERING_ORE: GameState.QUEST_NOT_STARTED,
+        GameState.QUEST_YARROW_SILVERLEAF: GameState.QUEST_NOT_STARTED,
     }
     GameState.quest_bonuses = {}
     GameState.equipped_armor_tier = 0

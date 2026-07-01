@@ -13,6 +13,7 @@ const ITEM_DEFINITIONS: Array[ItemDefinition] = [
     preload("res://data/items/golden_star.tres"),
     preload("res://data/items/glowing_herb.tres"),
     preload("res://data/items/shimmering_ore.tres"),
+    preload("res://data/items/silverleaf.tres"),
 ]
 
 const QUEST_SUMMARIES := {
@@ -37,12 +38,20 @@ const QUEST_SUMMARIES := {
         "learning_check": "Answer Finn's question",
         "completed": "Finn's forge quest complete",
     },
+    "yarrow_silverleaf": {
+        "not_started": "Talk to Yarrow the Healer",
+        "started": "Find silverleaf",
+        "ready_to_turn_in": "Return silverleaf to Yarrow",
+        "learning_check": "Answer Yarrow's question",
+        "completed": "Yarrow's remedy is brewed",
+    },
 }
 
 const BADGE_LABELS := {
     "elder_golden_star": "Elder's Wisdom Badge",
     "mira_glowing_herb": "Mira's Garden Badge",
     "finn_shimmering_ore": "Finn's Forge Badge",
+    "yarrow_silverleaf": "Yarrow's Remedy Badge",
 }
 
 const ARMOR_TIER_LABELS := {

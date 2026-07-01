@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/player/Player.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://scenes/npcs/Elder.tscn" id="2_elder"]
@@ -12,6 +12,8 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/CharacterPanel.tscn" id="10_character_panel"]
 [ext_resource type="PackedScene" path="res://scenes/npcs/Finn.tscn" id="11_finn"]
 [ext_resource type="PackedScene" path="res://scenes/items/ShimmeringOre.tscn" id="12_ore"]
+[ext_resource type="PackedScene" path="res://scenes/npcs/Yarrow.tscn" id="13_yarrow"]
+[ext_resource type="PackedScene" path="res://scenes/items/Silverleaf.tscn" id="14_silverleaf"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_obstacle"]
 size = Vector2(200, 60)
@@ -55,6 +57,12 @@ position = Vector2(980, 650)
 [node name="ShimmeringOre" parent="." instance=ExtResource("12_ore")]
 position = Vector2(1120, 560)
 
+[node name="Yarrow" parent="." instance=ExtResource("13_yarrow")]
+position = Vector2(640, 780)
+
+[node name="Silverleaf" parent="." instance=ExtResource("14_silverleaf")]
+position = Vector2(150, 780)
+
 [node name="HUD" parent="." instance=ExtResource("4_hud")]
 
 [node name="DialogueBox" parent="." instance=ExtResource("5_dialogue")]
@@ -71,4 +79,6 @@ position = Vector2(1120, 560)
 [connection signal="learning_check_requested" from="Mira" to="LearningCheck" method="show_check"]
 [connection signal="dialogue_requested" from="Finn" to="DialogueBox" method="show_dialogue"]
 [connection signal="learning_check_requested" from="Finn" to="LearningCheck" method="show_check"]
+[connection signal="dialogue_requested" from="Yarrow" to="DialogueBox" method="show_dialogue"]
+[connection signal="learning_check_requested" from="Yarrow" to="LearningCheck" method="show_check"]
 [connection signal="dialogue_requested" from="LearningCheck" to="DialogueBox" method="show_dialogue"]

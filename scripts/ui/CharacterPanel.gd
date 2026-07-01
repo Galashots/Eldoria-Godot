@@ -88,6 +88,7 @@ func _get_bonuses_summary() -> String:
         GameState.QUEST_ELDER_GOLDEN_STAR,
         GameState.QUEST_MIRA_GLOWING_HERB,
         GameState.QUEST_FINN_SHIMMERING_ORE,
+        GameState.QUEST_YARROW_SILVERLEAF,
     ]
     var badges: Array[String] = []
     for quest_id in quest_ids:
@@ -113,4 +114,8 @@ func _get_current_quest_summary() -> String:
         return ContentDefinitions.get_quest_summary(GameState.QUEST_MIRA_GLOWING_HERB, mira_state)
 
     var finn_state := GameState.get_quest_state(GameState.QUEST_FINN_SHIMMERING_ORE)
-    return ContentDefinitions.get_quest_summary(GameState.QUEST_FINN_SHIMMERING_ORE, finn_state)
+    if finn_state != GameState.QUEST_COMPLETED:
+        return ContentDefinitions.get_quest_summary(GameState.QUEST_FINN_SHIMMERING_ORE, finn_state)
+
+    var yarrow_state := GameState.get_quest_state(GameState.QUEST_YARROW_SILVERLEAF)
+    return ContentDefinitions.get_quest_summary(GameState.QUEST_YARROW_SILVERLEAF, yarrow_state)
