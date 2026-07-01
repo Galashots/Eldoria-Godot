@@ -26,6 +26,9 @@
 [ext_resource type="Script" path="res://scripts/ui/CharacterPanel.gd" id="22_m1khv"]
 [ext_resource type="Script" path="res://scripts/ui/LearningCheck.gd" id="24_vs4dm"]
 [ext_resource type="Script" path="res://scripts/ui/ProfileSelect.gd" id="26_gwlw1"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/MeadowSlime.tscn" id="27_ilqpp"]
+[ext_resource type="PackedScene" path="res://scenes/ui/CombatQuestion.tscn" id="28_ftc2p"]
+[ext_resource type="Script" path="res://scripts/ui/CombatQuestion.gd" id="29_04n4k"]
 
 [node name="Main" type="Node2D" unique_id=280939621]
 
@@ -99,6 +102,26 @@ script = ExtResource("24_vs4dm")
 layer = 100
 script = ExtResource("26_gwlw1")
 
+[node name="Enemies" type="Node2D" parent="." unique_id=835954324]
+
+[node name="MeadowSlime1" type="CharacterBody2D" parent="Enemies" unique_id=841379680 instance=ExtResource("27_ilqpp")]
+y_sort_enabled = true
+position = Vector2(1608, 1208)
+
+[node name="MeadowSlime2" type="CharacterBody2D" parent="Enemies" unique_id=175631366 instance=ExtResource("27_ilqpp")]
+y_sort_enabled = true
+position = Vector2(728, 488)
+
+[node name="MeadowSlime3" type="CharacterBody2D" parent="Enemies" unique_id=1522604327 instance=ExtResource("27_ilqpp")]
+y_sort_enabled = true
+position = Vector2(2088, 968)
+
+[node name="CombatQuestion" type="CanvasLayer" parent="." unique_id=532605820 instance=ExtResource("28_ftc2p")]
+layer = 91
+script = ExtResource("29_04n4k")
+
+[connection signal="combat_question_requested" from="Player" to="CombatQuestion" method="show_question"]
+[connection signal="dialogue_requested" from="Player" to="DialogueBox" method="show_dialogue"]
 [connection signal="dialogue_requested" from="Elder" to="DialogueBox" method="show_dialogue"]
 [connection signal="learning_check_requested" from="Elder" to="LearningCheck" method="show_check"]
 [connection signal="dialogue_requested" from="Mira" to="DialogueBox" method="show_dialogue"]

@@ -64,11 +64,11 @@
 
 The vertical slice above (4 quests, save/load, equip, tests) is done; the user has since
 approved a Phase 2 roadmap toward a real game (combat, pets, bigger maps, farm/home-base,
-mobile). Milestone order: **M1 world/map foundation** (next below) → M2 combat + first
-monster → M3 gear/rarity/inventory + shop → M4 pets → M5 bigger world & traversal → M6 farm
-+ home base → M7 mobile → M8 UI/theme polish. Architecture (EventBus, component nodes,
-`.tres`-driven stats) is introduced feature-by-feature, not upfront. Full plan context in
-project memory (`phase2-roadmap`).
+mobile). Milestone order: **M1 world/map foundation** (done) → **M2 combat + first monster**
+(done, next below) → M3 gear/rarity/inventory + shop → M4 pets → M5 bigger world &
+traversal → M6 farm + home base → M7 mobile → M8 UI/theme polish. Architecture (EventBus,
+component nodes, `.tres`-driven stats) is introduced feature-by-feature, not upfront. Full
+plan context in project memory (`phase2-roadmap`).
 
 10. ~~M1 — World/map foundation.~~ Done — `scenes/main/Main.tscn`'s flat `World/Floor`
     Polygon2D + single `Obstacle` replaced with a `World/Ground` `TileMapLayer` over a
@@ -86,6 +86,33 @@ project memory (`phase2-roadmap`).
     (combat/inventory/pets/farm) can migrate forward instead of crashing. No EventBus/
     component architecture yet — those arrive with M2 combat, per the "grow
     feature-by-feature" decision.
+
+11. ~~M2 — Combat + first monster.~~ Done — the component architecture arrives:
+    `HealthComponent`/`HitboxComponent`/`HurtboxComponent` (`scripts/core/combat/`), matched
+    by group membership rather than a dedicated physics layer (everything in this project
+    still defaults to layer/mask 1, proven enough at this scale). Real-time, movable combat
+    (no battle-transition screen): a new `attack` input action swings a brief hitbox in the
+    player's facing direction. First monster: **Meadow Slime** (wander/chase AI, 3 hp, small
+    contact damage, real art generated via ChatGPT and normalized through
+    `tools/asset_pipeline/` — see `docs/design/MONSTER_CONCEPTS.md`). The player keeps using
+    the existing, already-persisted
+    `GameState.player_hp` rather than getting its own `HealthComponent`; death is
+    non-punitive (teleport to the scene's original spawn point, heal to full, a friendly
+    line — no game over screen). The user's math-question damage-multiplier idea is
+    implemented as a stacking, decaying combat streak (`GameState.combat_streak` /
+    `get_combat_multiplier()`, capped at 3, `1 + streak*0.5`, correct-only per the
+    bonus-only rule) via a new `CombatQuestion` UI kept deliberately separate from
+    `LearningCheck` (no quest coupling). No `.tres` stats resource was introduced — a single
+    monster and the player's existing plain fields don't yet meet the "more content, or a
+    second consumer needing structured data" promotion bar; deferred to M3 (gear modifying
+    these numbers) or a second monster, whichever comes first. No EventBus yet — every new
+    signal is a direct connection, same as the existing NPC-to-UI wiring. Test suite grew to
+    13 (4 new, covering the combat math). Two real bugs caught live, both now structural
+    fixes: a `HurtboxComponent`'s exported `HealthComponent` node reference did not reliably
+    resolve from a raw `NodePath(...)` literal in `.tscn` text (fixed via sibling-name
+    auto-discovery in `_ready()` instead); and setting `monitorable`/`monitoring` directly
+    from inside a hit-reaction callback raised a Godot engine error, fixed via
+    `set_deferred()`.
 
 ## Cleanup backlog (from the repo audit, deliberately deferred)
 

@@ -192,6 +192,72 @@ func test_reset_state_clears_all_state_and_deletes_save_file() -> Dictionary:
 
     return {"ok": failures.is_empty(), "failures": failures}
 
+func test_combat_multiplier_stacks_correct_answers_and_caps() -> Dictionary:
+    var failures: Array[String] = []
+
+    _check(failures, GameState.get_combat_multiplier() == 1.0, "expected 1x multiplier with no streak")
+
+    GameState.answer_combat_question(true)
+    _check(failures, GameState.get_combat_multiplier() == 1.5, "expected 1.5x after 1 correct answer")
+
+    GameState.answer_combat_question(true)
+    _check(failures, GameState.get_combat_multiplier() == 2.0, "expected 2x after 2 correct answers")
+
+    GameState.answer_combat_question(true)
+    _check(failures, GameState.get_combat_multiplier() == 2.5, "expected 2.5x after 3 correct answers")
+
+    # Streak is capped at COMBAT_STREAK_MAX (3) - a 4th correct answer should not push higher.
+    GameState.answer_combat_question(true)
+    _check(failures, GameState.get_combat_multiplier() == 2.5, "expected multiplier to stay capped at 2.5x")
+
+    # A wrong answer never reduces the streak - bonus-only, matches the North Star rule.
+    GameState.answer_combat_question(false)
+    _check(failures, GameState.get_combat_multiplier() == 2.5, "expected a wrong answer to leave the streak untouched")
+
+    return {"ok": failures.is_empty(), "failures": failures}
+
+func test_combat_question_cooldown_gates_retrigger() -> Dictionary:
+    var failures: Array[String] = []
+
+    _check(failures, GameState.can_trigger_combat_question(), "expected a question to be triggerable by default")
+
+    GameState.mark_combat_question_triggered()
+    _check(failures, not GameState.can_trigger_combat_question(), "expected cooldown to block an immediate retrigger")
+
+    return {"ok": failures.is_empty(), "failures": failures}
+
+func test_take_player_damage_respects_hit_cooldown_and_heals_to_full() -> Dictionary:
+    var failures: Array[String] = []
+
+    _check(failures, GameState.player_hp == GameState.PLAYER_MAX_HP, "expected full hp at start")
+
+    GameState.take_player_damage(2)
+    _check(failures, GameState.player_hp == GameState.PLAYER_MAX_HP - 2, "expected hp reduced by 2")
+
+    # Immediate second hit within the same instant is blocked by the hit-cooldown - standing
+    # in continuous contact with an enemy shouldn't deal damage every physics frame.
+    GameState.take_player_damage(2)
+    _check(failures, GameState.player_hp == GameState.PLAYER_MAX_HP - 2, "expected the immediate second hit to be ignored")
+
+    GameState.heal_player_to_full()
+    _check(failures, GameState.player_hp == GameState.PLAYER_MAX_HP, "expected hp restored to full")
+
+    return {"ok": failures.is_empty(), "failures": failures}
+
+func test_take_player_damage_at_zero_hp_fires_died_exactly_once() -> Dictionary:
+    var failures: Array[String] = []
+
+    _player_died_signal_count = 0
+    GameState.player_died.connect(_on_player_died_probe)
+
+    GameState.take_player_damage(GameState.PLAYER_MAX_HP)
+    _check(failures, GameState.player_hp == 0, "expected hp to reach 0")
+    _check(failures, _player_died_signal_count == 1, "expected player_died to fire exactly once, fired %d time(s)" % _player_died_signal_count)
+
+    GameState.player_died.disconnect(_on_player_died_probe)
+
+    return {"ok": failures.is_empty(), "failures": failures}
+
 static func _check(failures: Array[String], condition: bool, message: String) -> void:
     if not condition:
         failures.append(message)
@@ -205,3 +271,8 @@ var _quest_changed_signal_count := 0
 
 func _on_quest_changed_probe(_quest_id: String, _state: String) -> void:
     _quest_changed_signal_count += 1
+
+var _player_died_signal_count := 0
+
+func _on_player_died_probe() -> void:
+    _player_died_signal_count += 1

@@ -36,14 +36,73 @@ field and `load_game()` calls a `_migrate(data)` step (currently a no-op — old
 saves and v1 have the same shape) so future schema growth (combat/inventory/pets/farm) can
 migrate old saves forward instead of crashing on load.
 
+**Combat + first monster (M2 of the Phase 2 roadmap): done.** Real-time, movable
+hack-and-slash (Stardew-style, not a battle-transition screen) arrives via the
+component architecture the Phase 2 plan called for: `HealthComponent`,
+`HitboxComponent`/`HurtboxComponent` (`scripts/core/combat/`), matched by group ("hitbox"/
+"hurtbox") rather than a dedicated physics layer, since everything in this project already
+defaults to layer/mask 1 and that's proven enough at this scale. The player has a new
+`attack` input action (Space or left click) that swings a brief hitbox in the facing
+direction (`Player._swing_attack()`), damaging anything with a matching hurtbox; a
+`HurtboxComponent` never damages its own owner (a same-parent check), which matters because
+an enemy's own contact-damage hitbox and its hurtbox occupy the same space. The first
+monster, **Meadow Slime** (`scripts/enemies/MeadowSlime.gd`/`.tscn`), is deliberately the
+lowest-stakes possible enemy for a Grade 2/5 audience: slow wander/chase AI within an aggro
+radius, 3 hp, 1 contact damage on touch (gated by a brief hit-immunity window so standing in
+it doesn't melt hp every physics frame). Real art landed the same session, generated via
+ChatGPT from the prompt in `docs/design/MONSTER_CONCEPTS.md` and normalized through
+`tools/asset_pipeline/` into `assets/sprites/enemies/meadow_slime_idle.png` (a single
+static idle pose - the slime doesn't turn to face the player). Three
+instances are placed in the M1 zone away from the quest lines. The player keeps using
+`GameState.player_hp` as its single source of truth (now wired to real damage via
+`GameState.take_player_damage()`/`heal_player_to_full()`) rather than getting its own
+`HealthComponent`, since that field already existed and is already saved; enemies get the
+new component since they need no persistence. Death is non-punitive per the North Star: at
+0 hp the player teleports back to wherever they started the scene (captured once in
+`Player._ready()`), heals to full, and gets a brief friendly dialogue line — no game over
+screen, no penalty.
+
+The user's requested damage-multiplier idea is implemented as a stacking, decaying combat
+streak: landing a hit while no question is on a ~12s cooldown pops a quick profile-aware
+2-choice numeracy question (`scenes/ui/CombatQuestion.tscn`/`.gd` - a new, deliberately
+separate scene from `LearningCheck`, since it has zero quest coupling and dismisses itself
+the instant an answer is picked rather than showing a lingering completion line). A correct
+answer bumps `GameState.combat_streak` (capped at 3), giving a `1 + streak*0.5` damage
+multiplier (1x/1.5x/2x/2.5x) applied to the *next* swing's damage, not retroactively to the
+hit that triggered the question. The streak decays by 1 every ~8s without a further correct
+answer. A wrong answer never reduces the streak or otherwise penalizes - bonus-only, same
+rule as every other learning check in this project. This state is deliberately **not**
+persisted (`GameState.save_game()`'s dict is untouched) since it's a moment-to-moment combat
+feel mechanic, not saved progress; `reset_state()` clears it anyway for hygiene. The HUD
+gained an "On Fire! x1.5"-style label (hidden at streak 0) and an "HP: 5/5" readout, since
+this is the first milestone where player hp is actually meaningful to see.
+
+No EventBus yet, per the "grow feature-by-feature" decision - every new signal here is a
+direct connection, same as the existing NPC-to-UI wiring. Two real bugs were caught and
+fixed during live verification (both now covered structurally, not just patched): a
+`HurtboxComponent`'s exported `health: HealthComponent` node reference did not reliably
+resolve from a raw `NodePath("...")` literal written directly into `.tscn` text (fixed by
+auto-discovering a sibling node named "HealthComponent" in `_ready()` instead of relying on
+a typed node export); and setting an `Area2D`'s `monitorable`/`monitoring` directly from
+inside a hit-reaction callback raised a Godot engine error ("Function blocked during in/out
+signal") - both now go through `set_deferred()`, matching the existing pattern in
+`Player.gd`'s equip-armor code elsewhere in this codebase. The GDScript test suite grew by 4
+tests covering the new pure-logic combat math (streak stacking/capping, the wrong-answer
+no-penalty rule, the question cooldown, player damage/heal/death signal firing) - see "How
+to run the GDScript test suite" below, now 13 tests total.
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
 - `AGENTS.md`: project and agent workflow guidance, including the current `ContentDefinitions.gd` rule for lightweight quest/item/profile display text.
 - `assets/sprites/tiles/placeholder_tileset.png` and `assets/tilesets/placeholder_tileset.tres`: bootstrap 4-tile (grass/path/water/rock) 16x16 placeholder tileset, generated as flat colors (not through the AI source-art pipeline, since it exists only to prove `TileMapLayer`/`TileSet` collision before real tile art). Water and rock tiles have a full-tile physics collision polygon on `TileSet` physics layer 0; grass and path have none (walkable).
-- `scenes/main/Main.tscn`: `World/Ground` `TileMapLayer` (160x100 tiles, 2560x1600px, `y_sort_enabled` on `World`) replacing the old flat floor/obstacle, player, Elder, Mira, Finn, Yarrow (all `y_sort_enabled`), collectibles (including Silverleaf), HUD, dialogue, character panel, profile selector, and learning check instances.
-- `scenes/player/Player.tscn`: player `Body` (`AnimatedSprite2D`, `sprite_frames` built in code per profile — see `Player.gd`), a hidden empty `Armor` (`AnimatedSprite2D`) scaffold for a future equipment layer, collision shape, and camera (`Camera2D` now has `limit_left/top/right/bottom` set to the map bounds and `position_smoothing_enabled` on).
-- `scripts/core/GameState.gd`: minimal profile, health, collected-item, reusable quest state (now four quests: Elder, Mira, Finn, Yarrow), and Elder compatibility flags. Also owns the equip system: `equipped_armor_tier` (0 = none) and an `armor_equipped(tier)` signal, granted automatically by `_check_and_grant_tier1_armor()` once all four quests reach `QUEST_COMPLETED` (called from `complete_quest()`). And local save/load: `save_game()`/`load_game()`/`reset_progress()` persist the fields above to `user://savegame.json`; `load_game()` runs in `_ready()`. Autosave is wired via four small `_on_<signal>_autosave()` handlers, one per signal (`profile_changed`, `quest_changed`, `item_added`, `armor_equipped`), each just calling `save_game()` — **not** one shared zero-arg handler connected to all four (see the note below on why that doesn't work).
+- `scenes/main/Main.tscn`: `World/Ground` `TileMapLayer` (160x100 tiles, 2560x1600px, `y_sort_enabled` on `World`) replacing the old flat floor/obstacle, player, Elder, Mira, Finn, Yarrow (all `y_sort_enabled`), collectibles (including Silverleaf), HUD, dialogue, character panel, profile selector, learning check, `Enemies` (3 `MeadowSlime` instances), and `CombatQuestion` instances.
+- `scripts/core/combat/HealthComponent.gd`, `HitboxComponent.gd`, `HurtboxComponent.gd`: the M2 component architecture. `HealthComponent` tracks hp with a brief post-hit immunity window (`hit_cooldown_sec`) and a `died` signal; `HitboxComponent` is a toggleable damage zone with a `landed` signal so an attacker can react to connecting; `HurtboxComponent` detects overlapping hitboxes by group membership ("hitbox"/"hurtbox" - not a dedicated physics layer, since everything in this project already defaults to layer/mask 1) and auto-discovers a sibling node named "HealthComponent" in `_ready()` rather than relying on a typed node export (a raw `NodePath(...)` literal written into `.tscn` text does not reliably resolve to a `HealthComponent` reference — a real bug caught live, see below). A `HurtboxComponent` never damages its own owner (same-parent check), since an enemy's own contact-damage hitbox and hurtbox occupy the same space.
+- `scripts/enemies/MeadowSlime.gd` / `scenes/enemies/MeadowSlime.tscn`: the first monster. Simple idle/wander/chase FSM (aggro radius, home-anchored wander), a `HealthComponent` (3 hp), a `Hurtbox` (receives player hits), and an always-on `ContactHitbox` (deals contact damage to the player). Real art (`assets/sprites/enemies/meadow_slime_idle.png`, via `assets/manifests/meadow_slime_idle.manifest.json`); see `docs/design/MONSTER_CONCEPTS.md`.
+- `scenes/ui/CombatQuestion.tscn` / `scripts/ui/CombatQuestion.gd`: the combat damage-multiplier question. Deliberately separate from `LearningCheck` (no quest coupling, dismisses itself immediately on answer). A small numeracy-only question pool per profile, matching the already-confirmed subject scope in `docs/design/CURRICULUM_MAP.md`.
+- `scenes/player/Player.tscn`: player `Body` (`AnimatedSprite2D`, `sprite_frames` built in code per profile — see `Player.gd`), a hidden empty `Armor` (`AnimatedSprite2D`) scaffold for a future equipment layer, collision shape, camera (`Camera2D` now has `limit_left/top/right/bottom` set to the map bounds and `position_smoothing_enabled` on), an `AttackHitbox` (toggled on for a brief window each swing, repositioned per facing direction), and a `PlayerHurtbox` (always-on, receives enemy hits).
+- `scripts/player/Player.gd` (combat additions): a new `attack` input action (Space or left click, added via the Godot Input Map) swings `AttackHitbox` in the player's current facing direction (`FACING_VECTORS`), gated by an active window + cooldown so it can't be spammed. Landing a hit (the `HitboxComponent.landed` signal) requests a combat question if one isn't on cooldown; taking a hit (`PlayerHurtbox.hit_received`) calls `GameState.take_player_damage()`. On `GameState.player_died`, the player teleports back to wherever it started the scene (captured once in `_ready()` as `_spawn_position`), heals to full, and shows a brief non-punitive dialogue line — no game over screen.
+- `scripts/core/GameState.gd`: minimal profile, health, collected-item, reusable quest state (now four quests: Elder, Mira, Finn, Yarrow), and Elder compatibility flags. Also owns the equip system: `equipped_armor_tier` (0 = none) and an `armor_equipped(tier)` signal, granted automatically by `_check_and_grant_tier1_armor()` once all four quests reach `QUEST_COMPLETED` (called from `complete_quest()`). And local save/load: `save_game()`/`load_game()`/`reset_progress()` persist the fields above to `user://savegame.json`; `load_game()` runs in `_ready()`. Autosave is wired via four small `_on_<signal>_autosave()` handlers, one per signal (`profile_changed`, `quest_changed`, `item_added`, `armor_equipped`), each just calling `save_game()` — **not** one shared zero-arg handler connected to all four (see the note below on why that doesn't work). Now also owns real player combat: `take_player_damage()`/`heal_player_to_full()` (with their own hit-cooldown, same pattern as `HealthComponent`) and the combat streak/multiplier (`combat_streak`, `get_combat_multiplier()`, `answer_combat_question()`, decaying over time in `_process()`) — deliberately **not** persisted, since it's a moment-to-moment combat feel mechanic, not saved progress.
 - `scripts/core/ContentDefinitions.gd`: tiny lookup layer for profile labels, item labels, quest summaries, badge labels, and armor tier labels (`get_badge_label(quest_id)`/`BADGE_LABELS`, `get_armor_tier_label(tier)`/`ARMOR_TIER_LABELS` — both deliberately plain dictionaries, not `.tres` resources, since neither meets the "more content, or a second consumer needing structured data" bar `AGENTS.md` sets for promoting to Resources). Item labels are resolved from `ItemDefinition` `.tres` resources (see below); profile labels, quest summaries, badge labels, and armor tier labels are still plain dictionaries.
 - `scripts/core/ItemDefinition.gd` and `data/items/{golden_star,glowing_herb,shimmering_ore,silverleaf}.tres`: a tiny Resource-backed content experiment (`docs/ROADMAP.md` milestone 2) — each item's id/label now lives in its own `.tres` file instead of a hardcoded dictionary entry, proving the pattern works before it's considered for quest/profile content too.
 - `scripts/player/Player.gd`: WASD and arrow-key movement blocked until profile selection; swaps the player sprite by profile via `GameState.profile_changed`, and by movement direction (8-way, with west/south-west/north-west mirrored from east/south-east/north-east via `flip_h`) as the player moves. Builds one `SpriteFrames` per profile in `_ready()` (cached in `_profile_frames`) containing both an `idle_<direction>` animation (1 frame) and a `walk_<direction>` animation (4-frame loop: idle, walk1, idle, walk2) per direction, and plays the matching one on the `AnimatedSprite2D` `body` node based on whether the player is currently moving. Also builds a second per-profile cache (`_profile_armor_frames`) from the Tier 1 armor textures, reusing the same builder with no walk poses (so armored walking falls back to a static armored idle pose); `_update_sprite()` picks that cache whenever `GameState.equipped_armor_tier > 0`, refreshed on `GameState.armor_equipped`.
@@ -55,7 +114,7 @@ migrate old saves forward instead of crashing on load.
 - `scenes/items/GlowingHerb.tscn`: glowing-herb pickup for Mira's quest.
 - `scenes/items/ShimmeringOre.tscn`: shimmering-ore pickup for Finn's quest.
 - `scenes/items/Silverleaf.tscn`: silverleaf pickup for Yarrow's quest.
-- `scripts/ui/HUD.gd`: visible objective text that updates based on selected profile and active quest state; chains through all four quests in order (Elder → Mira → Finn → Yarrow), falling through to the next once the current one completes.
+- `scripts/ui/HUD.gd`: visible objective text that updates based on selected profile and active quest state; chains through all four quests in order (Elder → Mira → Finn → Yarrow), falling through to the next once the current one completes. Now also shows an "HP: 5/5" readout and an "On Fire! x1.5"-style combat streak label (hidden at streak 0), reading `GameState.player_damaged`/`combat_streak_changed`.
 - `scenes/ui/DialogueBox.tscn` and `scripts/ui/DialogueBox.gd`: reusable speaker/message UI dismissed with E, Enter, or Space.
 - `scenes/ui/ProfileSelect.tscn` and `scripts/ui/ProfileSelect.gd`: profile selector overlay UI and logic.
 - `scenes/ui/LearningCheck.tscn` and `scripts/ui/LearningCheck.gd`: reusable profile-aware two-choice learning check.
@@ -71,7 +130,7 @@ migrate old saves forward instead of crashing on load.
 - `assets/manifests/mage_body_idle_{s,se,e,ne,n}.manifest.json`, `assets/source/generated/mage_body_idle_sheet/source.png` (a single shared 5-panel source sheet, generated in one ChatGPT response and addressed per direction via `sourceCell` on a 5-col grid), and `assets/sprites/characters/mage_body_idle_*.png`: production art for Grade 2 Mage, matching the brown-haired, navy/gold-tunic design from the V2 style reference. Only `_s` (south) is currently wired into `Player.gd`.
 - `assets/manifests/{mage,adventurer}_body_walk{1,2}_{s,se,e,ne,n}.manifest.json` (20 manifests), `assets/source/generated/{mage,adventurer}_body_walk_sheet/source.png` (one shared 5-direction x 2-pose grid sheet per character, generated in one ChatGPT response each, addressed via `sourceCell` on a 5-col x 2-row grid), and `assets/sprites/characters/{mage,adventurer}_body_walk{1,2}_*.png`: the two new mid-stride poses per direction per character that drive the walk-cycle animation (see `Player.gd` above). `walk1`/`walk2` combine with the existing `idle` pose at runtime — no third pose was generated for "neutral", since idle already serves that role.
 - `assets/manifests/{mage,adventurer}_body_idle_tier1_{s,se,e,ne,n}.manifest.json` (10 manifests), `assets/source/generated/{mage,adventurer}_body_idle_tier1_sheet/source.png` (one shared 5-direction grid sheet per character, a ChatGPT in-place edit of the base idle sheet adding leather armor), and `assets/sprites/characters/{mage,adventurer}_body_idle_tier1_*.png`: Tier 1 (Leather) armor art, see `docs/design/ARMOR_TIERS.md`. Normalized as full replacement body sprite sets (not a transparent overlay — see that doc for why the original diff-based overlay plan was dropped). Now wired into `Player.gd`/`GameState.gd`: completing all three quests auto-equips it (see above); no manual equip/unequip UI exists.
-- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon). See "How to run the GDScript test suite" below.
+- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 13 tests as of M2 (4 new: combat multiplier stacking/capping, the wrong-answer no-penalty rule, the question cooldown, player damage/heal/death signal firing). See "How to run the GDScript test suite" below.
 
 ## How to run
 
@@ -216,6 +275,27 @@ diagnosed; skip it for now and expect the suite to touch your local save file tr
 - [ ] All 4 NPC quests (Elder, Mira, Finn, Yarrow) are still reachable and completable in
       their new positions, in the same gated order as before (Elder → Mira → Finn → Yarrow).
 
+### Combat regression
+
+- [ ] Pressing Space or left-clicking swings a brief visible slash near the player in the
+      direction they're facing.
+- [ ] The player can move freely while a Meadow Slime is nearby and while fighting it —
+      combat never locks movement or forces a battle-transition screen.
+- [ ] A Meadow Slime wanders near its spawn point when the player is far away, and chases
+      the player once they get close.
+- [ ] Landing 3 hits on a Meadow Slime (with brief pauses between swings so the slime's own
+      hit-immunity window doesn't eat a swing) defeats it; it shrinks and disappears.
+- [ ] Touching a Meadow Slime deals contact damage to the player (visible as the HP counter
+      dropping), but standing in continued contact doesn't drain HP every frame.
+- [ ] The first hit landed on a slime after a pause pops a quick 2-choice math question;
+      answering (click, or press 1/2) closes it immediately and combat keeps going.
+- [ ] A correct answer shows "On Fire! x1.5" (then x2, x2.5) in the HUD; it fades back down
+      over time if no further correct answers land. A wrong answer never reduces it.
+- [ ] Letting player HP reach 0 (e.g. standing in repeated slime contact) doesn't show a
+      game-over screen — the player reappears at the zone's original spawn point with full
+      HP and a brief friendly message.
+- [ ] All 4 NPC quests still complete normally with Meadow Slimes present in the zone.
+
 ## Next milestone
 
 A design north-star doc set lives in `docs/design/` (`NORTH_STAR.md`, `CURRICULUM_MAP.md`, `VISUAL_CONTRACT.md`, `RESEARCH_NOTES.md`) to anchor future work. The learning checks now follow its bonus-only rule: each quest completes on item return regardless of answer, and a correct answer adds a bonus via `GameState.award_quest_bonus()`.
@@ -298,12 +378,21 @@ un-grants once earned). This is a judgment call made autonomously while the user
 flagged clearly here for review — a different next quest, a different subject, or declining
 to extend the armor requirement would all have been reasonable alternate choices.
 
-Next up: the user has since approved a **Phase 2 roadmap** (`docs/ROADMAP.md`'s "Phase 2"
-section) that supersedes the "one more NPC" question above — the placeholder vertical slice
-is done, and the project is moving toward a real game (combat, pets, bigger maps, farm,
-mobile). **M1 (world/map foundation) is done** (see above): `TileMapLayer` + collision +
-camera limits + y-sort, proven with a bootstrap placeholder tileset. Next is **M2 — combat +
-first monster**, which introduces the component-node architecture (`HealthComponent`,
-`HitboxComponent`/`HurtboxComponent`, a stats `.tres`) per the Phase 2 plan. Real tile art to
+The user has since approved a **Phase 2 roadmap** (`docs/ROADMAP.md`'s "Phase 2" section) —
+the placeholder vertical slice is done, and the project is moving toward a real game
+(combat, pets, bigger maps, farm, mobile). **M1 (world/map foundation) is done**:
+`TileMapLayer` + collision + camera limits + y-sort, proven with a bootstrap placeholder
+tileset. **M2 (combat + first monster) is done** (see above): the `HealthComponent`/
+`HitboxComponent`/`HurtboxComponent` architecture, a real-time hack-and-slash player attack,
+the Meadow Slime as the first monster, and the user's math-question damage-multiplier/streak
+idea. No stats `.tres` was introduced yet — M2's numbers (hp, damage, speed) are still plain
+`@export` vars on `HealthComponent`/`MeadowSlime.gd`, since a single monster and the
+player's fixed stats don't yet meet the "more content, or a second consumer needing
+structured data" bar; the first real stats `.tres` is more likely to land with M3 (gear that
+modifies these numbers) or a second monster, whichever comes first — flag this rather than
+promoting it speculatively now.
+
+Next up: **M3 — gear, rarity & inventory + shop**, per the Phase 2 plan. Real tile art to
 replace the placeholder tileset, Tier 1 walk-cycle armor art, and Tier 2 (Bronze) armor
-remain open art backlog items, lower priority than the Phase 2 milestone chain.
+remain open art backlog items, lower priority than the Phase 2 milestone chain. (Real
+Meadow Slime art landed the same session as M2 — see above.)

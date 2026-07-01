@@ -5,9 +5,26 @@ signal elder_quest_changed
 signal profile_changed(profile_id: String)
 signal quest_changed(quest_id: String, state: String)
 signal armor_equipped(tier: int)
+signal player_damaged(current_hp: int, max_hp: int)
+signal player_died
+signal combat_streak_changed(streak: int, multiplier: float)
 
 const SAVE_PATH := "user://savegame.json"
 const SAVE_VERSION := 1
+
+const PLAYER_MAX_HP := 5
+
+# Combat streak/multiplier: a correct combat math question bumps the streak (capped),
+# giving a temporary damage multiplier that decays over time if no further correct
+# answers land. Deliberately NOT persisted to save_game() - it's a moment-to-moment
+# combat feel mechanic tied to the current play session, not saved progress.
+const COMBAT_STREAK_MAX := 3
+const COMBAT_STREAK_DECAY_SEC := 8.0
+const COMBAT_MULTIPLIER_PER_STACK := 0.5
+const COMBAT_QUESTION_COOLDOWN_SEC := 12.0
+# Brief immunity after the player takes a hit, so standing in continuous contact with an
+# enemy doesn't deal damage every physics frame.
+const PLAYER_HIT_COOLDOWN_SEC := 0.5
 
 const QUEST_ELDER_GOLDEN_STAR := "elder_golden_star"
 const QUEST_MIRA_GLOWING_HERB := "mira_glowing_herb"
@@ -21,7 +38,7 @@ const QUEST_LEARNING_CHECK := "learning_check"
 const QUEST_COMPLETED := "completed"
 
 var selected_profile: String = ""
-var player_hp: int = 5
+var player_hp: int = PLAYER_MAX_HP
 var collected_items: Dictionary = {}
 var quest_states: Dictionary = {
     QUEST_ELDER_GOLDEN_STAR: QUEST_NOT_STARTED,
@@ -35,12 +52,31 @@ var equipped_armor_tier: int = 0
 var elder_quest_started: bool = false
 var elder_quest_completed: bool = false
 
+# Runtime-only combat state (not persisted - see the constants above).
+var combat_streak: int = 0
+var _time_since_last_correct_answer: float = 0.0
+var _player_hit_cooldown_remaining: float = 0.0
+var _combat_question_cooldown_remaining: float = 0.0
+
 func _ready() -> void:
     profile_changed.connect(_on_profile_changed_autosave)
     quest_changed.connect(_on_quest_changed_autosave)
     item_added.connect(_on_item_added_autosave)
     armor_equipped.connect(_on_armor_equipped_autosave)
     load_game()
+
+func _process(delta: float) -> void:
+    if _player_hit_cooldown_remaining > 0.0:
+        _player_hit_cooldown_remaining = maxf(0.0, _player_hit_cooldown_remaining - delta)
+    if _combat_question_cooldown_remaining > 0.0:
+        _combat_question_cooldown_remaining = maxf(0.0, _combat_question_cooldown_remaining - delta)
+
+    if combat_streak > 0:
+        _time_since_last_correct_answer += delta
+        if _time_since_last_correct_answer >= COMBAT_STREAK_DECAY_SEC:
+            _time_since_last_correct_answer = 0.0
+            combat_streak -= 1
+            combat_streak_changed.emit(combat_streak, get_combat_multiplier())
 
 func set_selected_profile(profile_id: String) -> void:
     selected_profile = profile_id
@@ -147,6 +183,38 @@ func _check_and_grant_tier1_armor() -> void:
     equipped_armor_tier = 1
     armor_equipped.emit(1)
 
+func get_combat_multiplier() -> float:
+    return 1.0 + combat_streak * COMBAT_MULTIPLIER_PER_STACK
+
+func take_player_damage(amount: int) -> void:
+    if player_hp <= 0 or _player_hit_cooldown_remaining > 0.0:
+        return
+
+    player_hp = maxi(0, player_hp - amount)
+    _player_hit_cooldown_remaining = PLAYER_HIT_COOLDOWN_SEC
+    player_damaged.emit(player_hp, PLAYER_MAX_HP)
+
+    if player_hp == 0:
+        player_died.emit()
+
+func heal_player_to_full() -> void:
+    player_hp = PLAYER_MAX_HP
+    player_damaged.emit(player_hp, PLAYER_MAX_HP)
+
+func can_trigger_combat_question() -> bool:
+    return _combat_question_cooldown_remaining <= 0.0
+
+func mark_combat_question_triggered() -> void:
+    _combat_question_cooldown_remaining = COMBAT_QUESTION_COOLDOWN_SEC
+
+func answer_combat_question(correct: bool) -> void:
+    if not correct:
+        return
+
+    _time_since_last_correct_answer = 0.0
+    combat_streak = mini(COMBAT_STREAK_MAX, combat_streak + 1)
+    combat_streak_changed.emit(combat_streak, get_combat_multiplier())
+
 func save_game() -> void:
     var data := {
         "version": SAVE_VERSION,
@@ -207,7 +275,7 @@ func reset_state() -> void:
         DirAccess.remove_absolute(SAVE_PATH)
 
     selected_profile = ""
-    player_hp = 5
+    player_hp = PLAYER_MAX_HP
     collected_items = {}
     quest_states = {
         QUEST_ELDER_GOLDEN_STAR: QUEST_NOT_STARTED,
@@ -217,6 +285,10 @@ func reset_state() -> void:
     }
     quest_bonuses = {}
     equipped_armor_tier = 0
+    combat_streak = 0
+    _time_since_last_correct_answer = 0.0
+    _player_hit_cooldown_remaining = 0.0
+    _combat_question_cooldown_remaining = 0.0
     _refresh_elder_quest_flags()
 
 func _on_profile_changed_autosave(_profile_id: String) -> void:
