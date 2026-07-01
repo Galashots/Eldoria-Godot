@@ -1,5 +1,7 @@
 extends RefCounted
 
+const MeadowSlime := preload("res://scripts/enemies/MeadowSlime.gd")
+
 ## Each test_* method runs against a freshly GameState.reset_state()'d singleton
 ## (see tests/test_runner.gd) and returns {"ok": bool, "failures": Array[String]}.
 ##
@@ -326,6 +328,28 @@ func test_take_player_damage_at_zero_hp_fires_died_exactly_once() -> Dictionary:
     _check(failures, _player_died_signal_count == 1, "expected player_died to fire exactly once, fired %d time(s)" % _player_died_signal_count)
 
     GameState.player_died.disconnect(_on_player_died_probe)
+
+    return {"ok": failures.is_empty(), "failures": failures}
+
+func test_meadow_slime_bonus_coin_roll_is_deterministic_and_additive_only() -> Dictionary:
+    # MeadowSlime.rolls_bonus_coin() is pure logic (chance, roll) -> bool, so this asserts
+    # both branches deterministically without needing a scene tree - see MeadowSlime.gd's
+    # _spawn_coin_drop(), which always spawns the guaranteed coin_drop_value coin first and
+    # only ever adds a bonus coin on top; it never reduces the guaranteed drop either way.
+    var failures: Array[String] = []
+    var chance := 0.12
+
+    _check(failures, not MeadowSlime.rolls_bonus_coin(chance, 0.12),
+        "expected a roll exactly at the chance boundary to miss (roll < chance, not <=)")
+    _check(failures, not MeadowSlime.rolls_bonus_coin(chance, 0.5),
+        "expected a roll well above the chance to miss")
+    _check(failures, not MeadowSlime.rolls_bonus_coin(chance, 0.99),
+        "expected a near-1.0 roll to miss")
+
+    _check(failures, MeadowSlime.rolls_bonus_coin(chance, 0.0),
+        "expected a roll of 0.0 to hit")
+    _check(failures, MeadowSlime.rolls_bonus_coin(chance, 0.11),
+        "expected a roll just under the chance to hit")
 
     return {"ok": failures.is_empty(), "failures": failures}
 
