@@ -219,6 +219,26 @@ func test_equip_weapon_requires_ownership_and_applies_damage_bonus() -> Dictiona
 
     return {"ok": failures.is_empty(), "failures": failures}
 
+func test_buy_and_equip_dawnbringer_blade_applies_top_tier_bonus() -> Dictionary:
+    # The Legendary 4th weapon (Dawnbringer Blade) must buy/equip exactly like the other
+    # three and apply its +4 damage bonus - the top of the price/power ladder (30 coins).
+    var failures: Array[String] = []
+
+    var too_poor := GameState.buy_gear("dawnbringer_blade")
+    _check(failures, not too_poor, "expected buy to fail before affording the 30-coin price")
+
+    GameState.add_coins(30)
+    var bought := GameState.buy_gear("dawnbringer_blade")
+    _check(failures, bought, "expected buy_gear to succeed with the 30-coin price in hand")
+    _check(failures, GameState.coins == 0, "expected all 30 coins deducted")
+    _check(failures, GameState.owns_gear("dawnbringer_blade"), "expected owned_gear to contain dawnbringer_blade")
+
+    GameState.equip_weapon("dawnbringer_blade")
+    _check(failures, GameState.equipped_weapon == "dawnbringer_blade", "expected dawnbringer_blade equipped once owned")
+    _check(failures, GameState.get_equipped_weapon_bonus() == 4, "expected the Legendary +4 damage_bonus to apply")
+
+    return {"ok": failures.is_empty(), "failures": failures}
+
 func test_load_game_is_a_no_op_when_no_save_file_exists() -> Dictionary:
     var failures: Array[String] = []
 

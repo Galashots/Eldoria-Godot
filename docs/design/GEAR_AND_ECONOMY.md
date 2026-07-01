@@ -12,6 +12,7 @@ one vendor, manual equip. See `docs/ROADMAP.md` milestone 12 for the full writeu
 | Common | white | starter-tier, cheap |
 | Uncommon | green | a real upgrade, modest cost |
 | Rare | blue | a meaningful cost, a meaningful upgrade |
+| Legendary | gold | the aspirational pinnacle — the top of the shop |
 
 Colors live in `ContentDefinitions.RARITY_COLORS` and are applied to gear labels in both the
 shop and the character panel's owned-weapons list.
@@ -23,6 +24,7 @@ shop and the character panel's owned-weapons list.
 | `worn_dagger` | Worn Dagger | Common | +1 | 3 coins |
 | `iron_sword` | Iron Sword | Uncommon | +2 | 8 coins |
 | `oakheart_blade` | Oakheart Blade | Rare | +3 | 20 coins |
+| `dawnbringer_blade` | Dawnbringer Blade | Legendary | +4 | 30 coins |
 
 Each is a `GearDefinition` `.tres` under `data/gear/`. Damage bonus adds to the player's
 `attack_base_damage` before the existing combat-streak multiplier is applied (see
@@ -56,3 +58,20 @@ framework — revisit that shape only once a second enemy needs the same behavio
 - Real coin & gear icon art (currently placeholder polygons, matching the bootstrap-tileset
   precedent in `docs/design/VISUAL_CONTRACT.md`).
 - Gear stat axes beyond `damage_bonus` (defense, max hp, move speed).
+
+## Faucet depth — flagged for a future economy slice
+
+Adding the Legendary Dawnbringer Blade (+4, 30 coins) as the aspirational top-of-shop item
+surfaced the real pacing bottleneck: the **coin faucet is thin and non-repeatable within a
+session.** The M1 zone has exactly **3 Meadow Slimes, and they do not respawn** (they
+`queue_free()` on death), so a fresh session yields only ~3 coins from combat. Coins persist
+across sessions, so the shop roster is a *cumulative* goal — but no top-tier item (not even
+the existing 20-coin Oakheart Blade) is reachable "within one session," and Dawnbringer at 30
+is deliberately priced as a multi-session pinnacle with only a modest 20→30 jump so it does
+**not** worsen the grind (per the anti-"pinch point"/anti-scarcity research in
+`docs/design/RESEARCH_NOTES.md` §6.2).
+
+The natural next economy slice is therefore on the **faucet** side, not another sink: a small,
+*repeatable* coin source (e.g. a modest slime respawn cadence, or a second tiny faucet) so the
+existing roster stays reachable without feeling grindy. Left for the architect to prioritize;
+Dawnbringer is intentionally the last *sink* added until the faucet is widened.

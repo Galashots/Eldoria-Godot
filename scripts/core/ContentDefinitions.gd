@@ -23,12 +23,14 @@ const GEAR_DEFINITIONS: Array[GearDefinition] = [
     preload("res://data/gear/worn_dagger.tres"),
     preload("res://data/gear/iron_sword.tres"),
     preload("res://data/gear/oakheart_blade.tres"),
+    preload("res://data/gear/dawnbringer_blade.tres"),
 ]
 
 const RARITY_COLORS := {
     "Common": Color.WHITE,
     "Uncommon": Color(0.35, 0.75, 0.35),
     "Rare": Color(0.35, 0.55, 0.95),
+    "Legendary": Color(0.95, 0.75, 0.2),
 }
 
 const QUEST_SUMMARIES := {

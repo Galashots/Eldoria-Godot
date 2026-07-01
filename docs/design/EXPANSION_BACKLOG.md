@@ -130,37 +130,6 @@ out of scope until a future pass has a concrete reason to revisit them).
   `Enemies` area of `Main.tscn`).
 - **Status:** ready
 
-### Add a shop restock reason: a second, tiny coin faucet
-- **Goal:** Once a player owns all 3 M3 weapons, coins currently have nowhere to go. Add one
-  small additional sink or faucet-pacing tweak so post-purchase coins still feel purposeful
-  during a normal session, without inventing a new economy system.
-- **Design rationale:** NORTH_STAR pillar "Every short session yields permanent progress" |
-  research: "Value chains" (Lost Garden) and "The Principles of Building A Game Economy"
-  (Department of Play), `docs/design/RESEARCH_NOTES.md` §6.2 — fixed-length/session games
-  should size faucets against a tallied list of sinks, and a "pinch point" economy (scarce
-  but not grindy) keeps pacing appropriate for a Grade 2/5 audience; avoid overshooting into
-  a punishing/grindy economy per that same research.
-- **Acceptance criteria:**
-  - [ ] Exactly one small addition — either (a) a 4th, slightly pricier weapon reusing the
-        exact same `GearDefinition` pattern (Rare or a new tier, priced so it's reachable
-        within a normal session per the research's pacing guidance), or (b) a cheap
-        repeatable sink (e.g. a "tip the Merchant" flavor interaction with no mechanical
-        effect beyond a dialogue acknowledgment) — pick (a) unless a design review finds (b)
-        clearly better; do not ship both in one slice.
-  - [ ] If a 4th weapon: it's added to `data/gear/`, appears in `ShopUI`, and is purchasable
-        and equippable exactly like the existing 3.
-  - [ ] Price is tuned so a player who already owns the 3 existing weapons can reach it
-        within roughly one more normal play session of Meadow-Slime coin farming (avoiding a
-        grindy economy per the cited research) — document the assumed coins/session estimate
-        in the PR description for future tuning.
-  - [ ] `docs/design/GEAR_AND_ECONOMY.md`'s roster table is updated to include the addition.
-  - [ ] Test suite covers purchase/equip of the new item exactly as it covers the existing 3.
-- **Likely files touched:** `data/gear/` (new `.tres`), `scripts/ui/ShopUI.gd` (if the roster
-  isn't already fully data-driven), `docs/design/GEAR_AND_ECONOMY.md`,
-  `tests/game_state_tests.gd`.
-- **Curriculum tie-in:** none — pure systems.
-- **Status:** ready
-
 ### First mini-boss: Elder Slime (tougher Meadow Slime variant)
 - **Goal:** Give the player one clearly-telegraphed, higher-stakes (but still non-punitive)
   fight — a larger, tougher Meadow Slime variant with more HP and a single new telegraphed
@@ -271,3 +240,10 @@ Blade on branch `slice-legendary-weapon` / PR #40 — its Done entry lives on th
 two expansion PRs are disjoint in code and will both land here on merge.)_
 
 _(further completed slices move here with a one-line note and the PR/commit that shipped them.)_
+
+- **Add a shop restock reason: a second, tiny coin faucet** → shipped as the Legendary
+  **Dawnbringer Blade** (+4 dmg, 30 coins) — a 4th weapon and aspirational top-of-shop coin
+  sink, data-driven add reusing `GearDefinition`/`ShopUI`. Branch `slice-legendary-weapon`
+  (PR opened by the expansion loop). Follow-up surfaced: the coin **faucet** (3
+  non-respawning Meadow Slimes) is the real pacing bottleneck — recorded in
+  `docs/design/GEAR_AND_ECONOMY.md` as the natural next economy slice.
