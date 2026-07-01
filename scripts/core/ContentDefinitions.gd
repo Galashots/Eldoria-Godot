@@ -26,6 +26,11 @@ const GEAR_DEFINITIONS: Array[GearDefinition] = [
     preload("res://data/gear/dawnbringer_blade.tres"),
 ]
 
+## Pet display/stat data mirrors the GearDefinition pattern above (see docs/design/PETS.md).
+const PET_DEFINITIONS: Array[PetDefinition] = [
+    preload("res://data/pets/mossy.tres"),
+]
+
 const RARITY_COLORS := {
     "Common": Color.WHITE,
     "Uncommon": Color(0.35, 0.75, 0.35),
@@ -105,6 +110,16 @@ static func get_gear(gear_id: String) -> GearDefinition:
 static func get_gear_label(gear_id: String) -> String:
     var gear := get_gear(gear_id)
     return gear.label if gear else gear_id
+
+static func get_pet(pet_id: String) -> PetDefinition:
+    for pet in PET_DEFINITIONS:
+        if pet.id == pet_id:
+            return pet
+    return null
+
+static func get_pet_label(pet_id: String) -> String:
+    var pet := get_pet(pet_id)
+    return pet.label if pet else pet_id
 
 static func get_rarity_color(rarity: String) -> Color:
     return RARITY_COLORS.get(rarity, Color.WHITE)
