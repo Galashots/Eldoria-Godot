@@ -1,13 +1,34 @@
 extends CanvasLayer
 
 @onready var objective_label: Label = $MarginContainer/ObjectiveLabel
+@onready var hp_label: Label = $CombatMarginContainer/CombatVBox/HPLabel
+@onready var streak_label: Label = $CombatMarginContainer/CombatVBox/StreakLabel
 
 func _ready() -> void:
     GameState.item_added.connect(_on_item_added)
     GameState.elder_quest_changed.connect(_on_elder_quest_changed)
     GameState.profile_changed.connect(_on_profile_changed)
     GameState.quest_changed.connect(_on_quest_changed)
+    GameState.player_damaged.connect(_on_player_damaged)
+    GameState.combat_streak_changed.connect(_on_combat_streak_changed)
     _update_objective()
+    _update_hp_label(GameState.player_hp, GameState.PLAYER_MAX_HP)
+    _update_streak_label(GameState.combat_streak, GameState.get_combat_multiplier())
+
+func _on_player_damaged(current_hp: int, max_hp: int) -> void:
+    _update_hp_label(current_hp, max_hp)
+
+func _update_hp_label(current_hp: int, max_hp: int) -> void:
+    hp_label.text = "HP: %d/%d" % [current_hp, max_hp]
+
+func _on_combat_streak_changed(streak: int, multiplier: float) -> void:
+    _update_streak_label(streak, multiplier)
+
+func _update_streak_label(streak: int, multiplier: float) -> void:
+    if streak <= 0:
+        streak_label.text = ""
+    else:
+        streak_label.text = "On Fire! x%s" % String.num(multiplier, 1)
 
 func _on_item_added(_item_id: String, _amount: int) -> void:
     _update_objective()
