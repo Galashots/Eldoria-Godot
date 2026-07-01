@@ -213,6 +213,7 @@ func reset_state() -> void:
         QUEST_ELDER_GOLDEN_STAR: QUEST_NOT_STARTED,
         QUEST_MIRA_GLOWING_HERB: QUEST_NOT_STARTED,
         QUEST_FINN_SHIMMERING_ORE: QUEST_NOT_STARTED,
+        QUEST_YARROW_SILVERLEAF: QUEST_NOT_STARTED,
     }
     quest_bonuses = {}
     equipped_armor_tier = 0
