@@ -116,6 +116,18 @@ keys load cleanly. No EventBus, no sell-back, no armor-as-buyable-gear — all e
 deferred in `GEAR_AND_ECONOMY.md`, not forced by the code. Test suite grew to 16 (3 new:
 coin overspend guard, buy/ownership idempotency, equip-requires-ownership + damage bonus).
 
+**Meadow Slime bonus-chance coin drop (expansion backlog): done.** A tight, additive-only
+follow-up to M3's flat 1-coin drop, per `docs/design/GEAR_AND_ECONOMY.md`'s new "Bonus drop
+rule": `MeadowSlime.gd` still always spawns its guaranteed 1-coin `CoinPickup`, and now also
+rolls a small exported `bonus_coin_chance` (default 0.12 / 12%) for exactly one *additional*
+coin on top — the guaranteed drop is never reduced or replaced, honoring the bonus-only rule
+that governs every reward system in this project. The roll is a pure static function,
+`MeadowSlime.rolls_bonus_coin(chance, roll)`, deliberately separated from the engine's
+`randf()` call so it's deterministically unit-testable (both the "misses" and "hits"
+branches) without a scene tree or RNG seeding. Scoped to a single exported var on
+`MeadowSlime.gd` rather than a new loot-table framework, since there's still only one enemy.
+Test suite grew to 17 (1 new: the bonus-roll boundary/hit/miss cases).
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
@@ -123,7 +135,7 @@ coin overspend guard, buy/ownership idempotency, equip-requires-ownership + dama
 - `assets/sprites/tiles/placeholder_tileset.png` and `assets/tilesets/placeholder_tileset.tres`: bootstrap 4-tile (grass/path/water/rock) 16x16 placeholder tileset, generated as flat colors (not through the AI source-art pipeline, since it exists only to prove `TileMapLayer`/`TileSet` collision before real tile art). Water and rock tiles have a full-tile physics collision polygon on `TileSet` physics layer 0; grass and path have none (walkable).
 - `scenes/main/Main.tscn`: `World/Ground` `TileMapLayer` (160x100 tiles, 2560x1600px, `y_sort_enabled` on `World`) replacing the old flat floor/obstacle, player, Elder, Mira, Finn, Yarrow (all `y_sort_enabled`), collectibles (including Silverleaf), HUD, dialogue, character panel, profile selector, learning check, `Enemies` (3 `MeadowSlime` instances), and `CombatQuestion` instances.
 - `scripts/core/combat/HealthComponent.gd`, `HitboxComponent.gd`, `HurtboxComponent.gd`: the M2 component architecture. `HealthComponent` tracks hp with a brief post-hit immunity window (`hit_cooldown_sec`) and a `died` signal; `HitboxComponent` is a toggleable damage zone with a `landed` signal so an attacker can react to connecting; `HurtboxComponent` detects overlapping hitboxes by group membership ("hitbox"/"hurtbox" - not a dedicated physics layer, since everything in this project already defaults to layer/mask 1) and auto-discovers a sibling node named "HealthComponent" in `_ready()` rather than relying on a typed node export (a raw `NodePath(...)` literal written into `.tscn` text does not reliably resolve to a `HealthComponent` reference — a real bug caught live, see below). A `HurtboxComponent` never damages its own owner (same-parent check), since an enemy's own contact-damage hitbox and hurtbox occupy the same space.
-- `scripts/enemies/MeadowSlime.gd` / `scenes/enemies/MeadowSlime.tscn`: the first monster. Simple idle/wander/chase FSM (aggro radius, home-anchored wander), a `HealthComponent` (3 hp), a `Hurtbox` (receives player hits), and an always-on `ContactHitbox` (deals contact damage to the player). Real art (`assets/sprites/enemies/meadow_slime_idle.png`, via `assets/manifests/meadow_slime_idle.manifest.json`); see `docs/design/MONSTER_CONCEPTS.md`.
+- `scripts/enemies/MeadowSlime.gd` / `scenes/enemies/MeadowSlime.tscn`: the first monster. Simple idle/wander/chase FSM (aggro radius, home-anchored wander), a `HealthComponent` (3 hp), a `Hurtbox` (receives player hits), and an always-on `ContactHitbox` (deals contact damage to the player). Real art (`assets/sprites/enemies/meadow_slime_idle.png`, via `assets/manifests/meadow_slime_idle.manifest.json`); see `docs/design/MONSTER_CONCEPTS.md`. On death it always spawns its guaranteed 1-coin `CoinPickup`, plus rolls an exported `bonus_coin_chance` (default 12%) for one additional bonus coin via the pure, deterministically-testable `MeadowSlime.rolls_bonus_coin(chance, roll)` — see `docs/design/GEAR_AND_ECONOMY.md`'s "Bonus drop rule".
 - `scenes/ui/CombatQuestion.tscn` / `scripts/ui/CombatQuestion.gd`: the combat damage-multiplier question. Deliberately separate from `LearningCheck` (no quest coupling, dismisses itself immediately on answer). A small numeracy-only question pool per profile, matching the already-confirmed subject scope in `docs/design/CURRICULUM_MAP.md`.
 - `scenes/player/Player.tscn`: player `Body` (`AnimatedSprite2D`, `sprite_frames` built in code per profile — see `Player.gd`), a hidden empty `Armor` (`AnimatedSprite2D`) scaffold for a future equipment layer, collision shape, camera (`Camera2D` now has `limit_left/top/right/bottom` set to the map bounds and `position_smoothing_enabled` on), an `AttackHitbox` (toggled on for a brief window each swing, repositioned per facing direction), and a `PlayerHurtbox` (always-on, receives enemy hits).
 - `scripts/player/Player.gd` (combat additions): a new `attack` input action (Space or left click, added via the Godot Input Map) swings `AttackHitbox` in the player's current facing direction (`FACING_VECTORS`), gated by an active window + cooldown so it can't be spammed. Landing a hit (the `HitboxComponent.landed` signal) requests a combat question if one isn't on cooldown; taking a hit (`PlayerHurtbox.hit_received`) calls `GameState.take_player_damage()`. On `GameState.player_died`, the player teleports back to wherever it started the scene (captured once in `_ready()` as `_spawn_position`), heals to full, and shows a brief non-punitive dialogue line — no game over screen.
@@ -155,7 +167,7 @@ coin overspend guard, buy/ownership idempotency, equip-requires-ownership + dama
 - `assets/manifests/mage_body_idle_{s,se,e,ne,n}.manifest.json`, `assets/source/generated/mage_body_idle_sheet/source.png` (a single shared 5-panel source sheet, generated in one ChatGPT response and addressed per direction via `sourceCell` on a 5-col grid), and `assets/sprites/characters/mage_body_idle_*.png`: production art for Grade 2 Mage, matching the brown-haired, navy/gold-tunic design from the V2 style reference. Only `_s` (south) is currently wired into `Player.gd`.
 - `assets/manifests/{mage,adventurer}_body_walk{1,2}_{s,se,e,ne,n}.manifest.json` (20 manifests), `assets/source/generated/{mage,adventurer}_body_walk_sheet/source.png` (one shared 5-direction x 2-pose grid sheet per character, generated in one ChatGPT response each, addressed via `sourceCell` on a 5-col x 2-row grid), and `assets/sprites/characters/{mage,adventurer}_body_walk{1,2}_*.png`: the two new mid-stride poses per direction per character that drive the walk-cycle animation (see `Player.gd` above). `walk1`/`walk2` combine with the existing `idle` pose at runtime — no third pose was generated for "neutral", since idle already serves that role.
 - `assets/manifests/{mage,adventurer}_body_idle_tier1_{s,se,e,ne,n}.manifest.json` (10 manifests), `assets/source/generated/{mage,adventurer}_body_idle_tier1_sheet/source.png` (one shared 5-direction grid sheet per character, a ChatGPT in-place edit of the base idle sheet adding leather armor), and `assets/sprites/characters/{mage,adventurer}_body_idle_tier1_*.png`: Tier 1 (Leather) armor art, see `docs/design/ARMOR_TIERS.md`. Normalized as full replacement body sprite sets (not a transparent overlay — see that doc for why the original diff-based overlay plan was dropped). Now wired into `Player.gd`/`GameState.gd`: completing all three quests auto-equips it (see above); no manual equip/unequip UI exists.
-- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 16 tests as of M3 (3 new: coin overspend guard, buy/ownership idempotency, equip-requires-ownership + damage bonus). See "How to run the GDScript test suite" below.
+- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 17 tests as of the Meadow Slime bonus-coin slice (16 from M3, plus 1 new: `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases, preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). See "How to run the GDScript test suite" below.
 - `scripts/core/GearDefinition.gd` and `data/gear/{worn_dagger,iron_sword,oakheart_blade}.tres`: the M3 gear-stats Resource, mirroring `ItemDefinition.gd` — id/label/rarity/damage_bonus/price per weapon.
 - `scripts/items/CoinPickup.gd` / `scenes/items/CoinPickup.tscn`: coin pickup, mirroring `Collectible.gd`; spawned (deferred) by `MeadowSlime._on_died()`.
 - `scripts/npcs/Merchant.gd` / `scenes/npcs/Merchant.tscn`: the gear vendor NPC. Interacting opens `ShopUI` directly (no dialogue box needed).
@@ -330,6 +342,8 @@ diagnosed; skip it for now and expect the suite to touch your local save file tr
 
 - [ ] Defeating a Meadow Slime drops a small coin pickup; walking over it increases the
       coin count.
+- [ ] Defeating several Meadow Slimes occasionally drops a second coin pickup alongside the
+      guaranteed one (roughly 1 in 8, tunable) — never fewer than the guaranteed 1 coin.
 - [ ] Approaching the Merchant NPC and pressing E opens the shop panel, listing all three
       weapons with their rarity color, damage bonus, and price.
 - [ ] Buying a weapon deducts the exact price from coins and its button switches to
@@ -446,3 +460,7 @@ see `docs/design/GEAR_AND_ECONOMY.md`.
 Next up: **M4 — pets**, per the Phase 2 plan. Real tile art to replace the placeholder
 tileset, Tier 1 walk-cycle armor art, Tier 2 (Bronze) armor, and real coin/gear icon art all
 remain open art backlog items, lower priority than the Phase 2 milestone chain.
+
+Separately, the autonomous expansion loop (`docs/design/EXPANSION_BACKLOG.md`) has started
+shipping small post-M3 slices on top of the gear/economy loop: the Meadow Slime bonus-chance
+coin drop (see above) is the first one, done.

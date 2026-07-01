@@ -67,35 +67,6 @@ out of scope until a future pass has a concrete reason to revisit them).
 
 ## Ready
 
-### Tie loot rarity to specific enemies (Meadow Slime bonus-chance drop)
-- **Goal:** Give the player an occasional *bonus* chance at coins (or, later, a rarity
-  token) on top of Meadow Slime's existing guaranteed 1-coin drop, so combat and the M3 shop
-  loop start to reinforce each other instead of the coin drop being a flat, un-tunable
-  constant.
-- **Design rationale:** NORTH_STAR pillar "Cohesion over volume" — deepens the existing
-  Meadow-Slime-to-shop loop rather than adding a parallel system | research: "Loot Drop Rates
-  Calculation Guide: Numbers to Feel" (PulseGeek) and "Defining Loot Tables in ARPG Game
-  Design" (Game Developer), `docs/design/RESEARCH_NOTES.md` §6.1 — professional loot tables
-  are tuned per-source, not as one flat global rate, and are additive-only here per the
-  bonus-only rule (never a chance of *zero* reward, only a chance of *extra*).
-- **Acceptance criteria:**
-  - [ ] Meadow Slime still always drops its existing guaranteed 1 coin (no regression).
-  - [ ] A small, tunable chance (e.g. ~10-15%, tuned in-engine per the research caveat, not
-        hardcoded blindly) adds one *additional* coin on top of the guaranteed drop — never
-        removes or reduces the guaranteed drop.
-  - [ ] The bonus-coin roll is implemented as a single exported probability on
-        `MeadowSlime.gd` (or a tiny shared helper if a second enemy will reuse it soon), not
-        a new generic loot-table framework — keep it proportional to one monster.
-  - [ ] Test suite covers the roll deterministically (e.g. by seeding/mocking randomness or
-        asserting the guaranteed-coin path is unaffected when the bonus roll fails/succeeds).
-  - [ ] No visual/UI change required beyond the existing coin-drop pickup already shipped in
-        M3; a second `CoinPickup` instance is an acceptable minimal presentation.
-- **Likely files touched:** `scripts/enemies/MeadowSlime.gd`, `tests/game_state_tests.gd` (or
-  a new enemy test file if one exists after M2/M3 land), `docs/design/GEAR_AND_ECONOMY.md`
-  (append the bonus-drop rule to keep it authoritative).
-- **Curriculum tie-in:** none — pure systems.
-- **Status:** ready
-
 ### Add a shop restock reason: a second, tiny coin faucet
 - **Goal:** Once a player owns all 3 M3 weapons, coins currently have nowhere to go. Add one
   small additional sink or faucet-pacing tweak so post-purchase coins still feel purposeful
@@ -220,4 +191,36 @@ out of scope until a future pass has a concrete reason to revisit them).
 
 ## Done
 
-_(empty — completed slices move here with a one-line note and the PR/commit that shipped them.)_
+### Tie loot rarity to specific enemies (Meadow Slime bonus-chance drop)
+- **Goal:** Give the player an occasional *bonus* chance at coins (or, later, a rarity
+  token) on top of Meadow Slime's existing guaranteed 1-coin drop, so combat and the M3 shop
+  loop start to reinforce each other instead of the coin drop being a flat, un-tunable
+  constant.
+- **Design rationale:** NORTH_STAR pillar "Cohesion over volume" — deepens the existing
+  Meadow-Slime-to-shop loop rather than adding a parallel system | research: "Loot Drop Rates
+  Calculation Guide: Numbers to Feel" (PulseGeek) and "Defining Loot Tables in ARPG Game
+  Design" (Game Developer), `docs/design/RESEARCH_NOTES.md` §6.1 — professional loot tables
+  are tuned per-source, not as one flat global rate, and are additive-only here per the
+  bonus-only rule (never a chance of *zero* reward, only a chance of *extra*).
+- **Acceptance criteria:**
+  - [x] Meadow Slime still always drops its existing guaranteed 1 coin (no regression).
+  - [x] A small, tunable chance (e.g. ~10-15%, tuned in-engine per the research caveat, not
+        hardcoded blindly) adds one *additional* coin on top of the guaranteed drop — never
+        removes or reduces the guaranteed drop.
+  - [x] The bonus-coin roll is implemented as a single exported probability on
+        `MeadowSlime.gd` (or a tiny shared helper if a second enemy will reuse it soon), not
+        a new generic loot-table framework — keep it proportional to one monster.
+  - [x] Test suite covers the roll deterministically (e.g. by seeding/mocking randomness or
+        asserting the guaranteed-coin path is unaffected when the bonus roll fails/succeeds).
+  - [x] No visual/UI change required beyond the existing coin-drop pickup already shipped in
+        M3; a second `CoinPickup` instance is an acceptable minimal presentation.
+- **Likely files touched:** `scripts/enemies/MeadowSlime.gd`, `tests/game_state_tests.gd` (or
+  a new enemy test file if one exists after M2/M3 land), `docs/design/GEAR_AND_ECONOMY.md`
+  (append the bonus-drop rule to keep it authoritative).
+- **Curriculum tie-in:** none — pure systems.
+- **Status:** done — shipped on `claude/meadow-slime-coin-drop-od4ghp`: `MeadowSlime.gd`
+  gained an exported `bonus_coin_chance` (default 0.12) and a pure
+  `rolls_bonus_coin(chance, roll)` static function covered by a new deterministic test;
+  `docs/design/GEAR_AND_ECONOMY.md` documents the additive-only "Bonus drop rule".
+
+_(further completed slices move here with a one-line note and the PR/commit that shipped them.)_

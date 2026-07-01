@@ -14,6 +14,12 @@ enum State { IDLE, WANDER, CHASE }
 @export var contact_damage: int = 1
 @export var coin_drop_value: int = 1
 
+## Bonus-only extra-coin chance on top of the guaranteed coin_drop_value above (never a
+## replacement for it - see docs/design/GEAR_AND_ECONOMY.md's "Bonus drop rule"). 0.12 (12%)
+## sits in the ~10-15% range the backlog slice suggested; tune in-engine from here, it's a
+## single exported var, not a hardcoded literal buried in logic.
+@export_range(0.0, 1.0, 0.01) var bonus_coin_chance: float = 0.12
+
 const CoinPickupScene := preload("res://scenes/items/CoinPickup.tscn")
 
 @onready var health: HealthComponent = $HealthComponent
@@ -59,10 +65,24 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 func _spawn_coin_drop() -> void:
+	_spawn_one_coin(coin_drop_value)
+
+	# Bonus-only: an occasional *additional* coin, never a reduction of the guaranteed drop
+	# above. rolls_bonus_coin() is a pure function (takes the random roll as an argument) so
+	# the probability logic is deterministically unit-testable without a scene tree.
+	if rolls_bonus_coin(bonus_coin_chance, randf()):
+		_spawn_one_coin(1)
+
+func _spawn_one_coin(coin_value: int) -> void:
 	var coin := CoinPickupScene.instantiate()
-	coin.value = coin_drop_value
+	coin.value = coin_value
 	coin.global_position = global_position
 	get_parent().add_child(coin)
+
+## Pure logic, no engine RNG call inside - pass an explicit roll in [0.0, 1.0) so tests can
+## assert both the "misses" and "hits" branches deterministically.
+static func rolls_bonus_coin(chance: float, roll: float) -> bool:
+	return roll < chance
 
 func _pick_wander_target() -> void:
 	var offset := Vector2(randf_range(-wander_radius, wander_radius), randf_range(-wander_radius, wander_radius))
