@@ -286,7 +286,9 @@ out of scope until a future pass has a concrete reason to revisit them).
 - **Likely files touched:** `scenes/main/Main.tscn`, possibly one or two new placeholder
   sprite assets under `assets/sprites/`, `docs/CURRENT_STATE.md` (manual checklist).
 - **Curriculum tie-in:** none — pure systems.
-- **Status:** ready
+- **Status:** done — shipped two placeholder-polygon props (`StandingStone`, `LoneTree`) at
+  the north village fork and west garden fork via `slice-map-landmarks`; visual-only, additive
+  (no NPC/path moved), live-verified from spawn. See Done.
 
 ---
 
@@ -313,4 +315,13 @@ out of scope until a future pass has a concrete reason to revisit them).
 
 ## Done
 
-_(empty — completed slices move here with a one-line note and the PR/commit that shipped them.)_
+- **Map readability pass: landmark props near existing path forks** → shipped two distinct
+  placeholder-polygon landmarks — a grey/gold **Standing Stone** (north, marks the
+  Elder/Merchant/Finn village cluster) and a green **Lone Tree** (west, marks Mira's garden
+  path). Purely visual (no collision/script), additive (no existing node moved). Branch
+  `slice-map-landmarks`. Live-verified from spawn: both readable from a screen away, the two
+  forks distinguishable at a glance.
+
+_(Note: the "shop restock reason / coin sink" slice also shipped as the Legendary Dawnbringer
+Blade on branch `slice-legendary-weapon` / PR #40 — its Done entry lives on that branch; these
+two expansion PRs are disjoint in code and will both land here on merge.)_
