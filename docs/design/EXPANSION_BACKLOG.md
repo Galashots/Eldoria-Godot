@@ -125,7 +125,9 @@ out of scope until a future pass has a concrete reason to revisit them).
   isn't already fully data-driven), `docs/design/GEAR_AND_ECONOMY.md`,
   `tests/game_state_tests.gd`.
 - **Curriculum tie-in:** none — pure systems.
-- **Status:** ready
+- **Status:** done — shipped option (a) as the Legendary **Dawnbringer Blade** (+4, 30 coins)
+  via `slice-legendary-weapon`; also flagged the thin/non-repeatable coin faucet (3
+  non-respawning slimes) as the real next economy slice in `GEAR_AND_ECONOMY.md`. See Done.
 
 ### First mini-boss: Elder Slime (tougher Meadow Slime variant)
 - **Goal:** Give the player one clearly-telegraphed, higher-stakes (but still non-punitive)
@@ -220,4 +222,9 @@ out of scope until a future pass has a concrete reason to revisit them).
 
 ## Done
 
-_(empty — completed slices move here with a one-line note and the PR/commit that shipped them.)_
+- **Add a shop restock reason: a second, tiny coin faucet** → shipped as the Legendary
+  **Dawnbringer Blade** (+4 dmg, 30 coins) — a 4th weapon and aspirational top-of-shop coin
+  sink, data-driven add reusing `GearDefinition`/`ShopUI`. Branch `slice-legendary-weapon`
+  (PR opened by the expansion loop). Follow-up surfaced: the coin **faucet** (3
+  non-respawning Meadow Slimes) is the real pacing bottleneck — recorded in
+  `docs/design/GEAR_AND_ECONOMY.md` as the natural next economy slice.
