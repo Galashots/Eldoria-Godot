@@ -38,6 +38,19 @@ Each is a `GearDefinition` `.tres` under `data/gear/`. Damage bonus adds to the 
 - Weapons are permanent once bought (`GameState.owned_gear`); equipping is a free, instant
   swap via the character panel, not a scarce resource.
 
+## Bonus drop rule
+
+On top of the guaranteed 1-coin drop above, Meadow Slime rolls a small **additive-only**
+bonus chance (`MeadowSlime.gd`'s exported `bonus_coin_chance`, default 0.12 / 12%, in the
+~10-15% range suggested when this was designed) for exactly one extra coin. This never
+replaces or reduces the guaranteed drop — it can only ever add a second coin on top,
+honoring the bonus-only/non-punitive rule that governs every reward system in this project
+(`docs/design/NORTH_STAR.md`). The roll itself is a pure function,
+`MeadowSlime.rolls_bonus_coin(chance, roll)`, so it's covered deterministically by the test
+suite (`tests/game_state_tests.gd`) without depending on real engine RNG. This is
+deliberately scoped to one exported var on `MeadowSlime.gd` rather than a generic loot-table
+framework — revisit that shape only once a second enemy needs the same behavior.
+
 ## Deferred (not in M3, flag before building)
 
 - Armor as buyable rarity gear (armor stays the existing quest-granted tier system).

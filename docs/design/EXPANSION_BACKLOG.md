@@ -67,67 +67,68 @@ out of scope until a future pass has a concrete reason to revisit them).
 
 ## Ready
 
-### Tie loot rarity to specific enemies (Meadow Slime bonus-chance drop)
-- **Goal:** Give the player an occasional *bonus* chance at coins (or, later, a rarity
-  token) on top of Meadow Slime's existing guaranteed 1-coin drop, so combat and the M3 shop
-  loop start to reinforce each other instead of the coin drop being a flat, un-tunable
-  constant.
-- **Design rationale:** NORTH_STAR pillar "Cohesion over volume" — deepens the existing
-  Meadow-Slime-to-shop loop rather than adding a parallel system | research: "Loot Drop Rates
-  Calculation Guide: Numbers to Feel" (PulseGeek) and "Defining Loot Tables in ARPG Game
-  Design" (Game Developer), `docs/design/RESEARCH_NOTES.md` §6.1 — professional loot tables
-  are tuned per-source, not as one flat global rate, and are additive-only here per the
-  bonus-only rule (never a chance of *zero* reward, only a chance of *extra*).
+<!-- Second expansion pass (orchestrator refill, 2026-07-01). The three slices below were
+     added after the first cycles shipped (Legendary weapon = PR #40, landmark props = PR #41,
+     bonus-coin drop = PR #39). They are ordered best-next-first AND by how conflict-free they
+     are against that still-open PR stack; each carries a "Sequencing" note. The four original
+     slices further down keep their status; PRs #39/#40/#41 flip three of them to done on merge. -->
+
+### "Creatures met" codex: permanent world-knowledge from combat
+- **Goal:** The first time the player defeats each monster type, it's recorded and shown as a
+  friendly "Creatures met" entry (name + one-line factoid) in the character panel — so combat
+  leaves behind permanent, collectible world-knowledge, not just coins.
+- **Design rationale:** NORTH_STAR pillar 5 "every short session yields permanent progress
+  (world knowledge, a keepsake, a codex entry)" | research: `RESEARCH_NOTES.md` §7.3 — a
+  bestiary/compendium filled by defeating creatures is a classic low-cost collection loop, each
+  entry paired with a short friendly factoid; bonus-only and non-punitive by construction (you
+  only ever gain entries).
 - **Acceptance criteria:**
-  - [ ] Meadow Slime still always drops its existing guaranteed 1 coin (no regression).
-  - [ ] A small, tunable chance (e.g. ~10-15%, tuned in-engine per the research caveat, not
-        hardcoded blindly) adds one *additional* coin on top of the guaranteed drop — never
-        removes or reduces the guaranteed drop.
-  - [ ] The bonus-coin roll is implemented as a single exported probability on
-        `MeadowSlime.gd` (or a tiny shared helper if a second enemy will reuse it soon), not
-        a new generic loot-table framework — keep it proportional to one monster.
-  - [ ] Test suite covers the roll deterministically (e.g. by seeding/mocking randomness or
-        asserting the guaranteed-coin path is unaffected when the bonus roll fails/succeeds).
-  - [ ] No visual/UI change required beyond the existing coin-drop pickup already shipped in
-        M3; a second `CoinPickup` instance is an acceptable minimal presentation.
-- **Likely files touched:** `scripts/enemies/MeadowSlime.gd`, `tests/game_state_tests.gd` (or
-  a new enemy test file if one exists after M2/M3 land), `docs/design/GEAR_AND_ECONOMY.md`
-  (append the bonus-drop rule to keep it authoritative).
-- **Curriculum tie-in:** none — pure systems.
+  - [ ] `GameState` tracks a persisted set of defeated monster type ids (survives save/load and
+        clears on reset), with a `record_creature_defeated(id)` that is idempotent.
+  - [ ] The Meadow Slime records itself as defeated on death (one call from its death path).
+  - [ ] The character panel shows a "Creatures met" section listing each recorded creature's
+        label + a one-line friendly factoid (text-only, no new art).
+  - [ ] Bonus-only: no gameplay/difficulty change; you cannot lose a codex entry.
+  - [ ] Covered by an **isolated new test file** (registered in `test_runner.gd`), not by
+        appending to `game_state_tests.gd`.
+- **Likely files touched:** `scripts/core/GameState.gd`, `scripts/enemies/MeadowSlime.gd` (one
+  line on death), `scripts/ui/CharacterPanel.gd` (+`.tscn`), a small factoid source, new
+  `tests/codex_tests.gd` + `tests/test_runner.gd`.
+- **Curriculum tie-in:** none directly — but the codex is the natural home for later "mastery
+  marks" (`CURRICULUM_MAP.md`'s stealth-assessment bridge) if that's ever built.
+- **Sequencing:** **wait for PR #39 to merge** — the one-line defeat hook is in
+  `MeadowSlime.gd`, which #39 edits; build after #39 lands to avoid a conflict. (`GameState.gd`
+  and `CharacterPanel.gd` are otherwise free.)
 - **Status:** ready
 
-### Add a shop restock reason: a second, tiny coin faucet
-- **Goal:** Once a player owns all 3 M3 weapons, coins currently have nowhere to go. Add one
-  small additional sink or faucet-pacing tweak so post-purchase coins still feel purposeful
-  during a normal session, without inventing a new economy system.
+### Gentle repeatable coin faucet: a slow Meadow Slime respawn
+- **Goal:** Make the coin faucet repeatable within a session so the shop roster (incl. the new
+  30-coin Dawnbringer) stays reachable without grind — slain Meadow Slimes slowly respawn (up
+  to the original count) at a gentle cadence.
 - **Design rationale:** NORTH_STAR pillar "Every short session yields permanent progress" |
-  research: "Value chains" (Lost Garden) and "The Principles of Building A Game Economy"
-  (Department of Play), `docs/design/RESEARCH_NOTES.md` §6.2 — fixed-length/session games
-  should size faucets against a tallied list of sinks, and a "pinch point" economy (scarce
-  but not grindy) keeps pacing appropriate for a Grade 2/5 audience; avoid overshooting into
-  a punishing/grindy economy per that same research.
+  research: `RESEARCH_NOTES.md` §7.2 (time-based respawn keeps a zone alive and lets a player
+  choose to earn more) and the faucet-depth finding already recorded in
+  `GEAR_AND_ECONOMY.md` — the flagged bottleneck is exactly this: 3 non-respawning slimes =
+  ~3 coins/session. Keep the cadence slow and the cap at the original 3 so the zone never feels
+  crowded or dangerous for a young audience.
 - **Acceptance criteria:**
-  - [ ] Exactly one small addition — either (a) a 4th, slightly pricier weapon reusing the
-        exact same `GearDefinition` pattern (Rare or a new tier, priced so it's reachable
-        within a normal session per the research's pacing guidance), or (b) a cheap
-        repeatable sink (e.g. a "tip the Merchant" flavor interaction with no mechanical
-        effect beyond a dialogue acknowledgment) — pick (a) unless a design review finds (b)
-        clearly better; do not ship both in one slice.
-  - [ ] If a 4th weapon: it's added to `data/gear/`, appears in `ShopUI`, and is purchasable
-        and equippable exactly like the existing 3.
-  - [ ] Price is tuned so a player who already owns the 3 existing weapons can reach it
-        within roughly one more normal play session of Meadow-Slime coin farming (avoiding a
-        grindy economy per the cited research) — document the assumed coins/session estimate
-        in the PR description for future tuning.
-  - [ ] `docs/design/GEAR_AND_ECONOMY.md`'s roster table is updated to include the addition.
-  - [ ] Test suite covers purchase/equip of the new item exactly as it covers the existing 3.
-- **Likely files touched:** `data/gear/` (new `.tres`), `scripts/ui/ShopUI.gd` (if the roster
-  isn't already fully data-driven), `docs/design/GEAR_AND_ECONOMY.md`,
-  `tests/game_state_tests.gd`.
+  - [ ] Defeated Meadow Slimes respawn after a slow, tunable delay, capped so the live count
+        never exceeds the original 3 (no crowding).
+  - [ ] Implemented as a small standalone `Spawner` node (disjoint from `MeadowSlime.gd`) that
+        watches its spawn points and re-instances — not a rewrite of the slime.
+  - [ ] Non-punitive: respawn is slow enough that clearing the area still gives a calm window;
+        no new damage/difficulty.
+  - [ ] `GEAR_AND_ECONOMY.md`'s faucet note is updated from "flagged" to "addressed".
+  - [ ] Covered by an isolated new test file (spawn-count cap / cadence pure logic), registered
+        in `test_runner.gd`.
+- **Likely files touched:** new `scripts/enemies/Spawner.gd` (+ maybe a scene),
+  `scenes/main/Main.tscn` (one Spawner node over the existing slime positions),
+  `docs/design/GEAR_AND_ECONOMY.md`, new `tests/spawner_tests.gd` + `tests/test_runner.gd`.
 - **Curriculum tie-in:** none — pure systems.
-- **Status:** done — shipped option (a) as the Legendary **Dawnbringer Blade** (+4, 30 coins)
-  via `slice-legendary-weapon`; also flagged the thin/non-repeatable coin faucet (3
-  non-respawning slimes) as the real next economy slice in `GEAR_AND_ECONOMY.md`. See Done.
+- **Sequencing:** **wait for PR #41 to merge** — adds a node to `Main.tscn`, which #41 also
+  edits; build after #41 lands. Also coordinate with the Elder Slime slice (both touch the
+  `Enemies` area of `Main.tscn`).
+- **Status:** ready
 
 ### First mini-boss: Elder Slime (tougher Meadow Slime variant)
 - **Goal:** Give the player one clearly-telegraphed, higher-stakes (but still non-punitive)
@@ -168,37 +169,6 @@ out of scope until a future pass has a concrete reason to revisit them).
 - **Curriculum tie-in:** none — pure systems.
 - **Status:** ready
 
-### Map readability pass: landmark props near existing path forks
-- **Goal:** Add 1-2 tall/distinctive landmark props (e.g. a large standing stone or a
-  distinctive lone tree) near the existing path forks in the M1 zone, so a player can see at
-  a glance which direction leads where, without adding a new biome or expanding the map.
-- **Design rationale:** NORTH_STAR pillar "Cohesion over volume" (a readability pass on the
-  existing single zone, not a new biome) | research: "Best Practices for Game Map Layout"
-  (Sandboxr) and "Wayfinding" (The Level Design Book), `docs/design/RESEARCH_NOTES.md` §6.4 —
-  readable layouts use landmarks and soft diegetic gating (already true of M1's lake/rock
-  outcrops) but currently lack any long-range visual landmark pulling the player toward NPCs
-  from a distance; a good readability test is whether a player can navigate by world cues
-  alone.
-- **Acceptance criteria:**
-  - [ ] 1-2 new static, placeholder-art props (matching the existing bootstrap-placeholder
-        convention — e.g. a simple colored polygon/sprite, not new production art) are placed
-        at existing path forks in `scenes/main/Main.tscn`, tall/bright enough to be visible
-        from a screen or more away.
-  - [ ] Props are purely visual (no collision required, unless matching an existing obstacle
-        pattern is trivially easy) — this is a readability slice, not a new gameplay
-        mechanic.
-  - [ ] No existing NPC/collectible/path position changes — this is additive only, preserving
-        the already-tested playable slice.
-  - [ ] Manual test checklist addition in `docs/CURRENT_STATE.md`: a player entering the zone
-        for the first time can identify, from the landmark alone, which fork leads toward the
-        already-visited vs. not-yet-visited NPCs.
-- **Likely files touched:** `scenes/main/Main.tscn`, possibly one or two new placeholder
-  sprite assets under `assets/sprites/`, `docs/CURRENT_STATE.md` (manual checklist).
-- **Curriculum tie-in:** none — pure systems.
-- **Status:** ready
-
----
-
 ## Blocked
 
 ### Fifth quest / new curriculum subject
@@ -221,6 +191,55 @@ out of scope until a future pass has a concrete reason to revisit them).
 ---
 
 ## Done
+
+### Tie loot rarity to specific enemies (Meadow Slime bonus-chance drop)
+- **Goal:** Give the player an occasional *bonus* chance at coins (or, later, a rarity
+  token) on top of Meadow Slime's existing guaranteed 1-coin drop, so combat and the M3 shop
+  loop start to reinforce each other instead of the coin drop being a flat, un-tunable
+  constant.
+- **Design rationale:** NORTH_STAR pillar "Cohesion over volume" — deepens the existing
+  Meadow-Slime-to-shop loop rather than adding a parallel system | research: "Loot Drop Rates
+  Calculation Guide: Numbers to Feel" (PulseGeek) and "Defining Loot Tables in ARPG Game
+  Design" (Game Developer), `docs/design/RESEARCH_NOTES.md` §6.1 — professional loot tables
+  are tuned per-source, not as one flat global rate, and are additive-only here per the
+  bonus-only rule (never a chance of *zero* reward, only a chance of *extra*).
+- **Acceptance criteria:**
+  - [x] Meadow Slime still always drops its existing guaranteed 1 coin (no regression).
+  - [x] A small, tunable chance (e.g. ~10-15%, tuned in-engine per the research caveat, not
+        hardcoded blindly) adds one *additional* coin on top of the guaranteed drop — never
+        removes or reduces the guaranteed drop.
+  - [x] The bonus-coin roll is implemented as a single exported probability on
+        `MeadowSlime.gd` (or a tiny shared helper if a second enemy will reuse it soon), not
+        a new generic loot-table framework — keep it proportional to one monster.
+  - [x] Test suite covers the roll deterministically (e.g. by seeding/mocking randomness or
+        asserting the guaranteed-coin path is unaffected when the bonus roll fails/succeeds).
+  - [x] No visual/UI change required beyond the existing coin-drop pickup already shipped in
+        M3; a second `CoinPickup` instance is an acceptable minimal presentation.
+- **Likely files touched:** `scripts/enemies/MeadowSlime.gd`, `tests/game_state_tests.gd` (or
+  a new enemy test file if one exists after M2/M3 land), `docs/design/GEAR_AND_ECONOMY.md`
+  (append the bonus-drop rule to keep it authoritative).
+- **Curriculum tie-in:** none — pure systems.
+- **Status:** done — shipped on `claude/meadow-slime-coin-drop-od4ghp`: `MeadowSlime.gd`
+  gained an exported `bonus_coin_chance` (default 0.12) and a pure
+  `rolls_bonus_coin(chance, roll)` static function covered by a new deterministic test;
+  `docs/design/GEAR_AND_ECONOMY.md` documents the additive-only "Bonus drop rule".
+
+- **Map readability pass: landmark props near existing path forks** → shipped two distinct
+  placeholder-polygon landmarks — a grey/gold **Standing Stone** (north, marks the
+  Elder/Merchant/Finn village cluster) and a green **Lone Tree** (west, marks Mira's garden
+  path). Purely visual (no collision/script), additive (no existing node moved). Branch
+  `slice-map-landmarks`. Live-verified from spawn: both readable from a screen away, the two
+  forks distinguishable at a glance.
+
+- **Combat hit-flash: brief pop on hit/hurt** → shipped as a reusable `HealthComponent`
+  behavior (scale pop + white tint, pure tested easing in `tests/hit_flash_tests.gd`) plus a
+  soft-red player-hurt variant in `Player.gd`. Branch `slice-hit-flash` / PR #43, merged.
+
+_(Note: the "shop restock reason / coin sink" slice also shipped as the Legendary Dawnbringer
+Blade on branch `slice-legendary-weapon` / PR #40 — its Done entry lives on that branch; these
+two expansion PRs are disjoint in code and will both land here on merge.)_
+
+_(further completed slices move here with a one-line note and the PR/commit that shipped them.)_
 
 - **Add a shop restock reason: a second, tiny coin faucet** → shipped as the Legendary
   **Dawnbringer Blade** (+4 dmg, 30 coins) — a 4th weapon and aspirational top-of-shop coin
