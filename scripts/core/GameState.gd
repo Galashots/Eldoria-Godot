@@ -166,13 +166,26 @@ func load_game() -> void:
 
     selected_profile = data.get("selected_profile", selected_profile)
     player_hp = data.get("player_hp", player_hp)
-    collected_items = data.get("collected_items", collected_items)
     quest_states = data.get("quest_states", quest_states)
     quest_bonuses = data.get("quest_bonuses", quest_bonuses)
     equipped_armor_tier = data.get("equipped_armor_tier", equipped_armor_tier)
+
+    # JSON.parse_string() returns every number as float, and Dictionary values have no
+    # static type to auto-coerce them back (unlike equipped_armor_tier's declared int type,
+    # which does this implicitly on assignment) - item counts must stay whole numbers.
+    var loaded_items: Dictionary = data.get("collected_items", {})
+    collected_items = {}
+    for item_id in loaded_items.keys():
+        collected_items[item_id] = int(loaded_items[item_id])
+
     _refresh_elder_quest_flags()
 
 func reset_progress() -> void:
+    reset_state()
+    if get_tree().current_scene != null:
+        get_tree().reload_current_scene()
+
+func reset_state() -> void:
     if FileAccess.file_exists(SAVE_PATH):
         DirAccess.remove_absolute(SAVE_PATH)
 
@@ -187,7 +200,6 @@ func reset_progress() -> void:
     quest_bonuses = {}
     equipped_armor_tier = 0
     _refresh_elder_quest_flags()
-    get_tree().reload_current_scene()
 
 func _on_profile_changed_autosave(_profile_id: String) -> void:
     save_game()

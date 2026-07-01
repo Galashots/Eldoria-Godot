@@ -38,9 +38,16 @@
    `GameState` correctly). A mouse-only "Reset Progress..." button was added to the character
    panel in the same milestone, with a two-step confirm sub-view, deliberately hard for a
    Grade 2/5 player to trigger by accident.
-7. Add more story/quest content. Slot a small headless GDScript test harness for
-   `GameState`'s quest state machine in *before* this, so growing quest logic lands on a
-   tested base (today only the Python pipeline has tests; game logic is manual-checklist only).
+7. ~~Add a GDScript test harness.~~ Done — a small custom headless suite (`tests/`, no
+   third-party framework: `tests/TestRunner.tscn` + `tests/test_runner.gd` +
+   `tests/game_state_tests.gd`) covers `GameState`'s quest lifecycle, item/quest wiring,
+   badge tracking, the Tier 1 armor grant, and the save/load/reset round trip. Building it
+   caught two real bugs (both fixed): `collected_items` counts silently turning into floats
+   after a save/load round trip (JSON numbers always parse as float), and a signal
+   connected to a **lambda** on a `RefCounted` object not reliably firing on this Godot 4.7
+   build — every test probe now uses a named method instead. Run via
+   `Godot...console.exe --headless --path . res://tests/TestRunner.tscn`, see
+   `docs/CURRENT_STATE.md`. Now add more story/quest content on top of this tested base.
 8. Plan iPad/web playtest/export path.
 
 ## Cleanup backlog (from the repo audit, deliberately deferred)
