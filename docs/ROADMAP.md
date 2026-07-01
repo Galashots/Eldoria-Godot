@@ -93,8 +93,9 @@ plan context in project memory (`phase2-roadmap`).
     still defaults to layer/mask 1, proven enough at this scale). Real-time, movable combat
     (no battle-transition screen): a new `attack` input action swings a brief hitbox in the
     player's facing direction. First monster: **Meadow Slime** (wander/chase AI, 3 hp, small
-    contact damage, placeholder green-blob art — see `docs/design/MONSTER_CONCEPTS.md` for
-    the real-art ChatGPT prompt). The player keeps using the existing, already-persisted
+    contact damage, real art generated via ChatGPT and normalized through
+    `tools/asset_pipeline/` — see `docs/design/MONSTER_CONCEPTS.md`). The player keeps using
+    the existing, already-persisted
     `GameState.player_hp` rather than getting its own `HealthComponent`; death is
     non-punitive (teleport to the scene's original spawn point, heal to full, a friendly
     line — no game over screen). The user's math-question damage-multiplier idea is

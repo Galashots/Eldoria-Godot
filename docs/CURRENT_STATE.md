@@ -49,8 +49,10 @@ an enemy's own contact-damage hitbox and its hurtbox occupy the same space. The 
 monster, **Meadow Slime** (`scripts/enemies/MeadowSlime.gd`/`.tscn`), is deliberately the
 lowest-stakes possible enemy for a Grade 2/5 audience: slow wander/chase AI within an aggro
 radius, 3 hp, 1 contact damage on touch (gated by a brief hit-immunity window so standing in
-it doesn't melt hp every physics frame), a placeholder green-blob `Polygon2D` (see
-`docs/design/MONSTER_CONCEPTS.md` for the ChatGPT prompt once this is proven live). Three
+it doesn't melt hp every physics frame). Real art landed the same session, generated via
+ChatGPT from the prompt in `docs/design/MONSTER_CONCEPTS.md` and normalized through
+`tools/asset_pipeline/` into `assets/sprites/enemies/meadow_slime_idle.png` (a single
+static idle pose - the slime doesn't turn to face the player). Three
 instances are placed in the M1 zone away from the quest lines. The player keeps using
 `GameState.player_hp` as its single source of truth (now wired to real damage via
 `GameState.take_player_damage()`/`heal_player_to_full()`) rather than getting its own
@@ -96,7 +98,7 @@ to run the GDScript test suite" below, now 13 tests total.
 - `assets/sprites/tiles/placeholder_tileset.png` and `assets/tilesets/placeholder_tileset.tres`: bootstrap 4-tile (grass/path/water/rock) 16x16 placeholder tileset, generated as flat colors (not through the AI source-art pipeline, since it exists only to prove `TileMapLayer`/`TileSet` collision before real tile art). Water and rock tiles have a full-tile physics collision polygon on `TileSet` physics layer 0; grass and path have none (walkable).
 - `scenes/main/Main.tscn`: `World/Ground` `TileMapLayer` (160x100 tiles, 2560x1600px, `y_sort_enabled` on `World`) replacing the old flat floor/obstacle, player, Elder, Mira, Finn, Yarrow (all `y_sort_enabled`), collectibles (including Silverleaf), HUD, dialogue, character panel, profile selector, learning check, `Enemies` (3 `MeadowSlime` instances), and `CombatQuestion` instances.
 - `scripts/core/combat/HealthComponent.gd`, `HitboxComponent.gd`, `HurtboxComponent.gd`: the M2 component architecture. `HealthComponent` tracks hp with a brief post-hit immunity window (`hit_cooldown_sec`) and a `died` signal; `HitboxComponent` is a toggleable damage zone with a `landed` signal so an attacker can react to connecting; `HurtboxComponent` detects overlapping hitboxes by group membership ("hitbox"/"hurtbox" - not a dedicated physics layer, since everything in this project already defaults to layer/mask 1) and auto-discovers a sibling node named "HealthComponent" in `_ready()` rather than relying on a typed node export (a raw `NodePath(...)` literal written into `.tscn` text does not reliably resolve to a `HealthComponent` reference — a real bug caught live, see below). A `HurtboxComponent` never damages its own owner (same-parent check), since an enemy's own contact-damage hitbox and hurtbox occupy the same space.
-- `scripts/enemies/MeadowSlime.gd` / `scenes/enemies/MeadowSlime.tscn`: the first monster. Simple idle/wander/chase FSM (aggro radius, home-anchored wander), a `HealthComponent` (3 hp), a `Hurtbox` (receives player hits), and an always-on `ContactHitbox` (deals contact damage to the player). Placeholder green-blob `Polygon2D`; see `docs/design/MONSTER_CONCEPTS.md`.
+- `scripts/enemies/MeadowSlime.gd` / `scenes/enemies/MeadowSlime.tscn`: the first monster. Simple idle/wander/chase FSM (aggro radius, home-anchored wander), a `HealthComponent` (3 hp), a `Hurtbox` (receives player hits), and an always-on `ContactHitbox` (deals contact damage to the player). Real art (`assets/sprites/enemies/meadow_slime_idle.png`, via `assets/manifests/meadow_slime_idle.manifest.json`); see `docs/design/MONSTER_CONCEPTS.md`.
 - `scenes/ui/CombatQuestion.tscn` / `scripts/ui/CombatQuestion.gd`: the combat damage-multiplier question. Deliberately separate from `LearningCheck` (no quest coupling, dismisses itself immediately on answer). A small numeracy-only question pool per profile, matching the already-confirmed subject scope in `docs/design/CURRICULUM_MAP.md`.
 - `scenes/player/Player.tscn`: player `Body` (`AnimatedSprite2D`, `sprite_frames` built in code per profile — see `Player.gd`), a hidden empty `Armor` (`AnimatedSprite2D`) scaffold for a future equipment layer, collision shape, camera (`Camera2D` now has `limit_left/top/right/bottom` set to the map bounds and `position_smoothing_enabled` on), an `AttackHitbox` (toggled on for a brief window each swing, repositioned per facing direction), and a `PlayerHurtbox` (always-on, receives enemy hits).
 - `scripts/player/Player.gd` (combat additions): a new `attack` input action (Space or left click, added via the Godot Input Map) swings `AttackHitbox` in the player's current facing direction (`FACING_VECTORS`), gated by an active window + cooldown so it can't be spammed. Landing a hit (the `HitboxComponent.landed` signal) requests a combat question if one isn't on cooldown; taking a hit (`PlayerHurtbox.hit_received`) calls `GameState.take_player_damage()`. On `GameState.player_died`, the player teleports back to wherever it started the scene (captured once in `_ready()` as `_spawn_position`), heals to full, and shows a brief non-punitive dialogue line — no game over screen.
@@ -391,6 +393,6 @@ modifies these numbers) or a second monster, whichever comes first — flag this
 promoting it speculatively now.
 
 Next up: **M3 — gear, rarity & inventory + shop**, per the Phase 2 plan. Real tile art to
-replace the placeholder tileset, real Meadow Slime art (`docs/design/MONSTER_CONCEPTS.md`
-has a ready ChatGPT prompt), Tier 1 walk-cycle armor art, and Tier 2 (Bronze) armor remain
-open art backlog items, lower priority than the Phase 2 milestone chain.
+replace the placeholder tileset, Tier 1 walk-cycle armor art, and Tier 2 (Bronze) armor
+remain open art backlog items, lower priority than the Phase 2 milestone chain. (Real
+Meadow Slime art landed the same session as M2 — see above.)

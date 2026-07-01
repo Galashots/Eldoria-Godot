@@ -5,11 +5,14 @@ proven live with placeholder art (same "bootstrap with a placeholder, then swap 
 order as `docs/design/VISUAL_CONTRACT.md`'s tileset precedent). Once approved, run the
 result through `tools/asset_pipeline/` per `docs/art/ASSET_NORMALIZATION_PIPELINE.md`.
 
-## Meadow Slime (M2 - first monster, implemented with placeholder art)
+## Meadow Slime (M2 - first monster, real art landed)
 
 `scripts/enemies/MeadowSlime.gd` / `scenes/enemies/MeadowSlime.tscn`. Deliberately the
 lowest-stakes possible "first enemy" - slow, low hp, small contact damage, classic and safe
-for a Grade 2/5 audience. Currently a flat green blob `Polygon2D`.
+for a Grade 2/5 audience. Generated from the prompt below via ChatGPT, normalized through
+`tools/asset_pipeline/` (`assets/manifests/meadow_slime_idle.manifest.json`, 32x32,
+`center_bottom` anchor) into `assets/sprites/enemies/meadow_slime_idle.png` - a single
+static idle pose, no directional facing (the slime doesn't turn to face the player).
 
 > A cute, friendly-looking round slime monster for a bright, family-friendly fantasy RPG,
 > made of translucent glowing green jelly with a simple happy/curious face, no teeth or
