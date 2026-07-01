@@ -16,6 +16,21 @@ const ITEM_DEFINITIONS: Array[ItemDefinition] = [
     preload("res://data/items/silverleaf.tres"),
 ]
 
+## Gear display/stat data is loaded from GearDefinition .tres resources under data/gear/ --
+## mirrors the ItemDefinition pattern above, promoted per docs/ROADMAP.md's M3 note now that
+## gear stats (rarity, damage_bonus, price) need structured data, not just display text.
+const GEAR_DEFINITIONS: Array[GearDefinition] = [
+    preload("res://data/gear/worn_dagger.tres"),
+    preload("res://data/gear/iron_sword.tres"),
+    preload("res://data/gear/oakheart_blade.tres"),
+]
+
+const RARITY_COLORS := {
+    "Common": Color.WHITE,
+    "Uncommon": Color(0.35, 0.75, 0.35),
+    "Rare": Color(0.35, 0.55, 0.95),
+}
+
 const QUEST_SUMMARIES := {
     "elder_golden_star": {
         "not_started": "Talk to Elder Rowan",
@@ -78,3 +93,16 @@ static func get_badge_label(quest_id: String) -> String:
 
 static func get_armor_tier_label(tier: int) -> String:
     return ARMOR_TIER_LABELS.get(tier, "Tier %d Armor" % tier)
+
+static func get_gear(gear_id: String) -> GearDefinition:
+    for gear in GEAR_DEFINITIONS:
+        if gear.id == gear_id:
+            return gear
+    return null
+
+static func get_gear_label(gear_id: String) -> String:
+    var gear := get_gear(gear_id)
+    return gear.label if gear else gear_id
+
+static func get_rarity_color(rarity: String) -> Color:
+    return RARITY_COLORS.get(rarity, Color.WHITE)

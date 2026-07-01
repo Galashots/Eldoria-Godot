@@ -29,6 +29,10 @@
 [ext_resource type="PackedScene" path="res://scenes/enemies/MeadowSlime.tscn" id="27_ilqpp"]
 [ext_resource type="PackedScene" path="res://scenes/ui/CombatQuestion.tscn" id="28_ftc2p"]
 [ext_resource type="Script" path="res://scripts/ui/CombatQuestion.gd" id="29_04n4k"]
+[ext_resource type="PackedScene" path="res://scenes/npcs/Merchant.tscn" id="30_merchant"]
+[ext_resource type="Script" path="res://scripts/npcs/Merchant.gd" id="31_merchant_script"]
+[ext_resource type="PackedScene" path="res://scenes/ui/ShopUI.tscn" id="32_shopui"]
+[ext_resource type="Script" path="res://scripts/ui/ShopUI.gd" id="33_shopui_script"]
 
 [node name="Main" type="Node2D" unique_id=280939621]
 
@@ -78,6 +82,11 @@ y_sort_enabled = true
 position = Vector2(1288, 1368)
 script = ExtResource("15_8dhb5")
 
+[node name="Merchant" type="StaticBody2D" parent="." instance=ExtResource("30_merchant")]
+y_sort_enabled = true
+position = Vector2(1288, 728)
+script = ExtResource("31_merchant_script")
+
 [node name="Silverleaf" type="Area2D" parent="." unique_id=1304323501 instance=ExtResource("14_silverleaf")]
 position = Vector2(1128, 1288)
 script = ExtResource("11_04n4k")
@@ -120,6 +129,10 @@ position = Vector2(2088, 968)
 layer = 91
 script = ExtResource("29_04n4k")
 
+[node name="ShopUI" type="CanvasLayer" parent="." instance=ExtResource("32_shopui")]
+layer = 85
+script = ExtResource("33_shopui_script")
+
 [connection signal="combat_question_requested" from="Player" to="CombatQuestion" method="show_question"]
 [connection signal="dialogue_requested" from="Player" to="DialogueBox" method="show_dialogue"]
 [connection signal="dialogue_requested" from="Elder" to="DialogueBox" method="show_dialogue"]
@@ -131,3 +144,4 @@ script = ExtResource("29_04n4k")
 [connection signal="dialogue_requested" from="Yarrow" to="DialogueBox" method="show_dialogue"]
 [connection signal="learning_check_requested" from="Yarrow" to="LearningCheck" method="show_check"]
 [connection signal="dialogue_requested" from="LearningCheck" to="DialogueBox" method="show_dialogue"]
+[connection signal="shop_requested" from="Merchant" to="ShopUI" method="open_shop"]

@@ -222,7 +222,8 @@ func _swing_attack() -> void:
 
 	var direction: Vector2 = FACING_VECTORS.get(facing, Vector2.DOWN)
 	attack_hitbox.position = direction * attack_reach
-	attack_hitbox.damage = int(round(attack_base_damage * GameState.get_combat_multiplier()))
+	var base_damage := attack_base_damage + GameState.get_equipped_weapon_bonus()
+	attack_hitbox.damage = int(round(base_damage * GameState.get_combat_multiplier()))
 	attack_hitbox.monitorable = true
 	attack_hitbox.visible = true
 

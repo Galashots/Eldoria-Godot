@@ -12,6 +12,9 @@ enum State { IDLE, WANDER, CHASE }
 @export var wander_radius: float = 80.0
 @export var idle_pause_sec: float = 1.5
 @export var contact_damage: int = 1
+@export var coin_drop_value: int = 1
+
+const CoinPickupScene := preload("res://scenes/items/CoinPickup.tscn")
 
 @onready var health: HealthComponent = $HealthComponent
 @onready var hurtbox: HurtboxComponent = $Hurtbox
@@ -55,6 +58,12 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
+func _spawn_coin_drop() -> void:
+	var coin := CoinPickupScene.instantiate()
+	coin.value = coin_drop_value
+	coin.global_position = global_position
+	get_parent().add_child(coin)
+
 func _pick_wander_target() -> void:
 	var offset := Vector2(randf_range(-wander_radius, wander_radius), randf_range(-wander_radius, wander_radius))
 	_wander_target = _home_position + offset
@@ -63,6 +72,7 @@ func _pick_wander_target() -> void:
 func _on_died() -> void:
 	hurtbox.set_deferred("monitoring", false)
 	contact_hitbox.set_deferred("monitorable", false)
+	_spawn_coin_drop.call_deferred()
 
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 0.25)

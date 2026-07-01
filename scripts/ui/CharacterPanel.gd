@@ -5,6 +5,8 @@ extends CanvasLayer
 @onready var items_label: Label = $PanelContainer/VBoxContainer/ItemsLabel
 @onready var bonuses_label: Label = $PanelContainer/VBoxContainer/BonusesLabel
 @onready var equipment_label: Label = $PanelContainer/VBoxContainer/EquipmentLabel
+@onready var coins_label: Label = $PanelContainer/VBoxContainer/CoinsLabel
+@onready var weapons_list: VBoxContainer = $PanelContainer/VBoxContainer/WeaponsList
 @onready var reset_button: Button = $PanelContainer/VBoxContainer/ResetButton
 @onready var confirm_reset_container: VBoxContainer = $PanelContainer/VBoxContainer/ConfirmResetContainer
 @onready var cancel_reset_button: Button = $PanelContainer/VBoxContainer/ConfirmResetContainer/CancelResetButton
@@ -17,6 +19,8 @@ func _ready() -> void:
     GameState.item_added.connect(_on_item_added)
     GameState.quest_changed.connect(_on_quest_changed)
     GameState.armor_equipped.connect(_on_armor_equipped)
+    GameState.coins_changed.connect(_on_coins_changed)
+    GameState.gear_changed.connect(_on_gear_changed)
     reset_button.pressed.connect(_on_reset_pressed)
     cancel_reset_button.pressed.connect(_on_reset_cancelled)
     confirm_reset_button.pressed.connect(_on_reset_confirmed)
@@ -61,12 +65,20 @@ func _on_quest_changed(_quest_id: String, _state: String) -> void:
 func _on_armor_equipped(_tier: int) -> void:
     _refresh()
 
+func _on_coins_changed(_coins: int) -> void:
+    _refresh()
+
+func _on_gear_changed() -> void:
+    _refresh()
+
 func _refresh() -> void:
     profile_label.text = "Profile: " + ContentDefinitions.get_profile_label(GameState.selected_profile)
     quest_label.text = "Current quest: " + _get_current_quest_summary()
     items_label.text = "Items: " + _get_items_summary()
     bonuses_label.text = "Bonuses earned: " + _get_bonuses_summary()
     equipment_label.text = "Equipment: " + _get_equipment_summary()
+    coins_label.text = "Coins: %d" % GameState.coins
+    _refresh_weapons_list()
 
 func _get_items_summary() -> String:
     var items: Array[String] = []
@@ -100,9 +112,38 @@ func _get_bonuses_summary() -> String:
     return ", ".join(badges)
 
 func _get_equipment_summary() -> String:
-    if GameState.equipped_armor_tier <= 0:
+    var parts: Array[String] = []
+    if GameState.equipped_armor_tier > 0:
+        parts.append(ContentDefinitions.get_armor_tier_label(GameState.equipped_armor_tier))
+    if GameState.equipped_weapon != "":
+        parts.append(ContentDefinitions.get_gear_label(GameState.equipped_weapon))
+
+    if parts.is_empty():
         return "none yet"
-    return ContentDefinitions.get_armor_tier_label(GameState.equipped_armor_tier)
+    return ", ".join(parts)
+
+func _refresh_weapons_list() -> void:
+    for child in weapons_list.get_children():
+        child.queue_free()
+
+    for gear_id in GameState.owned_gear:
+        var row := HBoxContainer.new()
+
+        var label := Label.new()
+        label.text = ContentDefinitions.get_gear_label(gear_id)
+        label.custom_minimum_size = Vector2(160, 0)
+        row.add_child(label)
+
+        var button := Button.new()
+        if GameState.equipped_weapon == gear_id:
+            button.text = "Equipped"
+            button.disabled = true
+        else:
+            button.text = "Equip"
+            button.pressed.connect(GameState.equip_weapon.bind(gear_id))
+        row.add_child(button)
+
+        weapons_list.add_child(row)
 
 func _get_current_quest_summary() -> String:
     var elder_state := GameState.get_quest_state(GameState.QUEST_ELDER_GOLDEN_STAR)

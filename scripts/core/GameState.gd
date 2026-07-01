@@ -8,9 +8,11 @@ signal armor_equipped(tier: int)
 signal player_damaged(current_hp: int, max_hp: int)
 signal player_died
 signal combat_streak_changed(streak: int, multiplier: float)
+signal coins_changed(coins: int)
+signal gear_changed
 
 const SAVE_PATH := "user://savegame.json"
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
 
 const PLAYER_MAX_HP := 5
 
@@ -48,6 +50,9 @@ var quest_states: Dictionary = {
 }
 var quest_bonuses: Dictionary = {}
 var equipped_armor_tier: int = 0
+var coins: int = 0
+var owned_gear: Array[String] = []
+var equipped_weapon: String = ""
 
 var elder_quest_started: bool = false
 var elder_quest_completed: bool = false
@@ -63,6 +68,8 @@ func _ready() -> void:
     quest_changed.connect(_on_quest_changed_autosave)
     item_added.connect(_on_item_added_autosave)
     armor_equipped.connect(_on_armor_equipped_autosave)
+    coins_changed.connect(_on_coins_changed_autosave)
+    gear_changed.connect(_on_gear_changed_autosave)
     load_game()
 
 func _process(delta: float) -> void:
@@ -183,6 +190,51 @@ func _check_and_grant_tier1_armor() -> void:
     equipped_armor_tier = 1
     armor_equipped.emit(1)
 
+func add_coins(amount: int) -> void:
+    if amount <= 0:
+        return
+    coins += amount
+    coins_changed.emit(coins)
+
+func spend_coins(amount: int) -> bool:
+    if amount <= 0 or amount > coins:
+        return false
+    coins -= amount
+    coins_changed.emit(coins)
+    return true
+
+func owns_gear(gear_id: String) -> bool:
+    return owned_gear.has(gear_id)
+
+func buy_gear(gear_id: String) -> bool:
+    if owns_gear(gear_id):
+        return false
+
+    var gear := ContentDefinitions.get_gear(gear_id)
+    if gear == null:
+        return false
+
+    if not spend_coins(gear.price):
+        return false
+
+    owned_gear.append(gear_id)
+    gear_changed.emit()
+    return true
+
+func equip_weapon(gear_id: String) -> void:
+    if gear_id != "" and not owns_gear(gear_id):
+        return
+
+    equipped_weapon = gear_id
+    gear_changed.emit()
+
+func get_equipped_weapon_bonus() -> int:
+    if equipped_weapon == "":
+        return 0
+
+    var gear := ContentDefinitions.get_gear(equipped_weapon)
+    return gear.damage_bonus if gear else 0
+
 func get_combat_multiplier() -> float:
     return 1.0 + combat_streak * COMBAT_MULTIPLIER_PER_STACK
 
@@ -224,6 +276,9 @@ func save_game() -> void:
         "quest_states": quest_states,
         "quest_bonuses": quest_bonuses,
         "equipped_armor_tier": equipped_armor_tier,
+        "coins": coins,
+        "owned_gear": owned_gear,
+        "equipped_weapon": equipped_weapon,
     }
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if not file:
@@ -249,6 +304,15 @@ func load_game() -> void:
     quest_states = data.get("quest_states", quest_states)
     quest_bonuses = data.get("quest_bonuses", quest_bonuses)
     equipped_armor_tier = data.get("equipped_armor_tier", equipped_armor_tier)
+    coins = int(data.get("coins", coins))
+    equipped_weapon = data.get("equipped_weapon", equipped_weapon)
+
+    # Array elements load as untyped Variant from JSON; coerce back to Array[String] since
+    # owned_gear's declared type doesn't auto-convert an untyped Array on assignment.
+    var loaded_gear: Array = data.get("owned_gear", [])
+    owned_gear = []
+    for gear_id in loaded_gear:
+        owned_gear.append(String(gear_id))
 
     # JSON.parse_string() returns every number as float, and Dictionary values have no
     # static type to auto-coerce them back (unlike equipped_armor_tier's declared int type,
@@ -261,8 +325,8 @@ func load_game() -> void:
     _refresh_elder_quest_flags()
 
 func _migrate(data: Dictionary) -> Dictionary:
-    # No-op for now: version 0 (pre-versioning saves, missing the key entirely) and
-    # version 1 have the same shape. Future schema changes add a step per version here.
+    # No-op: version 0/1 (missing coins/owned_gear/equipped_weapon entirely) and version 2
+    # load fine as-is, since load_game() reads the new keys via .get() with in-code defaults.
     return data
 
 func reset_progress() -> void:
@@ -285,6 +349,9 @@ func reset_state() -> void:
     }
     quest_bonuses = {}
     equipped_armor_tier = 0
+    coins = 0
+    owned_gear = []
+    equipped_weapon = ""
     combat_streak = 0
     _time_since_last_correct_answer = 0.0
     _player_hit_cooldown_remaining = 0.0
@@ -301,4 +368,10 @@ func _on_item_added_autosave(_item_id: String, _amount: int) -> void:
     save_game()
 
 func _on_armor_equipped_autosave(_tier: int) -> void:
+    save_game()
+
+func _on_coins_changed_autosave(_coins: int) -> void:
+    save_game()
+
+func _on_gear_changed_autosave() -> void:
     save_game()

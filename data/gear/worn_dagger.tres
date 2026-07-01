@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="GearDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/GearDefinition.gd" id="1_gear_def"]
+
+[resource]
+script = ExtResource("1_gear_def")
+id = "worn_dagger"
+label = "Worn Dagger"
+rarity = "Common"
+damage_bonus = 1
+price = 3
