@@ -6,7 +6,9 @@ Milestones 1 through 14 are complete and merged: the PR branch-sync docs rule, t
 
 The player sprite is now profile-aware and direction-aware: `Player.gd` swaps its texture based on `GameState.selected_profile` and the player's current movement direction. Both Grade 5 Adventurer and Grade 2 Mage have production 5-direction idle sets (south/south-east/east/north-east/north, generated from user-approved ChatGPT designs and normalized through the pipeline). The Mage set was generated as a single 5-panel sheet in one ChatGPT response (rather than 5 separate generations like the Adventurer) and cropped into a shared source image addressed by grid cell per direction — proving that approach also works. All 8 facings are now live: west/south-west/north-west mirror east/south-east/north-east via `flip_h`, matching the 5-render-plus-mirroring convention. The player's `Body` node is now an `AnimatedSprite2D` (was a plain `Sprite2D`), with one `SpriteFrames` resource per profile built in code from the existing idle textures (each direction is a single-frame animation, e.g. `idle_s`) — this is a zero-visual-change engine migration that gets the architecture ready for real multi-frame walk animations later, since adding walk frames will just mean calling `add_frame()` more times on the same `SpriteFrames`. A hidden, empty sibling `Armor` `AnimatedSprite2D` node also now exists, reserved for a future paper-doll equipment layer; no armor art exists yet, so `Armor` stays invisible. Walk-cycle animation is now live for both characters: each direction has a 4-frame loop (idle -> walk1 -> idle -> walk2, reusing the existing idle pose as the neutral "passing" frame rather than commissioning a full frame-by-frame cycle) that plays automatically while the player is moving, and reverts to the static idle pose the instant movement stops. Tier 1 (Leather) armor art now exists for both characters as full replacement idle sprite sets (see `docs/design/ARMOR_TIERS.md`), normalized through the same pipeline as base body art, and is now reachable in-game: completing all three existing quests (Elder, Mira, Finn) auto-equips it via `GameState.equipped_armor_tier`, `Player.gd` swaps the player's `SpriteFrames` to the tier1 set, and the character panel's equipment line shows "Equipment: Leather Armor". There is no manual equip/unequip UI (auto-equip only), and armored walking shows a static pose since no tier1 walk-cycle art exists yet.
 
-Local save/load now exists: `GameState` autosaves to `user://savegame.json` (JSON via `FileAccess`/`JSON`) on every profile/quest/item/armor change, and loads it in its own `_ready()` — before any other scene node's `_ready()` runs — so the game auto-resumes silently on relaunch (the profile selector and already-collected world pickups self-hide exactly as they already did for a fresh, no-save boot; no changes were needed to `ProfileSelect.gd`/`Collectible.gd`/`HUD.gd` to make this work). The character panel has a mouse-only "Reset Progress..." button (no keyboard shortcut) that requires an explicit second confirmation click before calling `GameState.reset_progress()`, which clears the save file and reloads the scene fresh.
+Local save/load now exists: `GameState` autosaves to `user://savegame.json` (JSON via `FileAccess`/`JSON`) on every profile/quest/item/armor change, and loads it in its own `_ready()` — before any other scene node's `_ready()` runs — so the game auto-resumes silently on relaunch (the profile selector and already-collected world pickups self-hide exactly as they already did for a fresh, no-save boot; no changes were needed to `ProfileSelect.gd`/`Collectible.gd`/`HUD.gd` to make this work). The character panel has a mouse-only "Reset Progress..." button (no keyboard shortcut) that requires an explicit second confirmation click before calling `GameState.reset_progress()`, which clears the save file and reloads the scene fresh. `reset_progress()` is composed from `reset_state()` (clears data + deletes the save file) plus a conditional scene reload, split apart so the state-clearing half can be exercised headlessly without a loaded scene.
+
+A small custom GDScript test suite now exists (`tests/`, see "How to run the GDScript test suite" below) covering `GameState`'s quest lifecycle, item/quest wiring, badge tracking, the Tier 1 armor auto-grant (order-independence, fires-once), and the save/load/reset round trip. Building it caught two real, non-obvious bugs, both now fixed: (1) `collected_items`' counts silently became floats after a save/load round trip, since `JSON.parse_string()` returns all numbers as float and a `Dictionary`'s values have no static type to auto-coerce them back — `load_game()` now explicitly casts each loaded count to `int`. (2) A signal connected to a **lambda** on a `RefCounted` object did not reliably fire on this Godot 4.7 build, even though the exact same signal correctly reached a **named** bound method — every probe in the test suite uses a named method for this reason; see the note in `tests/game_state_tests.gd` for the diagnosis.
 
 ## Implemented files
 
@@ -40,10 +42,28 @@ Local save/load now exists: `GameState` autosaves to `user://savegame.json` (JSO
 - `assets/manifests/mage_body_idle_{s,se,e,ne,n}.manifest.json`, `assets/source/generated/mage_body_idle_sheet/source.png` (a single shared 5-panel source sheet, generated in one ChatGPT response and addressed per direction via `sourceCell` on a 5-col grid), and `assets/sprites/characters/mage_body_idle_*.png`: production art for Grade 2 Mage, matching the brown-haired, navy/gold-tunic design from the V2 style reference. Only `_s` (south) is currently wired into `Player.gd`.
 - `assets/manifests/{mage,adventurer}_body_walk{1,2}_{s,se,e,ne,n}.manifest.json` (20 manifests), `assets/source/generated/{mage,adventurer}_body_walk_sheet/source.png` (one shared 5-direction x 2-pose grid sheet per character, generated in one ChatGPT response each, addressed via `sourceCell` on a 5-col x 2-row grid), and `assets/sprites/characters/{mage,adventurer}_body_walk{1,2}_*.png`: the two new mid-stride poses per direction per character that drive the walk-cycle animation (see `Player.gd` above). `walk1`/`walk2` combine with the existing `idle` pose at runtime — no third pose was generated for "neutral", since idle already serves that role.
 - `assets/manifests/{mage,adventurer}_body_idle_tier1_{s,se,e,ne,n}.manifest.json` (10 manifests), `assets/source/generated/{mage,adventurer}_body_idle_tier1_sheet/source.png` (one shared 5-direction grid sheet per character, a ChatGPT in-place edit of the base idle sheet adding leather armor), and `assets/sprites/characters/{mage,adventurer}_body_idle_tier1_*.png`: Tier 1 (Leather) armor art, see `docs/design/ARMOR_TIERS.md`. Normalized as full replacement body sprite sets (not a transparent overlay — see that doc for why the original diff-based overlay plan was dropped). Now wired into `Player.gd`/`GameState.gd`: completing all three quests auto-equips it (see above); no manual equip/unequip UI exists.
+- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon). See "How to run the GDScript test suite" below.
 
 ## How to run
 
 Open `project.godot` with Godot 4.x standard and press F5.
+
+## How to run the GDScript test suite
+
+```
+Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
+```
+
+Runs `tests/game_state_tests.gd` against the real `GameState` autoload and prints
+`PASS`/`FAIL` per test plus a summary line; exits non-zero if anything failed. See
+`tests/test_runner.gd` for the (small, custom, no third-party dependency) runner — it
+discovers every `test_*` method on `GameStateTests`, resets `GameState` via
+`GameState.reset_state()` before each one for isolation, and reports results.
+
+**This writes to the real `user://savegame.json`** (deleted by the final test, but present
+mid-run) — `--user-data-dir <path>` normally isolates this, but combining it with a custom
+scene argument hung indefinitely on this Windows/Godot 4.7 build for reasons not yet
+diagnosed; skip it for now and expect the suite to touch your local save file transiently.
 
 ## Manual test checklist
 
@@ -194,11 +214,23 @@ only a same-object connection with mismatched arity was affected; identical conn
 from other scripts (`Player.gd`, `HUD.gd`, `CharacterPanel.gd`) to those same signals fired
 correctly throughout, and connecting to a genuinely zero-arg signal also worked. The fix
 was four small per-signal handlers matching each signal's exact arity, mirroring the
-matching-arity pattern every other signal listener in this codebase already used. See
-[[godot-ai-mcp-setup]] for how this was diagnosed live via `editor_manage(op="game_eval")`.
+matching-arity pattern every other signal listener in this codebase already used. Diagnosed
+live via the `godot-ai` MCP bridge's `editor_manage(op="game_eval")`, which executes
+arbitrary GDScript in the running game and was the tool that made this diagnosis possible.
 
-Next decision is between:
-- a small headless GDScript test harness for `GameState`'s quest/save logic, ahead of
-  adding more content, since only the Python pipeline has automated tests today;
-- more story/quest content (`docs/ROADMAP.md` milestone 7);
-- generating Tier 1 walk-cycle armor art, or designing Tier 2 (Bronze).
+A small custom GDScript test suite now exists (`tests/`, no third-party framework) covering
+`GameState`'s quest lifecycle, item/quest wiring, badge tracking, the Tier 1 armor grant,
+and the save/load/reset round trip — see "How to run the GDScript test suite" above.
+Building it caught two more real bugs, both fixed: `collected_items` counts silently
+becoming floats after a JSON save/load round trip (JSON numbers always parse as float;
+`Dictionary` values have no static type to auto-coerce them back, unlike
+`equipped_armor_tier`'s declared `int` type), and a signal connected to a **lambda** (as
+opposed to a named method) on a `RefCounted` object not reliably firing on this Godot 4.7
+build even when the identical signal correctly reached a named-method listener — every
+probe in the test suite now uses a named method for this reason. `GameState.reset_progress()`
+was also split into `reset_state()` (data clearing) + a conditional scene reload, so the
+state-clearing half can be tested headlessly without a loaded scene to reload.
+
+Next up is more story/quest content (`docs/ROADMAP.md` milestone 7), now that it lands on
+a tested `GameState` base — or generating Tier 1 walk-cycle armor art, or designing Tier 2
+(Bronze).
