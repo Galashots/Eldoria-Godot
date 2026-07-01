@@ -44,3 +44,14 @@ Multiple AI tools work on this repo independently, so the same milestone can get
 2. Base new branches on current `origin/main`, not on an older local branch.
 
 After a branch's PR merges, or its work is confirmed superseded by something already on `main`, delete the branch (`git push origin --delete <branch>`) so the branch list stays current.
+
+## Subagents & expansion loop
+
+A Claude Code subagent suite lives in `.claude/agents/` for running a mostly-autonomous
+game-expansion loop: an Opus `game-architect` researches design and maintains the prioritized
+queue in `docs/design/EXPANSION_BACKLOG.md`, and Sonnet workers (`gdscript-implementer`,
+`gdscript-test-runner`, `pr-auditor`, `docs-keeper`, `asset-normalizer`) build the top slice.
+See `.claude/agents/README.md` for how the loop is sequenced. Key rules that bind any tool:
+the loop **never auto-merges or pushes to `main`** (it opens PRs for human review), it **halts
+on any backlog item marked `blocked: needs-user-input`** (e.g. the unconfirmed subject-scope
+table in `docs/design/CURRICULUM_MAP.md`), and it keeps one tiny slice per PR.
