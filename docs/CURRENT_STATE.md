@@ -6,13 +6,15 @@ Milestones 1 through 14 are complete and merged: the PR branch-sync docs rule, t
 
 The player sprite is now profile-aware and direction-aware: `Player.gd` swaps its texture based on `GameState.selected_profile` and the player's current movement direction. Both Grade 5 Adventurer and Grade 2 Mage have production 5-direction idle sets (south/south-east/east/north-east/north, generated from user-approved ChatGPT designs and normalized through the pipeline). The Mage set was generated as a single 5-panel sheet in one ChatGPT response (rather than 5 separate generations like the Adventurer) and cropped into a shared source image addressed by grid cell per direction — proving that approach also works. All 8 facings are now live: west/south-west/north-west mirror east/south-east/north-east via `flip_h`, matching the 5-render-plus-mirroring convention. The player's `Body` node is now an `AnimatedSprite2D` (was a plain `Sprite2D`), with one `SpriteFrames` resource per profile built in code from the existing idle textures (each direction is a single-frame animation, e.g. `idle_s`) — this is a zero-visual-change engine migration that gets the architecture ready for real multi-frame walk animations later, since adding walk frames will just mean calling `add_frame()` more times on the same `SpriteFrames`. A hidden, empty sibling `Armor` `AnimatedSprite2D` node also now exists, reserved for a future paper-doll equipment layer; no armor art exists yet, so `Armor` stays invisible. Walk-cycle animation is now live for both characters: each direction has a 4-frame loop (idle -> walk1 -> idle -> walk2, reusing the existing idle pose as the neutral "passing" frame rather than commissioning a full frame-by-frame cycle) that plays automatically while the player is moving, and reverts to the static idle pose the instant movement stops. Tier 1 (Leather) armor art now exists for both characters as full replacement idle sprite sets (see `docs/design/ARMOR_TIERS.md`), normalized through the same pipeline as base body art, and is now reachable in-game: completing all three existing quests (Elder, Mira, Finn) auto-equips it via `GameState.equipped_armor_tier`, `Player.gd` swaps the player's `SpriteFrames` to the tier1 set, and the character panel's equipment line shows "Equipment: Leather Armor". There is no manual equip/unequip UI (auto-equip only), and armored walking shows a static pose since no tier1 walk-cycle art exists yet.
 
+Local save/load now exists: `GameState` autosaves to `user://savegame.json` (JSON via `FileAccess`/`JSON`) on every profile/quest/item/armor change, and loads it in its own `_ready()` — before any other scene node's `_ready()` runs — so the game auto-resumes silently on relaunch (the profile selector and already-collected world pickups self-hide exactly as they already did for a fresh, no-save boot; no changes were needed to `ProfileSelect.gd`/`Collectible.gd`/`HUD.gd` to make this work). The character panel has a mouse-only "Reset Progress..." button (no keyboard shortcut) that requires an explicit second confirmation click before calling `GameState.reset_progress()`, which clears the save file and reloads the scene fresh.
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
 - `AGENTS.md`: project and agent workflow guidance, including the current `ContentDefinitions.gd` rule for lightweight quest/item/profile display text.
 - `scenes/main/Main.tscn`: green floor, brown collision obstacle, player, Elder, Mira, Finn, collectibles, HUD, dialogue, character panel, profile selector, and learning check instances.
 - `scenes/player/Player.tscn`: player `Body` (`AnimatedSprite2D`, `sprite_frames` built in code per profile — see `Player.gd`), a hidden empty `Armor` (`AnimatedSprite2D`) scaffold for a future equipment layer, collision shape, and camera.
-- `scripts/core/GameState.gd`: minimal profile, health, collected-item, reusable quest state, and Elder compatibility flags. Also owns the equip system: `equipped_armor_tier` (0 = none) and an `armor_equipped(tier)` signal, granted automatically by `_check_and_grant_tier1_armor()` once all three quests reach `QUEST_COMPLETED` (called from `complete_quest()`).
+- `scripts/core/GameState.gd`: minimal profile, health, collected-item, reusable quest state, and Elder compatibility flags. Also owns the equip system: `equipped_armor_tier` (0 = none) and an `armor_equipped(tier)` signal, granted automatically by `_check_and_grant_tier1_armor()` once all three quests reach `QUEST_COMPLETED` (called from `complete_quest()`). And local save/load: `save_game()`/`load_game()`/`reset_progress()` persist the fields above to `user://savegame.json`; `load_game()` runs in `_ready()`. Autosave is wired via four small `_on_<signal>_autosave()` handlers, one per signal (`profile_changed`, `quest_changed`, `item_added`, `armor_equipped`), each just calling `save_game()` — **not** one shared zero-arg handler connected to all four (see the note below on why that doesn't work).
 - `scripts/core/ContentDefinitions.gd`: tiny lookup layer for profile labels, item labels, quest summaries, badge labels, and armor tier labels (`get_badge_label(quest_id)`/`BADGE_LABELS`, `get_armor_tier_label(tier)`/`ARMOR_TIER_LABELS` — both deliberately plain dictionaries, not `.tres` resources, since neither meets the "more content, or a second consumer needing structured data" bar `AGENTS.md` sets for promoting to Resources). Item labels are resolved from `ItemDefinition` `.tres` resources (see below); profile labels, quest summaries, badge labels, and armor tier labels are still plain dictionaries.
 - `scripts/core/ItemDefinition.gd` and `data/items/{golden_star,glowing_herb,shimmering_ore}.tres`: a tiny Resource-backed content experiment (`docs/ROADMAP.md` milestone 2) — each item's id/label now lives in its own `.tres` file instead of a hardcoded dictionary entry, proving the pattern works before it's considered for quest/profile content too.
 - `scripts/player/Player.gd`: WASD and arrow-key movement blocked until profile selection; swaps the player sprite by profile via `GameState.profile_changed`, and by movement direction (8-way, with west/south-west/north-west mirrored from east/south-east/north-east via `flip_h`) as the player moves. Builds one `SpriteFrames` per profile in `_ready()` (cached in `_profile_frames`) containing both an `idle_<direction>` animation (1 frame) and a `walk_<direction>` animation (4-frame loop: idle, walk1, idle, walk2) per direction, and plays the matching one on the `AnimatedSprite2D` `body` node based on whether the player is currently moving. Also builds a second per-profile cache (`_profile_armor_frames`) from the Tier 1 armor textures, reusing the same builder with no walk poses (so armored walking falls back to a static armored idle pose); `_update_sprite()` picks that cache whenever `GameState.equipped_armor_tier > 0`, refreshed on `GameState.armor_equipped`.
@@ -26,7 +28,7 @@ The player sprite is now profile-aware and direction-aware: `Player.gd` swaps it
 - `scenes/ui/DialogueBox.tscn` and `scripts/ui/DialogueBox.gd`: reusable speaker/message UI dismissed with E, Enter, or Space.
 - `scenes/ui/ProfileSelect.tscn` and `scripts/ui/ProfileSelect.gd`: profile selector overlay UI and logic.
 - `scenes/ui/LearningCheck.tscn` and `scripts/ui/LearningCheck.gd`: reusable profile-aware two-choice learning check.
-- `scenes/ui/CharacterPanel.tscn` and `scripts/ui/CharacterPanel.gd`: placeholder character/inventory popup opened with C or I and backed by content definitions. `Items:` now lists every collected item generically (any id in `GameState.collected_items`, with an "x2" suffix for counts above 1) instead of three hardcoded checks. `Bonuses earned:` now lists earned badge names (e.g. "Elder's Wisdom Badge") instead of a bare count.
+- `scenes/ui/CharacterPanel.tscn` and `scripts/ui/CharacterPanel.gd`: placeholder character/inventory popup opened with C or I and backed by content definitions. `Items:` now lists every collected item generically (any id in `GameState.collected_items`, with an "x2" suffix for counts above 1) instead of three hardcoded checks. `Bonuses earned:` now lists earned badge names (e.g. "Elder's Wisdom Badge") instead of a bare count. Also has a "Reset Progress..." button (mouse-only, no keyboard shortcut) that reveals a two-step confirm sub-view ("Cancel" vs "Yes, erase everything") before calling `GameState.reset_progress()` — deliberately hard to trigger by accident for the Grade 2/5 target audience.
 - `scripts/ui/LearningCheck.gd`: a correct answer's completion dialogue now names the earned badge (e.g. "Bonus earned! You've received the Elder's Wisdom Badge.") instead of a generic "Bonus earned!" line.
 - `assets/README.md` and `assets/sprites/README.md`: asset folder structure guidance.
 - `assets/source/.gdignore` and `assets/source/README.md`: ignored source/reference material area.
@@ -120,6 +122,23 @@ Open `project.godot` with Godot 4.x standard and press F5.
 - [ ] Switching profiles (if applicable) shows the correct character's own armored sprite,
       not the other character's.
 
+### Save/load and reset regression
+
+- [ ] Fresh launch with no prior save shows the profile selector as before.
+- [ ] Selecting a profile, collecting an item, or completing a quest each cause the game to
+      autosave (no visible UI for this — it's silent/automatic).
+- [ ] Quitting and relaunching the game auto-resumes exactly where you left off: the profile
+      selector does NOT appear, the player sprite/facing/armor is correct, previously
+      collected world pickups do not reappear, and the character panel shows the same quest
+      progress, items, bonuses, and equipment as before quitting.
+- [ ] Character panel's "Reset Progress..." button is mouse-only — it has no keyboard
+      shortcut and doesn't trigger from WASD/E/C/I mashing.
+- [ ] Clicking "Reset Progress..." shows a confirm sub-view ("Erase ALL progress? This
+      cannot be undone.") instead of resetting immediately.
+- [ ] Clicking "Cancel" hides the confirm sub-view and changes nothing.
+- [ ] Clicking "Yes, erase everything" clears all progress, reloads the scene, and shows the
+      profile selector again as if freshly launched with no save.
+
 ## Next milestone
 
 A design north-star doc set lives in `docs/design/` (`NORTH_STAR.md`, `CURRICULUM_MAP.md`, `VISUAL_CONTRACT.md`, `RESEARCH_NOTES.md`) to anchor future work. The learning checks now follow its bonus-only rule: each quest completes on item return regardless of answer, and a correct answer adds a bonus via `GameState.award_quest_bonus()`.
@@ -164,10 +183,22 @@ scaffold; it may still suit small separable accessories (capes, masks) later. Th
 manual equip/unequip UI, and armored walking is a static pose (no tier1 walk-cycle art
 exists yet) — both are accepted limitations of this deliberately minimal slice, not bugs.
 
+Local save/load (`docs/ROADMAP.md` milestone 6) is done: `GameState` autosaves to
+`user://savegame.json` on every profile/quest/item/armor change and auto-resumes silently
+on relaunch, with no "Continue vs New Game" menu (see above). A "Reset Progress..." control
+was added in the same milestone (not deferred), with a two-step confirm deliberately hard
+for a Grade 2/5 player to trigger by accident. A real bug was caught and fixed during live
+verification: connecting one shared zero-argument autosave handler to all four of
+`GameState`'s own signals silently failed to dispatch for any signal that emits arguments —
+only a same-object connection with mismatched arity was affected; identical connections
+from other scripts (`Player.gd`, `HUD.gd`, `CharacterPanel.gd`) to those same signals fired
+correctly throughout, and connecting to a genuinely zero-arg signal also worked. The fix
+was four small per-signal handlers matching each signal's exact arity, mirroring the
+matching-arity pattern every other signal listener in this codebase already used. See
+[[godot-ai-mcp-setup]] for how this was diagnosed live via `editor_manage(op="game_eval")`.
+
 Next decision is between:
-- local save/load (`docs/ROADMAP.md` milestone 6) — `GameState` is entirely in-memory
-  today, so nothing (including the newly-equipped armor) survives a restart;
-- a small headless GDScript test harness for `GameState`'s quest logic, ahead of adding
-  more content, since only the Python pipeline has automated tests today;
+- a small headless GDScript test harness for `GameState`'s quest/save logic, ahead of
+  adding more content, since only the Python pipeline has automated tests today;
 - more story/quest content (`docs/ROADMAP.md` milestone 7);
 - generating Tier 1 walk-cycle armor art, or designing Tier 2 (Bronze).

@@ -49,3 +49,24 @@ autowrap_mode = 2
 layout_mode = 2
 text = "Equipment: coming soon"
 autowrap_mode = 2
+
+[node name="ResetButton" type="Button" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Reset Progress..."
+
+[node name="ConfirmResetContainer" type="VBoxContainer" parent="PanelContainer/VBoxContainer"]
+visible = false
+layout_mode = 2
+
+[node name="ConfirmResetLabel" type="Label" parent="PanelContainer/VBoxContainer/ConfirmResetContainer"]
+layout_mode = 2
+text = "Erase ALL progress? This cannot be undone."
+autowrap_mode = 2
+
+[node name="CancelResetButton" type="Button" parent="PanelContainer/VBoxContainer/ConfirmResetContainer"]
+layout_mode = 2
+text = "Cancel"
+
+[node name="ConfirmResetButton" type="Button" parent="PanelContainer/VBoxContainer/ConfirmResetContainer"]
+layout_mode = 2
+text = "Yes, erase everything"

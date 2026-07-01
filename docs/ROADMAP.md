@@ -30,7 +30,14 @@
    set, and the character panel's equipment line shows it. No manual equip/unequip UI, no
    new quest — the simplest possible slice, per `docs/design/ARMOR_TIERS.md`. Armored
    walking is a static pose (no tier1 walk-cycle art exists yet) — an accepted limitation.
-6. Add local save/load. `GameState` is entirely in-memory today; nothing survives a restart.
+6. ~~Add local save/load.~~ Done — `GameState` autosaves to `user://savegame.json` (JSON via
+   `FileAccess`/`JSON`, no custom Resource class) on every profile/quest/item/armor change
+   and loads it in its own `_ready()`, before any other scene node's `_ready()` runs — so the
+   game auto-resumes silently on relaunch with no "Continue vs New Game" menu, and no changes
+   were needed to `ProfileSelect.gd`/`Collectible.gd`/`HUD.gd` (they already re-derive from
+   `GameState` correctly). A mouse-only "Reset Progress..." button was added to the character
+   panel in the same milestone, with a two-step confirm sub-view, deliberately hard for a
+   Grade 2/5 player to trigger by accident.
 7. Add more story/quest content. Slot a small headless GDScript test harness for
    `GameState`'s quest state machine in *before* this, so growing quest logic lands on a
    tested base (today only the Python pipeline has tests; game logic is manual-checklist only).
