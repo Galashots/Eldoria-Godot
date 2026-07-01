@@ -64,6 +64,14 @@ The current Elder → Mira → Finn checks already fit this scheme:
 | **Elder — golden star** | Recover the golden star for Elder Rowan | Number sense / multiplication | "Which is bigger, 7 or 4?" / "6 × 7 = ?" |
 | **Mira — glowing herb** | Restore the garden | Phonemic awareness / word choice | "Rhymes with star?" / "Which verb is stronger?" |
 | **Finn — shimmering ore** | Supply the forge (gated after Mira) | Phonics / fractions | "Starts like *forge*?" / "Equal to 1/2?" |
+| **Yarrow — silverleaf** | Brew a remedy for villagers ill from the well (gated after Finn) | Money/number sense / word choice | "Which coin is worth more?" / "Which word means someone who helps others?" |
+
+**Yarrow was added deliberately narrow**, not as a template for indefinite expansion: same
+village hub, same linear gate chain, and the *already-confirmed* numeracy/literacy subjects
+above — no new subject was picked. The "Proposed subject scope — CONFIRM/ADJUST" table
+below is still unconfirmed; a fifth quest should get user input on subject scope rather than
+defaulting to numeracy/literacy again, per `docs/design/NORTH_STAR.md`'s "resist feature
+equity across many NPCs/biomes" pillar.
 
 **Realignment note:** implemented — each quest completes on item return; the check is the
 bonus step, not a gate.

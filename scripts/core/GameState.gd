@@ -11,6 +11,7 @@ const SAVE_PATH := "user://savegame.json"
 const QUEST_ELDER_GOLDEN_STAR := "elder_golden_star"
 const QUEST_MIRA_GLOWING_HERB := "mira_glowing_herb"
 const QUEST_FINN_SHIMMERING_ORE := "finn_shimmering_ore"
+const QUEST_YARROW_SILVERLEAF := "yarrow_silverleaf"
 
 const QUEST_NOT_STARTED := "not_started"
 const QUEST_STARTED := "started"
@@ -25,6 +26,7 @@ var quest_states: Dictionary = {
     QUEST_ELDER_GOLDEN_STAR: QUEST_NOT_STARTED,
     QUEST_MIRA_GLOWING_HERB: QUEST_NOT_STARTED,
     QUEST_FINN_SHIMMERING_ORE: QUEST_NOT_STARTED,
+    QUEST_YARROW_SILVERLEAF: QUEST_NOT_STARTED,
 }
 var quest_bonuses: Dictionary = {}
 var equipped_armor_tier: int = 0
@@ -53,6 +55,8 @@ func add_item(item_id: String, amount: int = 1) -> void:
         mark_quest_ready_to_turn_in(QUEST_MIRA_GLOWING_HERB)
     elif item_id == "shimmering_ore" and get_quest_state(QUEST_FINN_SHIMMERING_ORE) == QUEST_STARTED:
         mark_quest_ready_to_turn_in(QUEST_FINN_SHIMMERING_ORE)
+    elif item_id == "silverleaf" and get_quest_state(QUEST_YARROW_SILVERLEAF) == QUEST_STARTED:
+        mark_quest_ready_to_turn_in(QUEST_YARROW_SILVERLEAF)
 
 func has_item(item_id: String) -> bool:
     return collected_items.get(item_id, 0) > 0
@@ -130,7 +134,11 @@ func _check_and_grant_tier1_armor() -> void:
     if equipped_armor_tier > 0:
         return
 
-    var required_quests := [QUEST_ELDER_GOLDEN_STAR, QUEST_MIRA_GLOWING_HERB, QUEST_FINN_SHIMMERING_ORE]
+    # Extended to include Yarrow's quest when it was added, so armor still means "you've
+    # finished every quest the village has to offer" rather than freezing at the original
+    # three. Safe for existing saves: this only re-evaluates while armor is still ungranted
+    # (the early return above), so a save that already has armor keeps it regardless.
+    var required_quests := [QUEST_ELDER_GOLDEN_STAR, QUEST_MIRA_GLOWING_HERB, QUEST_FINN_SHIMMERING_ORE, QUEST_YARROW_SILVERLEAF]
     for quest_id in required_quests:
         if get_quest_state(quest_id) != QUEST_COMPLETED:
             return

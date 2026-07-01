@@ -10,27 +10,31 @@ Local save/load now exists: `GameState` autosaves to `user://savegame.json` (JSO
 
 A small custom GDScript test suite now exists (`tests/`, see "How to run the GDScript test suite" below) covering `GameState`'s quest lifecycle, item/quest wiring, badge tracking, the Tier 1 armor auto-grant (order-independence, fires-once), and the save/load/reset round trip. Building it caught two real, non-obvious bugs, both now fixed: (1) `collected_items`' counts silently became floats after a save/load round trip, since `JSON.parse_string()` returns all numbers as float and a `Dictionary`'s values have no static type to auto-coerce them back — `load_game()` now explicitly casts each loaded count to `int`. (2) A signal connected to a **lambda** on a `RefCounted` object did not reliably fire on this Godot 4.7 build, even though the exact same signal correctly reached a **named** bound method — every probe in the test suite uses a named method for this reason; see the note in `tests/game_state_tests.gd` for the diagnosis.
 
+A fourth quest now exists: **Yarrow the Healer** (`QUEST_YARROW_SILVERLEAF`), gated behind Finn's completion, mirroring the existing Elder/Mira/Finn shape exactly (fetch item, two-choice profile-specific learning check, bonus-only completion). Deliberately scoped narrow rather than sprawling into a new NPC archetype/subject/biome, per `docs/design/NORTH_STAR.md`'s explicit "resist feature equity across many NPCs/biomes" guidance and `docs/design/CURRICULUM_MAP.md`'s unconfirmed subject-scope flag: Yarrow stays in the same village hub, continues the same linear gate chain (Elder → Mira → Finn → Yarrow), and reuses the already-confirmed numeracy (G2: coin comparison) and literacy (G5: word choice) subjects rather than introducing a new one. The Tier 1 armor grant now requires all **four** quests, not three — a deliberate design call (not forced by the code) reasoned through explicitly: it's backward-compatible for existing saves (armor never un-grants once earned, since `_check_and_grant_tier1_armor()` early-returns once `equipped_armor_tier > 0`), and keeps "you're geared up" meaning "you finished everything the village has to offer" rather than freezing at the original three.
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
 - `AGENTS.md`: project and agent workflow guidance, including the current `ContentDefinitions.gd` rule for lightweight quest/item/profile display text.
-- `scenes/main/Main.tscn`: green floor, brown collision obstacle, player, Elder, Mira, Finn, collectibles, HUD, dialogue, character panel, profile selector, and learning check instances.
+- `scenes/main/Main.tscn`: green floor, brown collision obstacle, player, Elder, Mira, Finn, Yarrow, collectibles (including Silverleaf), HUD, dialogue, character panel, profile selector, and learning check instances.
 - `scenes/player/Player.tscn`: player `Body` (`AnimatedSprite2D`, `sprite_frames` built in code per profile — see `Player.gd`), a hidden empty `Armor` (`AnimatedSprite2D`) scaffold for a future equipment layer, collision shape, and camera.
-- `scripts/core/GameState.gd`: minimal profile, health, collected-item, reusable quest state, and Elder compatibility flags. Also owns the equip system: `equipped_armor_tier` (0 = none) and an `armor_equipped(tier)` signal, granted automatically by `_check_and_grant_tier1_armor()` once all three quests reach `QUEST_COMPLETED` (called from `complete_quest()`). And local save/load: `save_game()`/`load_game()`/`reset_progress()` persist the fields above to `user://savegame.json`; `load_game()` runs in `_ready()`. Autosave is wired via four small `_on_<signal>_autosave()` handlers, one per signal (`profile_changed`, `quest_changed`, `item_added`, `armor_equipped`), each just calling `save_game()` — **not** one shared zero-arg handler connected to all four (see the note below on why that doesn't work).
+- `scripts/core/GameState.gd`: minimal profile, health, collected-item, reusable quest state (now four quests: Elder, Mira, Finn, Yarrow), and Elder compatibility flags. Also owns the equip system: `equipped_armor_tier` (0 = none) and an `armor_equipped(tier)` signal, granted automatically by `_check_and_grant_tier1_armor()` once all four quests reach `QUEST_COMPLETED` (called from `complete_quest()`). And local save/load: `save_game()`/`load_game()`/`reset_progress()` persist the fields above to `user://savegame.json`; `load_game()` runs in `_ready()`. Autosave is wired via four small `_on_<signal>_autosave()` handlers, one per signal (`profile_changed`, `quest_changed`, `item_added`, `armor_equipped`), each just calling `save_game()` — **not** one shared zero-arg handler connected to all four (see the note below on why that doesn't work).
 - `scripts/core/ContentDefinitions.gd`: tiny lookup layer for profile labels, item labels, quest summaries, badge labels, and armor tier labels (`get_badge_label(quest_id)`/`BADGE_LABELS`, `get_armor_tier_label(tier)`/`ARMOR_TIER_LABELS` — both deliberately plain dictionaries, not `.tres` resources, since neither meets the "more content, or a second consumer needing structured data" bar `AGENTS.md` sets for promoting to Resources). Item labels are resolved from `ItemDefinition` `.tres` resources (see below); profile labels, quest summaries, badge labels, and armor tier labels are still plain dictionaries.
-- `scripts/core/ItemDefinition.gd` and `data/items/{golden_star,glowing_herb,shimmering_ore}.tres`: a tiny Resource-backed content experiment (`docs/ROADMAP.md` milestone 2) — each item's id/label now lives in its own `.tres` file instead of a hardcoded dictionary entry, proving the pattern works before it's considered for quest/profile content too.
+- `scripts/core/ItemDefinition.gd` and `data/items/{golden_star,glowing_herb,shimmering_ore,silverleaf}.tres`: a tiny Resource-backed content experiment (`docs/ROADMAP.md` milestone 2) — each item's id/label now lives in its own `.tres` file instead of a hardcoded dictionary entry, proving the pattern works before it's considered for quest/profile content too.
 - `scripts/player/Player.gd`: WASD and arrow-key movement blocked until profile selection; swaps the player sprite by profile via `GameState.profile_changed`, and by movement direction (8-way, with west/south-west/north-west mirrored from east/south-east/north-east via `flip_h`) as the player moves. Builds one `SpriteFrames` per profile in `_ready()` (cached in `_profile_frames`) containing both an `idle_<direction>` animation (1 frame) and a `walk_<direction>` animation (4-frame loop: idle, walk1, idle, walk2) per direction, and plays the matching one on the `AnimatedSprite2D` `body` node based on whether the player is currently moving. Also builds a second per-profile cache (`_profile_armor_frames`) from the Tier 1 armor textures, reusing the same builder with no walk poses (so armored walking falls back to a static armored idle pose); `_update_sprite()` picks that cache whenever `GameState.equipped_armor_tier > 0`, refreshed on `GameState.armor_equipped`.
 - `scenes/npcs/Elder.tscn` and `scripts/npcs/Elder.gd`: purple Elder placeholder with golden-star quest.
 - `scenes/npcs/Mira.tscn` and `scripts/npcs/Mira.gd`: green gardener NPC with glowing-herb quest.
 - `scenes/npcs/Finn.tscn` and `scripts/npcs/Finn.gd`: brown blacksmith placeholder with shimmering-ore quest gated after Mira completion.
+- `scenes/npcs/Yarrow.tscn` and `scripts/npcs/Yarrow.gd`: pale-robed village healer with a silverleaf quest gated after Finn completion — the fourth quest, added on top of the tested `GameState` base; mirrors Finn.gd's shape exactly.
 - `scenes/items/Collectible.tscn` and `scripts/items/Collectible.gd`: reusable pickup logic.
 - `scenes/items/GlowingHerb.tscn`: glowing-herb pickup for Mira's quest.
 - `scenes/items/ShimmeringOre.tscn`: shimmering-ore pickup for Finn's quest.
-- `scripts/ui/HUD.gd`: visible objective text that updates based on selected profile and active quest state.
+- `scenes/items/Silverleaf.tscn`: silverleaf pickup for Yarrow's quest.
+- `scripts/ui/HUD.gd`: visible objective text that updates based on selected profile and active quest state; chains through all four quests in order (Elder → Mira → Finn → Yarrow), falling through to the next once the current one completes.
 - `scenes/ui/DialogueBox.tscn` and `scripts/ui/DialogueBox.gd`: reusable speaker/message UI dismissed with E, Enter, or Space.
 - `scenes/ui/ProfileSelect.tscn` and `scripts/ui/ProfileSelect.gd`: profile selector overlay UI and logic.
 - `scenes/ui/LearningCheck.tscn` and `scripts/ui/LearningCheck.gd`: reusable profile-aware two-choice learning check.
-- `scenes/ui/CharacterPanel.tscn` and `scripts/ui/CharacterPanel.gd`: placeholder character/inventory popup opened with C or I and backed by content definitions. `Items:` now lists every collected item generically (any id in `GameState.collected_items`, with an "x2" suffix for counts above 1) instead of three hardcoded checks. `Bonuses earned:` now lists earned badge names (e.g. "Elder's Wisdom Badge") instead of a bare count. Also has a "Reset Progress..." button (mouse-only, no keyboard shortcut) that reveals a two-step confirm sub-view ("Cancel" vs "Yes, erase everything") before calling `GameState.reset_progress()` — deliberately hard to trigger by accident for the Grade 2/5 target audience.
+- `scenes/ui/CharacterPanel.tscn` and `scripts/ui/CharacterPanel.gd`: placeholder character/inventory popup opened with C or I and backed by content definitions. `Items:` now lists every collected item generically (any id in `GameState.collected_items`, with an "x2" suffix for counts above 1) instead of three hardcoded checks. `Bonuses earned:` now lists earned badge names (e.g. "Elder's Wisdom Badge") instead of a bare count, checking all four quests. `Current quest:` chains through all four quests, same as HUD. Also has a "Reset Progress..." button (mouse-only, no keyboard shortcut) that reveals a two-step confirm sub-view ("Cancel" vs "Yes, erase everything") before calling `GameState.reset_progress()` — deliberately hard to trigger by accident for the Grade 2/5 target audience.
 - `scripts/ui/LearningCheck.gd`: a correct answer's completion dialogue now names the earned badge (e.g. "Bonus earned! You've received the Elder's Wisdom Badge.") instead of a generic "Bonus earned!" line.
 - `assets/README.md` and `assets/sprites/README.md`: asset folder structure guidance.
 - `assets/source/.gdignore` and `assets/source/README.md`: ignored source/reference material area.
@@ -111,11 +115,11 @@ diagnosed; skip it for now and expect the suite to touch your local save file tr
 - [ ] Character panel shows selected profile.
 - [ ] Character panel shows current quest summary.
 - [ ] Character panel shows collected items after the golden star, glowing herb, and shimmering ore are collected.
-- [ ] Character panel shows equipment coming soon.
+- [ ] Character panel shows "Equipment: none yet" before armor is earned.
 - [ ] Character panel shows "Bonuses earned: none yet" before any bonus is earned, and lists the earned badge name(s) (e.g. "Elder's Wisdom Badge") as correct learning-check answers are given.
 - [ ] A correct learning-check answer's completion dialogue names the earned badge (e.g. "...You've received the Elder's Wisdom Badge.").
 - [ ] Character panel's Items line lists every collected item by name (not just the original three), with an "x2" suffix if the same item is collected more than once.
-- [ ] Existing Elder, Mira, and Finn quest flows still work while the character panel is opened and closed.
+- [ ] Existing Elder, Mira, Finn, and Yarrow quest flows still work while the character panel is opened and closed.
 
 ### Finn quest regression
 
@@ -130,13 +134,28 @@ diagnosed; skip it for now and expect the suite to touch your local save file tr
 - [ ] Wrong answer still completes the Finn quest, with no bonus.
 - [ ] Correct answer completes the Finn quest and the dialogue line includes "Bonus earned!".
 
+### Yarrow quest regression
+
+- [ ] Yarrow appears as a pale-robed healer near the south of the map.
+- [ ] Interacting with Yarrow before Finn is complete tells the player to help Finn first.
+- [ ] After Finn is complete, HUD points to Yarrow.
+- [ ] Yarrow offers the silverleaf quest.
+- [ ] Touching silverleaf removes it and records `silverleaf` in GameState.
+- [ ] Returning to Yarrow opens the profile-aware learning check.
+- [ ] Grade 2 Yarrow question accepts `a dime` as the correct answer.
+- [ ] Grade 5 Yarrow question accepts `kind` as the correct answer.
+- [ ] Wrong answer still completes the Yarrow quest, with no bonus.
+- [ ] Correct answer completes the Yarrow quest and the dialogue line includes "Bonus earned!".
+- [ ] After Yarrow's quest completes, HUD and character panel show a completion message
+      rather than pointing to a fifth quest that doesn't exist.
+
 ### Equip system regression
 
-- [ ] Before completing all three quests, character panel shows "Equipment: none yet".
-- [ ] The instant the third quest (Elder, Mira, or Finn, in any order) completes, the player
-      sprite immediately shows Tier 1 (Leather) armor for both Grade 2 Mage and Grade 5
-      Adventurer, without needing to reopen the character panel or restart.
-- [ ] Character panel shows "Equipment: Leather Armor" after all three quests complete.
+- [ ] Before completing all four quests, character panel shows "Equipment: none yet".
+- [ ] The instant the fourth quest (Elder, Mira, Finn, or Yarrow, in any order) completes,
+      the player sprite immediately shows Tier 1 (Leather) armor for both Grade 2 Mage and
+      Grade 5 Adventurer, without needing to reopen the character panel or restart.
+- [ ] Character panel shows "Equipment: Leather Armor" after all four quests complete.
 - [ ] Walking in any direction while armored shows a static armored pose (no leg animation)
       instead of the unarmored walk-cycle.
 - [ ] Switching profiles (if applicable) shows the correct character's own armored sprite,
@@ -231,6 +250,17 @@ probe in the test suite now uses a named method for this reason. `GameState.rese
 was also split into `reset_state()` (data clearing) + a conditional scene reload, so the
 state-clearing half can be tested headlessly without a loaded scene to reload.
 
-Next up is more story/quest content (`docs/ROADMAP.md` milestone 7), now that it lands on
-a tested `GameState` base — or generating Tier 1 walk-cycle armor art, or designing Tier 2
-(Bronze).
+A fourth quest is done: **Yarrow the Healer** (`QUEST_YARROW_SILVERLEAF`), gated behind
+Finn, mirroring the existing Elder/Mira/Finn shape exactly. Deliberately scoped narrow per
+`docs/design/NORTH_STAR.md`'s "resist feature equity across many NPCs/biomes" guidance and
+`docs/design/CURRICULUM_MAP.md`'s unconfirmed subject-scope flag — same village hub, same
+linear gate chain, same already-confirmed numeracy/literacy subjects, not a new archetype.
+The Tier 1 armor grant now requires all four quests (backward-compatible: armor never
+un-grants once earned). This is a judgment call made autonomously while the user was away;
+flagged clearly here for review — a different next quest, a different subject, or declining
+to extend the armor requirement would all have been reasonable alternate choices.
+
+Next up: continue adding story/quest content (`docs/ROADMAP.md` milestone 7) — ideally with
+user input on subject scope per `CURRICULUM_MAP.md`'s CONFIRM/ADJUST flag before going
+further, since repeating "one more NPC" risks exactly the feature-equity sprawl the design
+docs warn against — or generating Tier 1 walk-cycle armor art, or designing Tier 2 (Bronze).

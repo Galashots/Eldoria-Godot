@@ -1,7 +1,7 @@
 # Roadmap
 
 ## Current baseline
-- Elder → Mira → Finn placeholder vertical slice.
+- Elder → Mira → Finn → Yarrow placeholder vertical slice.
 - Two child profiles: Grade 2 Mage and Grade 5 Adventurer.
 - Local-first, single-player, no accounts, no analytics, no ads.
 - Placeholder art-first.
@@ -48,7 +48,17 @@
    build — every test probe now uses a named method instead. Run via
    `Godot...console.exe --headless --path . res://tests/TestRunner.tscn`, see
    `docs/CURRENT_STATE.md`. Now add more story/quest content on top of this tested base.
-8. Plan iPad/web playtest/export path.
+8. Add more story/quest content — **in progress.** A fourth quest, Yarrow the Healer
+   (`QUEST_YARROW_SILVERLEAF`), is done: gated behind Finn, mirroring the Elder/Mira/Finn
+   shape exactly (fetch item, two-choice check, bonus-only completion). Deliberately narrow
+   in scope — same village hub, same linear chain, same already-confirmed numeracy/literacy
+   subjects — per `docs/design/NORTH_STAR.md`'s "resist feature equity across many
+   NPCs/biomes" pillar and `docs/design/CURRICULUM_MAP.md`'s subject-scope CONFIRM/ADJUST
+   flag, both of which argue against just repeating this pattern indefinitely. Tier 1 armor
+   now requires all four quests. **Before adding a fifth quest, get user input on subject
+   scope** (`CURRICULUM_MAP.md`'s "Proposed subject scope — CONFIRM/ADJUST" table is still
+   unconfirmed) rather than defaulting to numeracy/literacy again.
+9. Plan iPad/web playtest/export path.
 
 ## Cleanup backlog (from the repo audit, deliberately deferred)
 

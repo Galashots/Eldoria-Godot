@@ -38,7 +38,12 @@ func _update_objective() -> void:
         return
 
     var finn_state := GameState.get_quest_state(GameState.QUEST_FINN_SHIMMERING_ORE)
-    _set_finn_objective(profile, finn_state)
+    if finn_state != GameState.QUEST_COMPLETED:
+        _set_finn_objective(profile, finn_state)
+        return
+
+    var yarrow_state := GameState.get_quest_state(GameState.QUEST_YARROW_SILVERLEAF)
+    _set_yarrow_objective(profile, yarrow_state)
 
 func _set_elder_objective(profile: String, quest_state: String) -> void:
     if profile == "grade_2_mage":
@@ -74,20 +79,36 @@ func _set_mira_objective(profile: String, quest_state: String) -> void:
 
 func _set_finn_objective(profile: String, quest_state: String) -> void:
     if profile == "grade_2_mage":
-        if quest_state == GameState.QUEST_COMPLETED:
-            objective_label.text = "Mage forge task complete: Shimmering ore delivered!"
-        elif quest_state == GameState.QUEST_READY_TO_TURN_IN or quest_state == GameState.QUEST_LEARNING_CHECK:
+        if quest_state == GameState.QUEST_READY_TO_TURN_IN or quest_state == GameState.QUEST_LEARNING_CHECK:
             objective_label.text = "Mage forge task: Bring the shimmering ore back to Finn."
         elif quest_state == GameState.QUEST_STARTED:
             objective_label.text = "Mage forge task: Find the shimmering ore."
         else:
             objective_label.text = "Mage forge task: Talk to Finn the Blacksmith."
     elif profile == "grade_5_adventurer":
-        if quest_state == GameState.QUEST_COMPLETED:
-            objective_label.text = "Adventurer forge task complete: Finn's forge is restored."
-        elif quest_state == GameState.QUEST_READY_TO_TURN_IN or quest_state == GameState.QUEST_LEARNING_CHECK:
+        if quest_state == GameState.QUEST_READY_TO_TURN_IN or quest_state == GameState.QUEST_LEARNING_CHECK:
             objective_label.text = "Adventurer forge task: Return the shimmering ore to Finn."
         elif quest_state == GameState.QUEST_STARTED:
             objective_label.text = "Adventurer forge task: Recover shimmering ore for Finn's forge."
         else:
             objective_label.text = "Adventurer forge task: Speak with Finn the Blacksmith."
+
+func _set_yarrow_objective(profile: String, quest_state: String) -> void:
+    if profile == "grade_2_mage":
+        if quest_state == GameState.QUEST_COMPLETED:
+            objective_label.text = "Mage remedy task complete: The village breathes easier!"
+        elif quest_state == GameState.QUEST_READY_TO_TURN_IN or quest_state == GameState.QUEST_LEARNING_CHECK:
+            objective_label.text = "Mage remedy task: Bring silverleaf back to Yarrow."
+        elif quest_state == GameState.QUEST_STARTED:
+            objective_label.text = "Mage remedy task: Find silverleaf."
+        else:
+            objective_label.text = "Mage remedy task: Talk to Yarrow the Healer."
+    elif profile == "grade_5_adventurer":
+        if quest_state == GameState.QUEST_COMPLETED:
+            objective_label.text = "Adventurer remedy task complete: Yarrow's cure is brewed."
+        elif quest_state == GameState.QUEST_READY_TO_TURN_IN or quest_state == GameState.QUEST_LEARNING_CHECK:
+            objective_label.text = "Adventurer remedy task: Return silverleaf to Yarrow."
+        elif quest_state == GameState.QUEST_STARTED:
+            objective_label.text = "Adventurer remedy task: Gather silverleaf for Yarrow's cure."
+        else:
+            objective_label.text = "Adventurer remedy task: Speak with Yarrow the Healer."
