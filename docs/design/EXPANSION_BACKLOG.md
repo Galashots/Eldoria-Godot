@@ -45,16 +45,178 @@ CONFIRM/ADJUST" table is **unconfirmed**, so any slice that would introduce a 5t
 new subject must be filed `blocked: needs-user-input` with a precise question — not built. The
 orchestrator HALTS the loop when the top item is `blocked: needs-user-input`.
 
+## Planning baseline for this pass (2026-07-01)
+
+This pass is planned strictly **after** two in-flight PRs, treated as ground truth even
+though not yet merged to `main`:
+
+- **PR #35 (M3: gear, rarity, coins & shop)** — `GearDefinition.gd` + 3 weapons
+  (`data/gear/`: Worn Dagger/Iron Sword/Oakheart Blade, Common/Uncommon/Rare), Meadow Slimes
+  drop 1 coin on death, a single `Merchant`/`ShopUI`, manual equip via the character panel,
+  save schema v2. See `docs/design/GEAR_AND_ECONOMY.md` (present on that branch).
+- **PR #36 (M4: pets, stacked on #35)** — `PetDefinition.gd` + Mossy the Sprite (Rare, +2 Max
+  HP), same all-4-quests auto-equip gate as Tier 1 armor, follow-only (no combat), save
+  schema v3. See `docs/design/PETS.md` (present on that branch).
+
+Every slice below assumes both have landed. None of them re-propose anything those PRs
+already deliver or explicitly defer (sell-back, multi-slot loadouts, consumables, a second
+pet species, pet combat, real icon/pet art, gear stat axes beyond `damage_bonus` — all still
+out of scope until a future pass has a concrete reason to revisit them).
+
 ---
 
 ## Ready
 
-_(empty — `game-architect` populates this on its first run, best next slice at the top.)_
+### Tie loot rarity to specific enemies (Meadow Slime bonus-chance drop)
+- **Goal:** Give the player an occasional *bonus* chance at coins (or, later, a rarity
+  token) on top of Meadow Slime's existing guaranteed 1-coin drop, so combat and the M3 shop
+  loop start to reinforce each other instead of the coin drop being a flat, un-tunable
+  constant.
+- **Design rationale:** NORTH_STAR pillar "Cohesion over volume" — deepens the existing
+  Meadow-Slime-to-shop loop rather than adding a parallel system | research: "Loot Drop Rates
+  Calculation Guide: Numbers to Feel" (PulseGeek) and "Defining Loot Tables in ARPG Game
+  Design" (Game Developer), `docs/design/RESEARCH_NOTES.md` §6.1 — professional loot tables
+  are tuned per-source, not as one flat global rate, and are additive-only here per the
+  bonus-only rule (never a chance of *zero* reward, only a chance of *extra*).
+- **Acceptance criteria:**
+  - [ ] Meadow Slime still always drops its existing guaranteed 1 coin (no regression).
+  - [ ] A small, tunable chance (e.g. ~10-15%, tuned in-engine per the research caveat, not
+        hardcoded blindly) adds one *additional* coin on top of the guaranteed drop — never
+        removes or reduces the guaranteed drop.
+  - [ ] The bonus-coin roll is implemented as a single exported probability on
+        `MeadowSlime.gd` (or a tiny shared helper if a second enemy will reuse it soon), not
+        a new generic loot-table framework — keep it proportional to one monster.
+  - [ ] Test suite covers the roll deterministically (e.g. by seeding/mocking randomness or
+        asserting the guaranteed-coin path is unaffected when the bonus roll fails/succeeds).
+  - [ ] No visual/UI change required beyond the existing coin-drop pickup already shipped in
+        M3; a second `CoinPickup` instance is an acceptable minimal presentation.
+- **Likely files touched:** `scripts/enemies/MeadowSlime.gd`, `tests/game_state_tests.gd` (or
+  a new enemy test file if one exists after M2/M3 land), `docs/design/GEAR_AND_ECONOMY.md`
+  (append the bonus-drop rule to keep it authoritative).
+- **Curriculum tie-in:** none — pure systems.
+- **Status:** ready
+
+### Add a shop restock reason: a second, tiny coin faucet
+- **Goal:** Once a player owns all 3 M3 weapons, coins currently have nowhere to go. Add one
+  small additional sink or faucet-pacing tweak so post-purchase coins still feel purposeful
+  during a normal session, without inventing a new economy system.
+- **Design rationale:** NORTH_STAR pillar "Every short session yields permanent progress" |
+  research: "Value chains" (Lost Garden) and "The Principles of Building A Game Economy"
+  (Department of Play), `docs/design/RESEARCH_NOTES.md` §6.2 — fixed-length/session games
+  should size faucets against a tallied list of sinks, and a "pinch point" economy (scarce
+  but not grindy) keeps pacing appropriate for a Grade 2/5 audience; avoid overshooting into
+  a punishing/grindy economy per that same research.
+- **Acceptance criteria:**
+  - [ ] Exactly one small addition — either (a) a 4th, slightly pricier weapon reusing the
+        exact same `GearDefinition` pattern (Rare or a new tier, priced so it's reachable
+        within a normal session per the research's pacing guidance), or (b) a cheap
+        repeatable sink (e.g. a "tip the Merchant" flavor interaction with no mechanical
+        effect beyond a dialogue acknowledgment) — pick (a) unless a design review finds (b)
+        clearly better; do not ship both in one slice.
+  - [ ] If a 4th weapon: it's added to `data/gear/`, appears in `ShopUI`, and is purchasable
+        and equippable exactly like the existing 3.
+  - [ ] Price is tuned so a player who already owns the 3 existing weapons can reach it
+        within roughly one more normal play session of Meadow-Slime coin farming (avoiding a
+        grindy economy per the cited research) — document the assumed coins/session estimate
+        in the PR description for future tuning.
+  - [ ] `docs/design/GEAR_AND_ECONOMY.md`'s roster table is updated to include the addition.
+  - [ ] Test suite covers purchase/equip of the new item exactly as it covers the existing 3.
+- **Likely files touched:** `data/gear/` (new `.tres`), `scripts/ui/ShopUI.gd` (if the roster
+  isn't already fully data-driven), `docs/design/GEAR_AND_ECONOMY.md`,
+  `tests/game_state_tests.gd`.
+- **Curriculum tie-in:** none — pure systems.
+- **Status:** ready
+
+### First mini-boss: Elder Slime (tougher Meadow Slime variant)
+- **Goal:** Give the player one clearly-telegraphed, higher-stakes (but still non-punitive)
+  fight — a larger, tougher Meadow Slime variant with more HP and a single new telegraphed
+  windup move — without building a bespoke boss-fight system.
+- **Design rationale:** NORTH_STAR pillar "Cohesion over volume" (reuses/deepens the
+  existing Meadow Slime component architecture rather than adding a new enemy archetype) |
+  research: "Building Better Bosses" and "Boss Design: How to Make an Unforgettable Boss
+  Battle" (Game Developer / Game Design Skills), and "Encounter" (The Level Design Book),
+  `docs/design/RESEARCH_NOTES.md` §6.3 — mini-bosses are conventionally a tougher variant of
+  a known enemy at a zone's mid-point, and fairness requires every dangerous move be clearly
+  telegraphed well before it lands, functioning as a loose tutorial for the tell.
+- **Acceptance criteria:**
+  - [ ] Reuses `scripts/enemies/MeadowSlime.gd`'s existing FSM/components (`HealthComponent`,
+        `HitboxComponent`/`HurtboxComponent`) — implemented as a variant (exported stat
+        overrides, e.g. via a scene inheriting `MeadowSlime.tscn`, or a small subclass), not
+        a new parallel monster script from scratch.
+  - [ ] Has meaningfully more HP than a regular Meadow Slime (tuned in-engine, not just "3x"
+        blindly) and deals contact damage the same way — same non-punitive death rule
+        applies (teleport/heal/friendly line, no game-over).
+  - [ ] Adds exactly one new telegraphed move: a brief, clearly visible wind-up (e.g. a
+        color-flash or a brief pause-then-lunge) before any bigger hit, giving the player a
+        fair visual cue to react to, honoring the telegraphing research above.
+  - [ ] Placed once, at a clear mid-point of the existing M1 zone (not guarding a new area),
+        reusing existing placeholder art techniques (e.g. a scaled-up/recolored variant of
+        the existing `meadow_slime_idle.png`, consistent with `docs/design/
+        MONSTER_CONCEPTS.md`'s "placeholder-first" precedent) rather than requiring new
+        production art before the system is proven.
+  - [ ] No new UI system (health bar, phase indicator) is required to ship this slice — the
+        existing HP/combat feedback the player already has (HUD "On Fire!"/HP readout) is
+        sufficient for a first pass; a boss health bar is explicitly deferred, not part of
+        this slice's acceptance criteria.
+  - [ ] Test suite covers the variant's stat overrides and telegraphed-hit timing at the same
+        pure-logic level M2's combat tests already do.
+- **Likely files touched:** `scripts/enemies/MeadowSlime.gd` (variant hook or a small new
+  subclass), `scenes/enemies/` (new scene, e.g. `ElderSlime.tscn`), `scenes/main/Main.tscn`
+  (one placement), `docs/design/MONSTER_CONCEPTS.md` (append the variant), `tests/`.
+- **Curriculum tie-in:** none — pure systems.
+- **Status:** ready
+
+### Map readability pass: landmark props near existing path forks
+- **Goal:** Add 1-2 tall/distinctive landmark props (e.g. a large standing stone or a
+  distinctive lone tree) near the existing path forks in the M1 zone, so a player can see at
+  a glance which direction leads where, without adding a new biome or expanding the map.
+- **Design rationale:** NORTH_STAR pillar "Cohesion over volume" (a readability pass on the
+  existing single zone, not a new biome) | research: "Best Practices for Game Map Layout"
+  (Sandboxr) and "Wayfinding" (The Level Design Book), `docs/design/RESEARCH_NOTES.md` §6.4 —
+  readable layouts use landmarks and soft diegetic gating (already true of M1's lake/rock
+  outcrops) but currently lack any long-range visual landmark pulling the player toward NPCs
+  from a distance; a good readability test is whether a player can navigate by world cues
+  alone.
+- **Acceptance criteria:**
+  - [ ] 1-2 new static, placeholder-art props (matching the existing bootstrap-placeholder
+        convention — e.g. a simple colored polygon/sprite, not new production art) are placed
+        at existing path forks in `scenes/main/Main.tscn`, tall/bright enough to be visible
+        from a screen or more away.
+  - [ ] Props are purely visual (no collision required, unless matching an existing obstacle
+        pattern is trivially easy) — this is a readability slice, not a new gameplay
+        mechanic.
+  - [ ] No existing NPC/collectible/path position changes — this is additive only, preserving
+        the already-tested playable slice.
+  - [ ] Manual test checklist addition in `docs/CURRENT_STATE.md`: a player entering the zone
+        for the first time can identify, from the landmark alone, which fork leads toward the
+        already-visited vs. not-yet-visited NPCs.
+- **Likely files touched:** `scenes/main/Main.tscn`, possibly one or two new placeholder
+  sprite assets under `assets/sprites/`, `docs/CURRENT_STATE.md` (manual checklist).
+- **Curriculum tie-in:** none — pure systems.
+- **Status:** ready
+
+---
 
 ## Blocked
 
-_(empty — items needing user input or an upstream dependency live here, each with the exact
-blocking question or dependency.)_
+### Fifth quest / new curriculum subject
+- **Goal:** (not authored — see question below; do not decide this unilaterally.)
+- **Design rationale:** N/A until user input resolves the open CONFIRM gate.
+- **Acceptance criteria:** N/A.
+- **Likely files touched:** N/A.
+- **Curriculum tie-in:** Directly blocked by `docs/design/CURRICULUM_MAP.md`'s "Proposed
+  subject scope — CONFIRM/ADJUST" table, which is still unconfirmed.
+- **Status:** blocked: needs-user-input
+- **Exact question for the user:** `CURRICULUM_MAP.md` proposes Grade 2 = numeracy primary /
+  literacy secondary / science-social later, and Grade 5 = numeracy primary / literacy
+  secondary / science-social later — with exact Alberta curriculum outcome codes still
+  `TODO`. Before any 5th quest (or any new subject folded into an existing quest) is
+  designed: **do you confirm this subject scope as-is, or do you want to adjust which
+  subject comes next (e.g. move to science/social studies instead of a 3rd numeracy/literacy
+  quest), and can you supply (or approve deferring) the specific Alberta outcome codes this
+  table marks as TODO?**
+
+---
 
 ## Done
 
