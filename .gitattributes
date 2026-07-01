@@ -1,0 +1,19 @@
+# Normalize line endings. This repo (and Godot's own output) is LF throughout,
+# but contributors on Windows may have core.autocrlf=true globally, which
+# mis-flags LF-only text files (notably *.png.import) as perpetually modified.
+# Pinning eol=lf per-file makes git ignore autocrlf here and keeps status clean.
+* text=auto eol=lf
+
+# Binary assets: never touch line endings or try to diff as text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.ttf binary
+*.otf binary
+*.wav binary
+*.ogg binary
+*.mp3 binary
+*.zip binary
