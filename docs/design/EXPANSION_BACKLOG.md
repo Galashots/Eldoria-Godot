@@ -67,6 +67,99 @@ out of scope until a future pass has a concrete reason to revisit them).
 
 ## Ready
 
+<!-- Second expansion pass (orchestrator refill, 2026-07-01). The three slices below were
+     added after the first cycles shipped (Legendary weapon = PR #40, landmark props = PR #41,
+     bonus-coin drop = PR #39). They are ordered best-next-first AND by how conflict-free they
+     are against that still-open PR stack; each carries a "Sequencing" note. The four original
+     slices further down keep their status; PRs #39/#40/#41 flip three of them to done on merge. -->
+
+### Combat hit-flash: a brief white flash when something takes damage
+- **Goal:** When the player hits an enemy (and when the player is hit), the struck sprite
+  briefly flashes white, so a landed hit reads instantly — the single cheapest bit of "game
+  feel" for the existing M2 combat.
+- **Design rationale:** NORTH_STAR pillar "Cohesion over volume" — deepens the existing
+  combat's readability, adds no new system | research: `RESEARCH_NOTES.md` §7.1 — a ~50-100ms
+  white flash on hit is the highest-impact/lowest-cost juice ("Juice it or lose it" lineage);
+  the "juice problem" counterpoint says keep it subtle, which suits a Grade 2/5 audience (a
+  gentle flash, no screen shake).
+- **Acceptance criteria:**
+  - [ ] Taking damage briefly tints the struck entity's sprite toward white then restores it
+        (~0.08s, tunable), implemented as a small reusable behavior on `HealthComponent`
+        (flash an assigned sprite target) so any entity with a `HealthComponent` gets it.
+  - [ ] The Meadow Slime flashes when the player hits it; the player flashes when hit (player
+        has no `HealthComponent`, so its flash lives in `Player.gd`, mirroring the same timing).
+  - [ ] No screen shake, no hit-stop in this slice (deferred per the "juice problem" caution);
+        purely a color flash. No gameplay/damage/timing change to combat itself.
+  - [ ] The flash's pure timing logic (e.g. a function mapping elapsed→tint) is unit-tested in
+        an **isolated new test file** registered in `tests/test_runner.gd`, NOT appended to
+        `game_state_tests.gd` (which is a merge hotspot right now).
+- **Likely files touched:** `scripts/core/combat/HealthComponent.gd`,
+  `scenes/enemies/MeadowSlime.tscn` (wire the Body as flash target — the `.tscn`, not the
+  `.gd`), `scripts/player/Player.gd`, `scenes/player/Player.tscn`, new `tests/hit_flash_tests.gd`
+  + `tests/test_runner.gd` (register it).
+- **Curriculum tie-in:** none — pure systems.
+- **Sequencing:** **conflict-free now** — touches none of the files in the open PR stack
+  (#39 edits `MeadowSlime.gd` not `.tscn`; #40 edits gear/`ContentDefinitions`; #41 edits
+  `Main.tscn`). `GameState.gd`/`HealthComponent.gd`/`Player.gd`/`test_runner.gd` are all free.
+- **Status:** ready
+
+### "Creatures met" codex: permanent world-knowledge from combat
+- **Goal:** The first time the player defeats each monster type, it's recorded and shown as a
+  friendly "Creatures met" entry (name + one-line factoid) in the character panel — so combat
+  leaves behind permanent, collectible world-knowledge, not just coins.
+- **Design rationale:** NORTH_STAR pillar 5 "every short session yields permanent progress
+  (world knowledge, a keepsake, a codex entry)" | research: `RESEARCH_NOTES.md` §7.3 — a
+  bestiary/compendium filled by defeating creatures is a classic low-cost collection loop, each
+  entry paired with a short friendly factoid; bonus-only and non-punitive by construction (you
+  only ever gain entries).
+- **Acceptance criteria:**
+  - [ ] `GameState` tracks a persisted set of defeated monster type ids (survives save/load and
+        clears on reset), with a `record_creature_defeated(id)` that is idempotent.
+  - [ ] The Meadow Slime records itself as defeated on death (one call from its death path).
+  - [ ] The character panel shows a "Creatures met" section listing each recorded creature's
+        label + a one-line friendly factoid (text-only, no new art).
+  - [ ] Bonus-only: no gameplay/difficulty change; you cannot lose a codex entry.
+  - [ ] Covered by an **isolated new test file** (registered in `test_runner.gd`), not by
+        appending to `game_state_tests.gd`.
+- **Likely files touched:** `scripts/core/GameState.gd`, `scripts/enemies/MeadowSlime.gd` (one
+  line on death), `scripts/ui/CharacterPanel.gd` (+`.tscn`), a small factoid source, new
+  `tests/codex_tests.gd` + `tests/test_runner.gd`.
+- **Curriculum tie-in:** none directly — but the codex is the natural home for later "mastery
+  marks" (`CURRICULUM_MAP.md`'s stealth-assessment bridge) if that's ever built.
+- **Sequencing:** **wait for PR #39 to merge** — the one-line defeat hook is in
+  `MeadowSlime.gd`, which #39 edits; build after #39 lands to avoid a conflict. (`GameState.gd`
+  and `CharacterPanel.gd` are otherwise free.)
+- **Status:** ready
+
+### Gentle repeatable coin faucet: a slow Meadow Slime respawn
+- **Goal:** Make the coin faucet repeatable within a session so the shop roster (incl. the new
+  30-coin Dawnbringer) stays reachable without grind — slain Meadow Slimes slowly respawn (up
+  to the original count) at a gentle cadence.
+- **Design rationale:** NORTH_STAR pillar "Every short session yields permanent progress" |
+  research: `RESEARCH_NOTES.md` §7.2 (time-based respawn keeps a zone alive and lets a player
+  choose to earn more) and the faucet-depth finding already recorded in
+  `GEAR_AND_ECONOMY.md` — the flagged bottleneck is exactly this: 3 non-respawning slimes =
+  ~3 coins/session. Keep the cadence slow and the cap at the original 3 so the zone never feels
+  crowded or dangerous for a young audience.
+- **Acceptance criteria:**
+  - [ ] Defeated Meadow Slimes respawn after a slow, tunable delay, capped so the live count
+        never exceeds the original 3 (no crowding).
+  - [ ] Implemented as a small standalone `Spawner` node (disjoint from `MeadowSlime.gd`) that
+        watches its spawn points and re-instances — not a rewrite of the slime.
+  - [ ] Non-punitive: respawn is slow enough that clearing the area still gives a calm window;
+        no new damage/difficulty.
+  - [ ] `GEAR_AND_ECONOMY.md`'s faucet note is updated from "flagged" to "addressed".
+  - [ ] Covered by an isolated new test file (spawn-count cap / cadence pure logic), registered
+        in `test_runner.gd`.
+- **Likely files touched:** new `scripts/enemies/Spawner.gd` (+ maybe a scene),
+  `scenes/main/Main.tscn` (one Spawner node over the existing slime positions),
+  `docs/design/GEAR_AND_ECONOMY.md`, new `tests/spawner_tests.gd` + `tests/test_runner.gd`.
+- **Curriculum tie-in:** none — pure systems.
+- **Sequencing:** **wait for PR #41 to merge** — adds a node to `Main.tscn`, which #41 also
+  edits; build after #41 lands. Also coordinate with the Elder Slime slice (both touch the
+  `Enemies` area of `Main.tscn`).
+- **Status:** ready
+
 ### Tie loot rarity to specific enemies (Meadow Slime bonus-chance drop)
 - **Goal:** Give the player an occasional *bonus* chance at coins (or, later, a rarity
   token) on top of Meadow Slime's existing guaranteed 1-coin drop, so combat and the M3 shop
