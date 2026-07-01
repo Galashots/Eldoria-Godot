@@ -5,13 +5,21 @@ extends CanvasLayer
 @onready var items_label: Label = $PanelContainer/VBoxContainer/ItemsLabel
 @onready var bonuses_label: Label = $PanelContainer/VBoxContainer/BonusesLabel
 @onready var equipment_label: Label = $PanelContainer/VBoxContainer/EquipmentLabel
+@onready var reset_button: Button = $PanelContainer/VBoxContainer/ResetButton
+@onready var confirm_reset_container: VBoxContainer = $PanelContainer/VBoxContainer/ConfirmResetContainer
+@onready var cancel_reset_button: Button = $PanelContainer/VBoxContainer/ConfirmResetContainer/CancelResetButton
+@onready var confirm_reset_button: Button = $PanelContainer/VBoxContainer/ConfirmResetContainer/ConfirmResetButton
 
 func _ready() -> void:
     visible = false
+    confirm_reset_container.visible = false
     GameState.profile_changed.connect(_on_profile_changed)
     GameState.item_added.connect(_on_item_added)
     GameState.quest_changed.connect(_on_quest_changed)
     GameState.armor_equipped.connect(_on_armor_equipped)
+    reset_button.pressed.connect(_on_reset_pressed)
+    cancel_reset_button.pressed.connect(_on_reset_cancelled)
+    confirm_reset_button.pressed.connect(_on_reset_confirmed)
     _refresh()
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -28,7 +36,18 @@ func _unhandled_input(event: InputEvent) -> void:
         visible = not visible
         if visible:
             _refresh()
+        else:
+            confirm_reset_container.visible = false
         get_viewport().set_input_as_handled()
+
+func _on_reset_pressed() -> void:
+    confirm_reset_container.visible = true
+
+func _on_reset_cancelled() -> void:
+    confirm_reset_container.visible = false
+
+func _on_reset_confirmed() -> void:
+    GameState.reset_progress()
 
 func _on_profile_changed(_profile_id: String) -> void:
     _refresh()

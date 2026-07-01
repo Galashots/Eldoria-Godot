@@ -6,6 +6,8 @@ signal profile_changed(profile_id: String)
 signal quest_changed(quest_id: String, state: String)
 signal armor_equipped(tier: int)
 
+const SAVE_PATH := "user://savegame.json"
+
 const QUEST_ELDER_GOLDEN_STAR := "elder_golden_star"
 const QUEST_MIRA_GLOWING_HERB := "mira_glowing_herb"
 const QUEST_FINN_SHIMMERING_ORE := "finn_shimmering_ore"
@@ -29,6 +31,13 @@ var equipped_armor_tier: int = 0
 
 var elder_quest_started: bool = false
 var elder_quest_completed: bool = false
+
+func _ready() -> void:
+    profile_changed.connect(_on_profile_changed_autosave)
+    quest_changed.connect(_on_quest_changed_autosave)
+    item_added.connect(_on_item_added_autosave)
+    armor_equipped.connect(_on_armor_equipped_autosave)
+    load_game()
 
 func set_selected_profile(profile_id: String) -> void:
     selected_profile = profile_id
@@ -128,3 +137,66 @@ func _check_and_grant_tier1_armor() -> void:
 
     equipped_armor_tier = 1
     armor_equipped.emit(1)
+
+func save_game() -> void:
+    var data := {
+        "selected_profile": selected_profile,
+        "player_hp": player_hp,
+        "collected_items": collected_items,
+        "quest_states": quest_states,
+        "quest_bonuses": quest_bonuses,
+        "equipped_armor_tier": equipped_armor_tier,
+    }
+    var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+    if not file:
+        return
+    file.store_string(JSON.stringify(data))
+
+func load_game() -> void:
+    if not FileAccess.file_exists(SAVE_PATH):
+        return
+
+    var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
+    if not file:
+        return
+
+    var data: Variant = JSON.parse_string(file.get_as_text())
+    if typeof(data) != TYPE_DICTIONARY:
+        return
+
+    selected_profile = data.get("selected_profile", selected_profile)
+    player_hp = data.get("player_hp", player_hp)
+    collected_items = data.get("collected_items", collected_items)
+    quest_states = data.get("quest_states", quest_states)
+    quest_bonuses = data.get("quest_bonuses", quest_bonuses)
+    equipped_armor_tier = data.get("equipped_armor_tier", equipped_armor_tier)
+    _refresh_elder_quest_flags()
+
+func reset_progress() -> void:
+    if FileAccess.file_exists(SAVE_PATH):
+        DirAccess.remove_absolute(SAVE_PATH)
+
+    selected_profile = ""
+    player_hp = 5
+    collected_items = {}
+    quest_states = {
+        QUEST_ELDER_GOLDEN_STAR: QUEST_NOT_STARTED,
+        QUEST_MIRA_GLOWING_HERB: QUEST_NOT_STARTED,
+        QUEST_FINN_SHIMMERING_ORE: QUEST_NOT_STARTED,
+    }
+    quest_bonuses = {}
+    equipped_armor_tier = 0
+    _refresh_elder_quest_flags()
+    get_tree().reload_current_scene()
+
+func _on_profile_changed_autosave(_profile_id: String) -> void:
+    save_game()
+
+func _on_quest_changed_autosave(_quest_id: String, _state: String) -> void:
+    save_game()
+
+func _on_item_added_autosave(_item_id: String, _amount: int) -> void:
+    save_game()
+
+func _on_armor_equipped_autosave(_tier: int) -> void:
+    save_game()
