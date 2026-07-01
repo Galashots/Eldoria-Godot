@@ -25,6 +25,12 @@ const GEAR_DEFINITIONS: Array[GearDefinition] = [
     preload("res://data/gear/oakheart_blade.tres"),
 ]
 
+## Pet display/stat data is loaded from PetDefinition .tres resources under data/pets/ --
+## mirrors GEAR_DEFINITIONS. M4 ships a single pet; the array shape supports more later.
+const PET_DEFINITIONS: Array[PetDefinition] = [
+    preload("res://data/pets/mossy_sprite.tres"),
+]
+
 const RARITY_COLORS := {
     "Common": Color.WHITE,
     "Uncommon": Color(0.35, 0.75, 0.35),
@@ -106,3 +112,13 @@ static func get_gear_label(gear_id: String) -> String:
 
 static func get_rarity_color(rarity: String) -> Color:
     return RARITY_COLORS.get(rarity, Color.WHITE)
+
+static func get_pet(pet_id: String) -> PetDefinition:
+    for pet in PET_DEFINITIONS:
+        if pet.id == pet_id:
+            return pet
+    return null
+
+static func get_pet_label(pet_id: String) -> String:
+    var pet := get_pet(pet_id)
+    return pet.label if pet else pet_id

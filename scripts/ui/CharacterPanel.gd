@@ -7,6 +7,7 @@ extends CanvasLayer
 @onready var equipment_label: Label = $PanelContainer/VBoxContainer/EquipmentLabel
 @onready var coins_label: Label = $PanelContainer/VBoxContainer/CoinsLabel
 @onready var weapons_list: VBoxContainer = $PanelContainer/VBoxContainer/WeaponsList
+@onready var pets_list: VBoxContainer = $PanelContainer/VBoxContainer/PetsList
 @onready var reset_button: Button = $PanelContainer/VBoxContainer/ResetButton
 @onready var confirm_reset_container: VBoxContainer = $PanelContainer/VBoxContainer/ConfirmResetContainer
 @onready var cancel_reset_button: Button = $PanelContainer/VBoxContainer/ConfirmResetContainer/CancelResetButton
@@ -21,6 +22,8 @@ func _ready() -> void:
     GameState.armor_equipped.connect(_on_armor_equipped)
     GameState.coins_changed.connect(_on_coins_changed)
     GameState.gear_changed.connect(_on_gear_changed)
+    GameState.pet_unlocked.connect(_on_pet_changed)
+    GameState.pet_changed.connect(_on_pet_changed)
     reset_button.pressed.connect(_on_reset_pressed)
     cancel_reset_button.pressed.connect(_on_reset_cancelled)
     confirm_reset_button.pressed.connect(_on_reset_confirmed)
@@ -71,6 +74,9 @@ func _on_coins_changed(_coins: int) -> void:
 func _on_gear_changed() -> void:
     _refresh()
 
+func _on_pet_changed() -> void:
+    _refresh()
+
 func _refresh() -> void:
     profile_label.text = "Profile: " + ContentDefinitions.get_profile_label(GameState.selected_profile)
     quest_label.text = "Current quest: " + _get_current_quest_summary()
@@ -79,6 +85,7 @@ func _refresh() -> void:
     equipment_label.text = "Equipment: " + _get_equipment_summary()
     coins_label.text = "Coins: %d" % GameState.coins
     _refresh_weapons_list()
+    _refresh_pets_list()
 
 func _get_items_summary() -> String:
     var items: Array[String] = []
@@ -117,6 +124,8 @@ func _get_equipment_summary() -> String:
         parts.append(ContentDefinitions.get_armor_tier_label(GameState.equipped_armor_tier))
     if GameState.equipped_weapon != "":
         parts.append(ContentDefinitions.get_gear_label(GameState.equipped_weapon))
+    if GameState.equipped_pet != "":
+        parts.append(ContentDefinitions.get_pet_label(GameState.equipped_pet))
 
     if parts.is_empty():
         return "none yet"
@@ -144,6 +153,34 @@ func _refresh_weapons_list() -> void:
         row.add_child(button)
 
         weapons_list.add_child(row)
+
+func _refresh_pets_list() -> void:
+    for child in pets_list.get_children():
+        child.queue_free()
+
+    for pet_id in GameState.owned_pets:
+        var pet := ContentDefinitions.get_pet(pet_id)
+        if pet == null:
+            continue
+
+        var row := HBoxContainer.new()
+
+        var label := Label.new()
+        label.text = "%s (%s) +%d Max HP" % [pet.label, pet.rarity, pet.hp_bonus]
+        label.add_theme_color_override("font_color", ContentDefinitions.get_rarity_color(pet.rarity))
+        label.custom_minimum_size = Vector2(220, 0)
+        row.add_child(label)
+
+        var button := Button.new()
+        if GameState.equipped_pet == pet_id:
+            button.text = "Unequip"
+            button.pressed.connect(GameState.equip_pet.bind(""))
+        else:
+            button.text = "Equip"
+            button.pressed.connect(GameState.equip_pet.bind(pet_id))
+        row.add_child(button)
+
+        pets_list.add_child(row)
 
 func _get_current_quest_summary() -> String:
     var elder_state := GameState.get_quest_state(GameState.QUEST_ELDER_GOLDEN_STAR)

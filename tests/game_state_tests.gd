@@ -113,6 +113,64 @@ func test_completing_all_quests_grants_armor_exactly_once_regardless_of_order() 
 
     return {"ok": failures.is_empty(), "failures": failures}
 
+func test_completing_all_quests_grants_first_pet_exactly_once_and_auto_equips_it() -> Dictionary:
+    var failures: Array[String] = []
+
+    _check(failures, GameState.owned_pets.is_empty(), "expected no pets before any quest completes")
+
+    # Deliberately not the "natural" order, mirroring the armor-grant test's
+    # order-independence proof.
+    GameState.complete_quest(GameState.QUEST_FINN_SHIMMERING_ORE)
+    _check(failures, GameState.owned_pets.is_empty(), "expected no pet after only 1/4 quests")
+
+    GameState.complete_quest(GameState.QUEST_YARROW_SILVERLEAF)
+    GameState.complete_quest(GameState.QUEST_MIRA_GLOWING_HERB)
+    _check(failures, GameState.owned_pets.is_empty(), "expected no pet after only 3/4 quests")
+
+    _pet_unlocked_signal_count = 0
+    GameState.pet_unlocked.connect(_on_pet_unlocked_probe)
+    GameState.complete_quest(GameState.QUEST_ELDER_GOLDEN_STAR)
+    GameState.pet_unlocked.disconnect(_on_pet_unlocked_probe)
+
+    _check(failures, GameState.owns_pet(GameState.FIRST_PET_ID), "expected the first pet owned after all 4 quests complete")
+    _check(failures, GameState.equipped_pet == GameState.FIRST_PET_ID, "expected the first pet to be auto-equipped on grant")
+    _check(failures, _pet_unlocked_signal_count == 1, "expected pet_unlocked to fire exactly once, fired %d time(s)" % _pet_unlocked_signal_count)
+    _check(failures, GameState.player_hp == GameState.get_effective_max_hp(), "expected the player healed to the new bonus-inclusive max on grant")
+
+    return {"ok": failures.is_empty(), "failures": failures}
+
+func test_equip_pet_requires_ownership_and_applies_max_hp_bonus() -> Dictionary:
+    var failures: Array[String] = []
+
+    _check(failures, GameState.get_effective_max_hp() == GameState.PLAYER_MAX_HP, "expected base max hp with no pet equipped")
+
+    GameState.equip_pet("mossy_sprite")
+    _check(failures, GameState.equipped_pet == "", "expected equip to be refused for an unowned pet")
+
+    GameState.owned_pets.append("mossy_sprite")
+    GameState.equip_pet("mossy_sprite")
+    _check(failures, GameState.equipped_pet == "mossy_sprite", "expected mossy_sprite to be equipped once owned")
+    _check(failures, GameState.get_effective_max_hp() == GameState.PLAYER_MAX_HP + 2, "expected the pet's +2 hp_bonus to apply")
+
+    GameState.equip_pet("")
+    _check(failures, GameState.equipped_pet == "", "expected equip_pet('') to unequip")
+    _check(failures, GameState.get_effective_max_hp() == GameState.PLAYER_MAX_HP, "expected max hp to drop back to base once unequipped")
+
+    return {"ok": failures.is_empty(), "failures": failures}
+
+func test_equip_pet_clamps_current_hp_down_when_unequipping_lowers_max() -> Dictionary:
+    var failures: Array[String] = []
+
+    GameState.owned_pets.append("mossy_sprite")
+    GameState.equip_pet("mossy_sprite")
+    GameState.heal_player_to_full()
+    _check(failures, GameState.player_hp == GameState.PLAYER_MAX_HP + 2, "expected full hp at the bonus-inclusive max")
+
+    GameState.equip_pet("")
+    _check(failures, GameState.player_hp == GameState.PLAYER_MAX_HP, "expected hp clamped down to the new lower max on unequip")
+
+    return {"ok": failures.is_empty(), "failures": failures}
+
 func test_save_and_load_round_trip() -> Dictionary:
     var failures: Array[String] = []
 
@@ -126,6 +184,8 @@ func test_save_and_load_round_trip() -> Dictionary:
     GameState.add_coins(10)
     GameState.buy_gear("worn_dagger")
     GameState.equip_weapon("worn_dagger")
+    GameState.owned_pets.append("mossy_sprite")
+    GameState.equip_pet("mossy_sprite")
 
     var saved_profile := GameState.selected_profile
     var saved_items := GameState.collected_items.duplicate(true)
@@ -135,6 +195,8 @@ func test_save_and_load_round_trip() -> Dictionary:
     var saved_coins := GameState.coins
     var saved_owned_gear := GameState.owned_gear.duplicate(true)
     var saved_weapon := GameState.equipped_weapon
+    var saved_owned_pets := GameState.owned_pets.duplicate(true)
+    var saved_pet := GameState.equipped_pet
 
     # Simulate a fresh process: wipe in-memory state, then load whatever autosave wrote.
     GameState.selected_profile = ""
@@ -150,6 +212,8 @@ func test_save_and_load_round_trip() -> Dictionary:
     GameState.coins = 0
     GameState.owned_gear = []
     GameState.equipped_weapon = ""
+    GameState.owned_pets = []
+    GameState.equipped_pet = ""
 
     GameState.load_game()
 
@@ -161,6 +225,8 @@ func test_save_and_load_round_trip() -> Dictionary:
     _check(failures, GameState.coins == saved_coins, "coins mismatch after load")
     _check(failures, GameState.owned_gear == saved_owned_gear, "owned_gear mismatch after load")
     _check(failures, GameState.equipped_weapon == saved_weapon, "equipped_weapon mismatch after load")
+    _check(failures, GameState.owned_pets == saved_owned_pets, "owned_pets mismatch after load")
+    _check(failures, GameState.equipped_pet == saved_pet, "equipped_pet mismatch after load")
 
     return {"ok": failures.is_empty(), "failures": failures}
 
@@ -246,6 +312,8 @@ func test_reset_state_clears_all_state_and_deletes_save_file() -> Dictionary:
     GameState.add_coins(10)
     GameState.buy_gear("worn_dagger")
     GameState.equip_weapon("worn_dagger")
+    GameState.owned_pets.append("mossy_sprite")
+    GameState.equip_pet("mossy_sprite")
     GameState.save_game()
     _check(failures, FileAccess.file_exists(GameState.SAVE_PATH), "expected a save file to exist before reset")
 
@@ -259,6 +327,8 @@ func test_reset_state_clears_all_state_and_deletes_save_file() -> Dictionary:
     _check(failures, GameState.coins == 0, "expected coins reset to 0")
     _check(failures, GameState.owned_gear.is_empty(), "expected owned_gear cleared after reset")
     _check(failures, GameState.equipped_weapon == "", "expected equipped_weapon cleared after reset")
+    _check(failures, GameState.owned_pets.is_empty(), "expected owned_pets cleared after reset")
+    _check(failures, GameState.equipped_pet == "", "expected equipped_pet cleared after reset")
     _check(failures, not FileAccess.file_exists(GameState.SAVE_PATH), "expected save file deleted after reset")
 
     return {"ok": failures.is_empty(), "failures": failures}
@@ -347,3 +417,8 @@ var _player_died_signal_count := 0
 
 func _on_player_died_probe() -> void:
     _player_died_signal_count += 1
+
+var _pet_unlocked_signal_count := 0
+
+func _on_pet_unlocked_probe() -> void:
+    _pet_unlocked_signal_count += 1

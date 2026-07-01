@@ -116,6 +116,33 @@ keys load cleanly. No EventBus, no sell-back, no armor-as-buyable-gear — all e
 deferred in `GEAR_AND_ECONOMY.md`, not forced by the code. Test suite grew to 16 (3 new:
 coin overspend guard, buy/ownership idempotency, equip-requires-ownership + damage bonus).
 
+**Pets (M4 of the Phase 2 roadmap): done.** Another **tight vertical slice** per the same
+`NORTH_STAR.md` reasoning as M3: one pet species, follow-only (no combat), one passive stat
+— see `docs/design/PETS.md` for the locked roster/rule. `PetDefinition.gd` (mirroring
+`GearDefinition.gd`) backs the first pet, Mossy the Sprite (Rare, +2 Max HP), under
+`data/pets/`. It unlocks on the same all-4-quests gate the Tier 1 armor grant already uses
+(`GameState._check_and_grant_first_pet()`, called alongside `_check_and_grant_tier1_armor()`
+from `complete_quest()`) and is auto-equipped the instant it's granted, healing the player to
+the new bonus-inclusive max. Pets use the same `owned_X`/`equipped_X` ownership shape M3
+built for gear (`owned_pets`/`equipped_pet`), not a single on/off flag, per the user's
+explicit request for a dedicated equip-and-swap section: the character panel gained a Pets
+list (each owned pet's label, rarity color, stat line, and an Equip/Unequip toggle button) —
+only one pet can be active at a time, and unequipping clamps current hp down if it now
+exceeds the lower max (verified live: HUD read "7/7" equipped, dropped correctly to "5/5"
+on unequip, and restored to "7/7" plus a live-spawned pet on re-equip). The pet itself
+(`scripts/pets/Pet.gd`/`.tscn`) reuses the exact chase-state movement already proven in
+`MeadowSlime.gd`, stripped to follow-only (no wander/idle states, no aggro radius, no
+HealthComponent/Hitbox — this pet never fights), and spawns/despawns dynamically as a player
+sibling whenever `GameState.equipped_pet` changes (including on load, if a save already has
+one equipped), rather than living as a static `Main.tscn` node. A real bug caught during
+implementation, before it ever ran live: `HUD.gd`'s `_ready()` read the raw `PLAYER_MAX_HP`
+constant directly instead of computing the pet-inclusive max, which would have under-reported
+hp on load until the next damage event — fixed to call `GameState.get_effective_max_hp()`.
+Save schema bumped to version 3 (`owned_pets`/`equipped_pet`); `_migrate()` stays a no-op.
+Test suite grew to 19 (3 new: grant-once + auto-equip, equip-requires-ownership + hp bonus,
+unequip hp clamping). No pet combat/AI, no second species, no Merchant purchase path — all
+explicitly deferred in `docs/design/PETS.md`, not forced by the code.
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
@@ -155,12 +182,15 @@ coin overspend guard, buy/ownership idempotency, equip-requires-ownership + dama
 - `assets/manifests/mage_body_idle_{s,se,e,ne,n}.manifest.json`, `assets/source/generated/mage_body_idle_sheet/source.png` (a single shared 5-panel source sheet, generated in one ChatGPT response and addressed per direction via `sourceCell` on a 5-col grid), and `assets/sprites/characters/mage_body_idle_*.png`: production art for Grade 2 Mage, matching the brown-haired, navy/gold-tunic design from the V2 style reference. Only `_s` (south) is currently wired into `Player.gd`.
 - `assets/manifests/{mage,adventurer}_body_walk{1,2}_{s,se,e,ne,n}.manifest.json` (20 manifests), `assets/source/generated/{mage,adventurer}_body_walk_sheet/source.png` (one shared 5-direction x 2-pose grid sheet per character, generated in one ChatGPT response each, addressed via `sourceCell` on a 5-col x 2-row grid), and `assets/sprites/characters/{mage,adventurer}_body_walk{1,2}_*.png`: the two new mid-stride poses per direction per character that drive the walk-cycle animation (see `Player.gd` above). `walk1`/`walk2` combine with the existing `idle` pose at runtime — no third pose was generated for "neutral", since idle already serves that role.
 - `assets/manifests/{mage,adventurer}_body_idle_tier1_{s,se,e,ne,n}.manifest.json` (10 manifests), `assets/source/generated/{mage,adventurer}_body_idle_tier1_sheet/source.png` (one shared 5-direction grid sheet per character, a ChatGPT in-place edit of the base idle sheet adding leather armor), and `assets/sprites/characters/{mage,adventurer}_body_idle_tier1_*.png`: Tier 1 (Leather) armor art, see `docs/design/ARMOR_TIERS.md`. Normalized as full replacement body sprite sets (not a transparent overlay — see that doc for why the original diff-based overlay plan was dropped). Now wired into `Player.gd`/`GameState.gd`: completing all three quests auto-equips it (see above); no manual equip/unequip UI exists.
-- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 16 tests as of M3 (3 new: coin overspend guard, buy/ownership idempotency, equip-requires-ownership + damage bonus). See "How to run the GDScript test suite" below.
+- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 19 tests as of M4 (3 new: pet grant-once + auto-equip, equip-requires-ownership + hp bonus, unequip hp clamping). See "How to run the GDScript test suite" below.
 - `scripts/core/GearDefinition.gd` and `data/gear/{worn_dagger,iron_sword,oakheart_blade}.tres`: the M3 gear-stats Resource, mirroring `ItemDefinition.gd` — id/label/rarity/damage_bonus/price per weapon.
 - `scripts/items/CoinPickup.gd` / `scenes/items/CoinPickup.tscn`: coin pickup, mirroring `Collectible.gd`; spawned (deferred) by `MeadowSlime._on_died()`.
 - `scripts/npcs/Merchant.gd` / `scenes/npcs/Merchant.tscn`: the gear vendor NPC. Interacting opens `ShopUI` directly (no dialogue box needed).
 - `scripts/ui/ShopUI.gd` / `scenes/ui/ShopUI.tscn`: the shop panel, built from `ContentDefinitions.GEAR_DEFINITIONS` at runtime (no per-item scene nodes to maintain). Buy buttons disable once owned or unaffordable.
 - `docs/design/GEAR_AND_ECONOMY.md`: locks the M3 rarity list and weapon roster (id/rarity/damage/price) for future gear additions.
+- `scripts/core/PetDefinition.gd` and `data/pets/mossy_sprite.tres`: the M4 pet-stats Resource, mirroring `GearDefinition.gd` — id/label/rarity/hp_bonus per pet.
+- `scripts/pets/Pet.gd` / `scenes/pets/Pet.tscn`: the follow-only companion pet, reusing `MeadowSlime.gd`'s chase-state movement stripped of combat/wander/aggro.
+- `docs/design/PETS.md`: locks the M4 roster (id/rarity/stat) and the unlock/equip rule for future pet additions.
 
 ## How to run
 
@@ -346,6 +376,23 @@ diagnosed; skip it for now and expect the suite to touch your local save file tr
 - [ ] All 4 NPC quests and Meadow Slime combat still work normally with the Merchant and
       shop present in the zone.
 
+### Pets regression
+
+- [ ] Completing all 4 NPC quests grants and auto-equips a pet (Mossy the Sprite) that
+      spawns near the player; the HUD's HP readout immediately shows the higher bonus-
+      inclusive max (e.g. "7/7"), not just after the next hit.
+- [ ] The pet follows the player around the zone without lagging permanently behind or
+      overlapping.
+- [ ] Opening the character panel shows a Pets section listing the pet with its rarity
+      color and stat line (e.g. "Mossy the Sprite (Rare) +2 Max HP") and an "Unequip"
+      button; the `Equipment:` line also lists the pet.
+- [ ] Clicking Unequip despawns the pet, drops the HUD's max hp back to base (clamping
+      current hp down if it was above the new max), and the button switches to "Equip".
+- [ ] Clicking Equip again respawns the pet and restores the higher max hp.
+- [ ] Owned pets and the currently equipped pet survive a save/reload.
+- [ ] All 4 NPC quests, Meadow Slime combat, and the M3 shop/equip flow still work normally
+      with the pet present and following.
+
 ## Next milestone
 
 A design north-star doc set lives in `docs/design/` (`NORTH_STAR.md`, `CURRICULUM_MAP.md`, `VISUAL_CONTRACT.md`, `RESEARCH_NOTES.md`) to anchor future work. The learning checks now follow its bonus-only rule: each quest completes on item return regardless of answer, and a correct answer adds a bonus via `GameState.award_quest_bonus()`.
@@ -441,8 +488,12 @@ player's fixed stats didn't yet meet the "more content, or a second consumer nee
 structured data" bar. **M3 (gear, rarity, coins & shop) is done** (see above): the first real
 stats `.tres`, `GearDefinition`, landed as flagged, backing a tight three-weapon vertical
 slice (one gear slot, one vendor, manual equip) rather than the full gear/inventory surface —
-see `docs/design/GEAR_AND_ECONOMY.md`.
+see `docs/design/GEAR_AND_ECONOMY.md`. **M4 (pets) is done** (see above): the first
+companion, Mossy the Sprite, follow-only with a +2 Max HP bonus, unlocked on the same
+all-4-quests gate as Tier 1 armor and given its own equip/swap section in the character
+panel per the user's request — see `docs/design/PETS.md`.
 
-Next up: **M4 — pets**, per the Phase 2 plan. Real tile art to replace the placeholder
-tileset, Tier 1 walk-cycle armor art, Tier 2 (Bronze) armor, and real coin/gear icon art all
-remain open art backlog items, lower priority than the Phase 2 milestone chain.
+Next up: **M5 — bigger world & traversal**, per the Phase 2 plan. Real tile art to replace
+the placeholder tileset, Tier 1 walk-cycle armor art, Tier 2 (Bronze) armor, real coin/gear
+icon art, and real pet art all remain open art backlog items, lower priority than the Phase 2
+milestone chain.

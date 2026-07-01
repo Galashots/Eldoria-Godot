@@ -65,7 +65,7 @@
 The vertical slice above (4 quests, save/load, equip, tests) is done; the user has since
 approved a Phase 2 roadmap toward a real game (combat, pets, bigger maps, farm/home-base,
 mobile). Milestone order: **M1 world/map foundation** (done) → **M2 combat + first monster**
-(done) → **M3 gear/rarity/inventory + shop** (done, next below) → M4 pets → M5 bigger world &
+(done) → **M3 gear/rarity/inventory + shop** (done) → **M4 pets** (done, next below) → M5 bigger world &
 traversal → M6 farm + home base → M7 mobile → M8 UI/theme polish. Architecture (EventBus,
 component nodes, `.tres`-driven stats) is introduced feature-by-feature, not upfront. Full
 plan context in project memory (`phase2-roadmap`).
@@ -133,6 +133,30 @@ plan context in project memory (`phase2-roadmap`).
     bonus). Explicitly deferred (flagged in `GEAR_AND_ECONOMY.md`, not forced by the code):
     armor as buyable gear, sell-back, multi-slot loadouts, consumables, real coin/gear icon
     art, and gear stat axes beyond `damage_bonus`.
+
+13. ~~M4 — Pets.~~ Done — another **tight vertical slice**: one pet species, follow-only (no
+    combat), one passive stat, per the same "cohesion over volume" reasoning as M3. `Pet
+    Definition` (`scripts/core/PetDefinition.gd`, mirroring `GearDefinition`) backs the first
+    pet, Mossy the Sprite (Rare, +2 Max HP — locked in `docs/design/PETS.md`). Unlocks on the
+    same all-4-quests gate as the Tier 1 armor grant (`GameState._check_and_grant_first_pet()`,
+    called alongside `_check_and_grant_tier1_armor()` from `complete_quest()`), and is
+    auto-equipped the moment it's granted. Pets use the same `owned_X`/`equipped_X` shape M3
+    built for gear (`owned_pets`/`equipped_pet`), not a single on/off flag, so the character
+    panel gained a dedicated Pets section (owned pets, their stat line, an Equip/Unequip
+    toggle) rather than reusing the Equipment line alone — only one pet can be active at a
+    time, and unequipping clamps current hp down if it now exceeds the lower max. A real bug
+    caught during exploration, not live testing: `HUD.gd`'s `_ready()` read the raw
+    `PLAYER_MAX_HP` constant directly instead of the new `GameState.get_effective_max_hp()`,
+    which would have under-reported max hp on load until the next damage event — fixed before
+    it shipped. The pet itself (`scripts/pets/Pet.gd`/`.tscn`) reuses the exact chase-state
+    movement already proven in `MeadowSlime.gd`, stripped to follow-only (no wander/idle
+    states, no aggro radius, no HealthComponent/Hitbox), and spawns/despawns dynamically as a
+    player sibling on equip changes rather than living as a static `Main.tscn` node. Save
+    schema bumped to version 3 (`owned_pets`/`equipped_pet`); `_migrate()` stays a no-op.
+    Test suite grew to 19 (3 new: grant-once + auto-equip, equip-requires-ownership + hp
+    bonus, unequip hp clamping). Explicitly deferred (flagged in `docs/design/PETS.md`): pet
+    combat/AI, a second pet species or unlock-time choice, buying pets from the Merchant,
+    evolution/leveling, real pet art.
 
 ## Cleanup backlog (from the repo audit, deliberately deferred)
 

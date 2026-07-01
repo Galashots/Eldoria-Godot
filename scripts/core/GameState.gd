@@ -10,9 +10,11 @@ signal player_died
 signal combat_streak_changed(streak: int, multiplier: float)
 signal coins_changed(coins: int)
 signal gear_changed
+signal pet_unlocked
+signal pet_changed
 
 const SAVE_PATH := "user://savegame.json"
-const SAVE_VERSION := 2
+const SAVE_VERSION := 3
 
 const PLAYER_MAX_HP := 5
 
@@ -53,6 +55,8 @@ var equipped_armor_tier: int = 0
 var coins: int = 0
 var owned_gear: Array[String] = []
 var equipped_weapon: String = ""
+var owned_pets: Array[String] = []
+var equipped_pet: String = ""
 
 var elder_quest_started: bool = false
 var elder_quest_completed: bool = false
@@ -70,6 +74,8 @@ func _ready() -> void:
     armor_equipped.connect(_on_armor_equipped_autosave)
     coins_changed.connect(_on_coins_changed_autosave)
     gear_changed.connect(_on_gear_changed_autosave)
+    pet_unlocked.connect(_on_pet_unlocked_autosave)
+    pet_changed.connect(_on_pet_changed_autosave)
     load_game()
 
 func _process(delta: float) -> void:
@@ -147,6 +153,7 @@ func complete_quest(quest_id: String) -> void:
 
     set_quest_state(quest_id, QUEST_COMPLETED)
     _check_and_grant_tier1_armor()
+    _check_and_grant_first_pet()
 
 func award_quest_bonus(quest_id: String) -> void:
     quest_bonuses[quest_id] = true
@@ -189,6 +196,53 @@ func _check_and_grant_tier1_armor() -> void:
 
     equipped_armor_tier = 1
     armor_equipped.emit(1)
+
+const FIRST_PET_ID := "mossy_sprite"
+
+func _check_and_grant_first_pet() -> void:
+    if owns_pet(FIRST_PET_ID):
+        return
+
+    # Same four-quest gate as the armor grant above - finishing the village's full quest
+    # chain grants both. Early-returns above once owned, so a save that already has the pet
+    # keeps it regardless.
+    var required_quests := [QUEST_ELDER_GOLDEN_STAR, QUEST_MIRA_GLOWING_HERB, QUEST_FINN_SHIMMERING_ORE, QUEST_YARROW_SILVERLEAF]
+    for quest_id in required_quests:
+        if get_quest_state(quest_id) != QUEST_COMPLETED:
+            return
+
+    owned_pets.append(FIRST_PET_ID)
+    pet_unlocked.emit()
+    equip_pet(FIRST_PET_ID)
+    heal_player_to_full()
+
+func owns_pet(pet_id: String) -> bool:
+    return owned_pets.has(pet_id)
+
+func equip_pet(pet_id: String) -> void:
+    if pet_id != "" and not owns_pet(pet_id):
+        return
+
+    equipped_pet = pet_id
+    pet_changed.emit()
+
+    # Unequipping can lower the effective max below the current hp (e.g. 7/7 with the pet's
+    # +2 bonus drops to a 5 max on unequip) - clamp down so the HUD never shows hp above max.
+    # Equipping never needs this since the max only grows.
+    var effective_max := get_effective_max_hp()
+    if player_hp > effective_max:
+        player_hp = effective_max
+        player_damaged.emit(player_hp, effective_max)
+
+func get_equipped_pet_bonus() -> int:
+    if equipped_pet == "":
+        return 0
+
+    var pet := ContentDefinitions.get_pet(equipped_pet)
+    return pet.hp_bonus if pet else 0
+
+func get_effective_max_hp() -> int:
+    return PLAYER_MAX_HP + get_equipped_pet_bonus()
 
 func add_coins(amount: int) -> void:
     if amount <= 0:
@@ -244,14 +298,14 @@ func take_player_damage(amount: int) -> void:
 
     player_hp = maxi(0, player_hp - amount)
     _player_hit_cooldown_remaining = PLAYER_HIT_COOLDOWN_SEC
-    player_damaged.emit(player_hp, PLAYER_MAX_HP)
+    player_damaged.emit(player_hp, get_effective_max_hp())
 
     if player_hp == 0:
         player_died.emit()
 
 func heal_player_to_full() -> void:
-    player_hp = PLAYER_MAX_HP
-    player_damaged.emit(player_hp, PLAYER_MAX_HP)
+    player_hp = get_effective_max_hp()
+    player_damaged.emit(player_hp, get_effective_max_hp())
 
 func can_trigger_combat_question() -> bool:
     return _combat_question_cooldown_remaining <= 0.0
@@ -279,6 +333,8 @@ func save_game() -> void:
         "coins": coins,
         "owned_gear": owned_gear,
         "equipped_weapon": equipped_weapon,
+        "owned_pets": owned_pets,
+        "equipped_pet": equipped_pet,
     }
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if not file:
@@ -306,6 +362,7 @@ func load_game() -> void:
     equipped_armor_tier = data.get("equipped_armor_tier", equipped_armor_tier)
     coins = int(data.get("coins", coins))
     equipped_weapon = data.get("equipped_weapon", equipped_weapon)
+    equipped_pet = data.get("equipped_pet", equipped_pet)
 
     # Array elements load as untyped Variant from JSON; coerce back to Array[String] since
     # owned_gear's declared type doesn't auto-convert an untyped Array on assignment.
@@ -313,6 +370,11 @@ func load_game() -> void:
     owned_gear = []
     for gear_id in loaded_gear:
         owned_gear.append(String(gear_id))
+
+    var loaded_pets: Array = data.get("owned_pets", [])
+    owned_pets = []
+    for pet_id in loaded_pets:
+        owned_pets.append(String(pet_id))
 
     # JSON.parse_string() returns every number as float, and Dictionary values have no
     # static type to auto-coerce them back (unlike equipped_armor_tier's declared int type,
@@ -325,8 +387,9 @@ func load_game() -> void:
     _refresh_elder_quest_flags()
 
 func _migrate(data: Dictionary) -> Dictionary:
-    # No-op: version 0/1 (missing coins/owned_gear/equipped_weapon entirely) and version 2
-    # load fine as-is, since load_game() reads the new keys via .get() with in-code defaults.
+    # No-op: versions 0-2 (missing coins/owned_gear/equipped_weapon/owned_pets/equipped_pet
+    # entirely) load fine as-is, since load_game() reads every key via .get() with an
+    # in-code default.
     return data
 
 func reset_progress() -> void:
@@ -352,6 +415,8 @@ func reset_state() -> void:
     coins = 0
     owned_gear = []
     equipped_weapon = ""
+    owned_pets = []
+    equipped_pet = ""
     combat_streak = 0
     _time_since_last_correct_answer = 0.0
     _player_hit_cooldown_remaining = 0.0
@@ -374,4 +439,10 @@ func _on_coins_changed_autosave(_coins: int) -> void:
     save_game()
 
 func _on_gear_changed_autosave() -> void:
+    save_game()
+
+func _on_pet_unlocked_autosave() -> void:
+    save_game()
+
+func _on_pet_changed_autosave() -> void:
     save_game()

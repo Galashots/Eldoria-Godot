@@ -81,6 +81,8 @@ const FACING_VECTORS := {
 
 const WALK_FPS := 8.0
 
+const PetScene := preload("res://scenes/pets/Pet.tscn")
+
 # Tier 1 (Leather) armor idle art only exists as idle poses (no walk-cycle frames yet), so
 # armored walking falls back to a static armored idle pose via _build_sprite_frames' existing
 # "no walk poses" branch.
@@ -109,6 +111,7 @@ var _profile_armor_frames: Dictionary = {}
 var _spawn_position: Vector2
 var _attack_active_remaining: float = 0.0
 var _attack_cooldown_remaining: float = 0.0
+var _pet_instance: CharacterBody2D = null
 
 func _ready() -> void:
 	add_to_group("player")
@@ -121,11 +124,15 @@ func _ready() -> void:
 	GameState.profile_changed.connect(_on_profile_changed)
 	GameState.armor_equipped.connect(_on_armor_equipped)
 	GameState.player_died.connect(_on_player_died)
+	GameState.pet_changed.connect(_on_pet_changed)
 	_update_sprite()
 
 	_spawn_position = position
 	attack_hitbox.landed.connect(_on_attack_landed)
 	player_hurtbox.hit_received.connect(_on_player_hurtbox_hit)
+
+	if GameState.equipped_pet != "":
+		_spawn_pet(GameState.equipped_pet)
 
 func _build_sprite_frames(idle_directions: Dictionary, walk_directions: Dictionary) -> SpriteFrames:
 	var frames := SpriteFrames.new()
@@ -241,3 +248,20 @@ func _on_player_died() -> void:
 	position = _spawn_position
 	GameState.heal_player_to_full()
 	dialogue_requested.emit("", "You feel dizzy and stumble home to rest. You're okay now!")
+
+func _on_pet_changed() -> void:
+	_despawn_pet()
+	if GameState.equipped_pet != "":
+		_spawn_pet(GameState.equipped_pet)
+
+func _spawn_pet(_pet_id: String) -> void:
+	var pet := PetScene.instantiate()
+	pet.follow_target = self
+	pet.global_position = global_position
+	get_parent().add_child(pet)
+	_pet_instance = pet
+
+func _despawn_pet() -> void:
+	if _pet_instance != null and is_instance_valid(_pet_instance):
+		_pet_instance.queue_free()
+	_pet_instance = null
