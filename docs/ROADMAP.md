@@ -60,6 +60,33 @@
    unconfirmed) rather than defaulting to numeracy/literacy again.
 9. Plan iPad/web playtest/export path.
 
+## Phase 2 — from placeholder slice to a real game
+
+The vertical slice above (4 quests, save/load, equip, tests) is done; the user has since
+approved a Phase 2 roadmap toward a real game (combat, pets, bigger maps, farm/home-base,
+mobile). Milestone order: **M1 world/map foundation** (next below) → M2 combat + first
+monster → M3 gear/rarity/inventory + shop → M4 pets → M5 bigger world & traversal → M6 farm
++ home base → M7 mobile → M8 UI/theme polish. Architecture (EventBus, component nodes,
+`.tres`-driven stats) is introduced feature-by-feature, not upfront. Full plan context in
+project memory (`phase2-roadmap`).
+
+10. ~~M1 — World/map foundation.~~ Done — `scenes/main/Main.tscn`'s flat `World/Floor`
+    Polygon2D + single `Obstacle` replaced with a `World/Ground` `TileMapLayer` over a
+    160x100-tile (2560x1600px) zone, using a bootstrap 4-tile placeholder tileset
+    (`assets/sprites/tiles/placeholder_tileset.png` + `assets/tilesets/placeholder_tileset.tres`:
+    grass/path walkable, water/rock impassible via `TileSet` physics-layer collision
+    polygons). `World.y_sort_enabled` and per-entity `y_sort_enabled` are on. The Player's
+    `Camera2D` (`scenes/player/Player.tscn`) now has `limit_left/top/right/bottom` matching
+    the map bounds and `position_smoothing_enabled`. The existing 4 NPCs, 4 collectibles,
+    and player spawn are repositioned into the new zone, connected by dirt paths, with a
+    lake and two rock outcrops as collision obstacles to prove the system. Save-schema
+    versioning was folded in per the Phase 2 plan: `GameState.save_game()` now writes a
+    `"version": 1` field and `load_game()` calls a `_migrate(data)` step (currently a no-op,
+    since old un-versioned saves and v1 have the same shape) — future schema growth
+    (combat/inventory/pets/farm) can migrate forward instead of crashing. No EventBus/
+    component architecture yet — those arrive with M2 combat, per the "grow
+    feature-by-feature" decision.
+
 ## Cleanup backlog (from the repo audit, deliberately deferred)
 
 Low-risk tidy-ups identified during the audit but intentionally not bundled into feature

@@ -12,12 +12,37 @@ A small custom GDScript test suite now exists (`tests/`, see "How to run the GDS
 
 A fourth quest now exists: **Yarrow the Healer** (`QUEST_YARROW_SILVERLEAF`), gated behind Finn's completion, mirroring the existing Elder/Mira/Finn shape exactly (fetch item, two-choice profile-specific learning check, bonus-only completion). Deliberately scoped narrow rather than sprawling into a new NPC archetype/subject/biome, per `docs/design/NORTH_STAR.md`'s explicit "resist feature equity across many NPCs/biomes" guidance and `docs/design/CURRICULUM_MAP.md`'s unconfirmed subject-scope flag: Yarrow stays in the same village hub, continues the same linear gate chain (Elder → Mira → Finn → Yarrow), and reuses the already-confirmed numeracy (G2: coin comparison) and literacy (G5: word choice) subjects rather than introducing a new one. The Tier 1 armor grant now requires all **four** quests, not three — a deliberate design call (not forced by the code) reasoned through explicitly: it's backward-compatible for existing saves (armor never un-grants once earned, since `_check_and_grant_tier1_armor()` early-returns once `equipped_armor_tier > 0`), and keeps "you're geared up" meaning "you finished everything the village has to offer" rather than freezing at the original three.
 
+**World/map foundation (M1 of the Phase 2 roadmap): done.** The flat single-screen
+`World/Floor` Polygon2D + one `Obstacle` in `scenes/main/Main.tscn` are replaced with a
+`World/Ground` `TileMapLayer` over a bigger, tiled, collidable zone (160x100 tiles,
+2560x1600px), using a bootstrap 4-tile placeholder tileset (grass, dirt path, water, rock —
+see "Implemented files" below) to prove `TileMapLayer` + `TileSet` collision + camera limits
+end to end before real tile art exists. Water and rock tiles carry a `TileSet` physics-layer
+collision polygon (impassible); grass and path are walkable. `World.y_sort_enabled` is on,
+as is `y_sort_enabled` on the player and all 4 NPCs, so vertical draw order now follows
+position. The Player's existing `Camera2D` now has `limit_left/top/right/bottom` set to the
+map bounds and `position_smoothing_enabled` on, so the camera stops at the zone edges
+instead of showing empty space and follows the player smoothly instead of snapping. The
+existing 4 NPCs (Elder, Mira, Finn, Yarrow), their 4 collectibles, and the player spawn are
+repositioned into the new zone, connected by dirt-path tiles, with a lake and two small rock
+outcrops as impassible terrain features so the collision system has something to prove
+itself against (previously only one brown obstacle rectangle existed). The 4-quest chain,
+save/load, and equip system are unchanged and were confirmed still working live (Elder's
+full quest — item pickup, learning-check UI, bonus badge, HUD advance to Mira — was played
+through end to end against the new map; the other 3 quests share identical code paths and
+are already covered by the automated test suite). Save-schema versioning was folded into
+this milestone per the Phase 2 plan: `GameState.save_game()` now writes a `"version": 1`
+field and `load_game()` calls a `_migrate(data)` step (currently a no-op — old un-versioned
+saves and v1 have the same shape) so future schema growth (combat/inventory/pets/farm) can
+migrate old saves forward instead of crashing on load.
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
 - `AGENTS.md`: project and agent workflow guidance, including the current `ContentDefinitions.gd` rule for lightweight quest/item/profile display text.
-- `scenes/main/Main.tscn`: green floor, brown collision obstacle, player, Elder, Mira, Finn, Yarrow, collectibles (including Silverleaf), HUD, dialogue, character panel, profile selector, and learning check instances.
-- `scenes/player/Player.tscn`: player `Body` (`AnimatedSprite2D`, `sprite_frames` built in code per profile — see `Player.gd`), a hidden empty `Armor` (`AnimatedSprite2D`) scaffold for a future equipment layer, collision shape, and camera.
+- `assets/sprites/tiles/placeholder_tileset.png` and `assets/tilesets/placeholder_tileset.tres`: bootstrap 4-tile (grass/path/water/rock) 16x16 placeholder tileset, generated as flat colors (not through the AI source-art pipeline, since it exists only to prove `TileMapLayer`/`TileSet` collision before real tile art). Water and rock tiles have a full-tile physics collision polygon on `TileSet` physics layer 0; grass and path have none (walkable).
+- `scenes/main/Main.tscn`: `World/Ground` `TileMapLayer` (160x100 tiles, 2560x1600px, `y_sort_enabled` on `World`) replacing the old flat floor/obstacle, player, Elder, Mira, Finn, Yarrow (all `y_sort_enabled`), collectibles (including Silverleaf), HUD, dialogue, character panel, profile selector, and learning check instances.
+- `scenes/player/Player.tscn`: player `Body` (`AnimatedSprite2D`, `sprite_frames` built in code per profile — see `Player.gd`), a hidden empty `Armor` (`AnimatedSprite2D`) scaffold for a future equipment layer, collision shape, and camera (`Camera2D` now has `limit_left/top/right/bottom` set to the map bounds and `position_smoothing_enabled` on).
 - `scripts/core/GameState.gd`: minimal profile, health, collected-item, reusable quest state (now four quests: Elder, Mira, Finn, Yarrow), and Elder compatibility flags. Also owns the equip system: `equipped_armor_tier` (0 = none) and an `armor_equipped(tier)` signal, granted automatically by `_check_and_grant_tier1_armor()` once all four quests reach `QUEST_COMPLETED` (called from `complete_quest()`). And local save/load: `save_game()`/`load_game()`/`reset_progress()` persist the fields above to `user://savegame.json`; `load_game()` runs in `_ready()`. Autosave is wired via four small `_on_<signal>_autosave()` handlers, one per signal (`profile_changed`, `quest_changed`, `item_added`, `armor_equipped`), each just calling `save_game()` — **not** one shared zero-arg handler connected to all four (see the note below on why that doesn't work).
 - `scripts/core/ContentDefinitions.gd`: tiny lookup layer for profile labels, item labels, quest summaries, badge labels, and armor tier labels (`get_badge_label(quest_id)`/`BADGE_LABELS`, `get_armor_tier_label(tier)`/`ARMOR_TIER_LABELS` — both deliberately plain dictionaries, not `.tres` resources, since neither meets the "more content, or a second consumer needing structured data" bar `AGENTS.md` sets for promoting to Resources). Item labels are resolved from `ItemDefinition` `.tres` resources (see below); profile labels, quest summaries, badge labels, and armor tier labels are still plain dictionaries.
 - `scripts/core/ItemDefinition.gd` and `data/items/{golden_star,glowing_herb,shimmering_ore,silverleaf}.tres`: a tiny Resource-backed content experiment (`docs/ROADMAP.md` milestone 2) — each item's id/label now lives in its own `.tres` file instead of a hardcoded dictionary entry, proving the pattern works before it's considered for quest/profile content too.
@@ -178,6 +203,19 @@ diagnosed; skip it for now and expect the suite to touch your local save file tr
 - [ ] Clicking "Yes, erase everything" clears all progress, reloads the scene, and shows the
       profile selector again as if freshly launched with no save.
 
+### World/map regression
+
+- [ ] The zone is visibly bigger than one screen — walking in any direction moves well past
+      the original single-screen bounds before hitting the outer rock border.
+- [ ] Grass and dirt-path tiles are walkable; the player cannot walk into water or rock
+      tiles, or past the outer rock border at the edge of the map.
+- [ ] The camera stops scrolling at the map edges (no empty/gray space beyond the tiled
+      zone) and follows the player smoothly rather than snapping instantly.
+- [ ] The player and all 4 NPCs draw in correct front/behind order as the player walks
+      above/below them (y-sort).
+- [ ] All 4 NPC quests (Elder, Mira, Finn, Yarrow) are still reachable and completable in
+      their new positions, in the same gated order as before (Elder → Mira → Finn → Yarrow).
+
 ## Next milestone
 
 A design north-star doc set lives in `docs/design/` (`NORTH_STAR.md`, `CURRICULUM_MAP.md`, `VISUAL_CONTRACT.md`, `RESEARCH_NOTES.md`) to anchor future work. The learning checks now follow its bonus-only rule: each quest completes on item return regardless of answer, and a correct answer adds a bonus via `GameState.award_quest_bonus()`.
@@ -260,7 +298,12 @@ un-grants once earned). This is a judgment call made autonomously while the user
 flagged clearly here for review — a different next quest, a different subject, or declining
 to extend the armor requirement would all have been reasonable alternate choices.
 
-Next up: continue adding story/quest content (`docs/ROADMAP.md` milestone 7) — ideally with
-user input on subject scope per `CURRICULUM_MAP.md`'s CONFIRM/ADJUST flag before going
-further, since repeating "one more NPC" risks exactly the feature-equity sprawl the design
-docs warn against — or generating Tier 1 walk-cycle armor art, or designing Tier 2 (Bronze).
+Next up: the user has since approved a **Phase 2 roadmap** (`docs/ROADMAP.md`'s "Phase 2"
+section) that supersedes the "one more NPC" question above — the placeholder vertical slice
+is done, and the project is moving toward a real game (combat, pets, bigger maps, farm,
+mobile). **M1 (world/map foundation) is done** (see above): `TileMapLayer` + collision +
+camera limits + y-sort, proven with a bootstrap placeholder tileset. Next is **M2 — combat +
+first monster**, which introduces the component-node architecture (`HealthComponent`,
+`HitboxComponent`/`HurtboxComponent`, a stats `.tres`) per the Phase 2 plan. Real tile art to
+replace the placeholder tileset, Tier 1 walk-cycle armor art, and Tier 2 (Bronze) armor
+remain open art backlog items, lower priority than the Phase 2 milestone chain.
