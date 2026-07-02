@@ -436,7 +436,35 @@ boundary edges, and the cross-fade easing's endpoints/midpoint/clamping).
 - `scripts/core/AudioManager.gd` (region ambience pass): generalized from one global ambient loop to region-aware playback — `REGION_RECTS` (world-pixel rectangles matching `tools/paint_map.gd`'s tile regions), `REGION_STREAMS` (one loop per region), a ~0.5s `Timer` poll of the player's position, and a two-player cross-fade (`_crossfade_to_region()`) driven by the pure `region_for_position()`/`crossfade_volume_db()` static functions.
 - `assets/audio/gen_sfx.py` (region ambience pass additions): `village_hearth()`, `meadow_birds()`, `forest_wind()`, `lake_water()` — four new self-synthesized, soft, loop-seam-faded ambient beds, one per region (see writeup above).
 - `assets/audio/{village_hearth,meadow_birds,forest_wind,lake_water}.wav`: the generated region ambient tracks.
-- `tests/audio_tests.gd` (region ambience pass additions): 6 new tests for `region_for_position()` (in-rect lookups, first-match-wins on overlap, outside-all-rects fallback, inclusive/exclusive boundary edges) and `crossfade_volume_db()` (endpoints, midpoint, clamping). Suite total is now 64 (55 + 3 campfire + 6 region ambience).
+- `tests/audio_tests.gd` (region ambience pass additions): 6 new tests for `region_for_position()` (in-rect lookups, first-match-wins on overlap, outside-all-rects fallback, inclusive/exclusive boundary edges) and `crossfade_volume_db()` (endpoints, midpoint, clamping). Suite total is now 68 (55 + 3 campfire + 6 region ambience + 4 discovery).
+- **Discovery sparkle-spots: hidden finds across the new region map (expansion backlog):
+  done.** Four small hidden bonus pickups scattered across four *distinct* regions of the
+  epic-pass map — the flower meadow, the forest edge, the lake shore, and the rocky border —
+  turning the map's new regions into a curiosity/exploration reward loop, per
+  `docs/design/NORTH_STAR.md` pillars 1 (deepen the existing map, not a new biome) and 5
+  (permanent world-knowledge per session). `scripts/items/SparkleSpot.gd` /
+  `scenes/items/SparkleSpot.tscn` is a new small reusable pickup mirroring
+  `Collectible.gd`/`CoinPickup.gd`'s exact `Area2D`/`body_entered` shape (placeholder art: a
+  pale-gold star/diamond `Polygon2D` shimmer) with exported `place_id`/`coin_reward`; on touch
+  it awards the coin bonus via the existing `GameState.add_coins()`, calls the new
+  `GameState.discover_place(place_id)`, and plays the existing `AudioManager.play_sfx
+  ("coin_chime")`. `GameState.places_discovered: Dictionary` mirrors `creatures_met`/
+  `keepsakes` exactly: idempotent `discover_place(id)` (fires `place_discovered(place_id)`
+  once per new id), `has_discovered_place(id)`, persisted via `save_game()`/`load_game()`
+  (`.get()` default, no save-schema bump) and cleared in `reset_state()`.
+  `ContentDefinitions.PLACE_FACTS` (plain dictionary, id -> `{label, fact}`, four entries) +
+  `get_place_label(id)`/`get_place_fact(id)` mirror `CREATURE_FACTS`/`KEEPSAKE_FACTS`. The
+  character panel gained a "Places discovered" section (`PlacesList` `VBoxContainer`,
+  refreshed via `_refresh_places_list()` on `GameState.place_discovered`) listing each
+  discovered place as "Label — fact", with a "none yet" empty state matching the panel's other
+  sections. Placed once each in `scenes/main/Main.tscn`: `FlowerMeadowSparkle` (1680, 1360,
+  flower meadow), `ForestEdgeSparkle` (288, 1600, forest edge), `LakeShoreSparkle` (1728, 864,
+  lake sand shore), `RockyBorderSparkle` (3360, 320, far-corner grass near the rocky border) —
+  all chosen clear of every existing NPC/item/path/prop position. Bonus-only by construction:
+  a missed spot never blocks or nags, and coin rewards are 1-2 per spot. A new isolated
+  `tests/discovery_tests.gd` (4 tests: first-discovery records + signal fires once, repeat
+  discovery stays idempotent, save/load round trip, reset clears) is registered in
+  `tests/test_runner.gd`.
 
 ## How to run
 
@@ -448,12 +476,12 @@ Open `project.godot` with Godot 4.x standard and press F5.
 Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
 ```
 
-Runs all 10 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
+Runs all 11 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
 (18), `tests/hit_flash_tests.gd` (5), `tests/pet_tests.gd` (5), `tests/spawner_tests.gd` (7),
 `tests/audio_tests.gd` (9), `tests/codex_tests.gd` (4), `tests/elder_slime_tests.gd` (4),
-`tests/keepsake_tests.gd` (4), `tests/map_tests.gd` (5), and `tests/campfire_tests.gd` (3) -
+`tests/keepsake_tests.gd` (4), `tests/map_tests.gd` (5), `tests/campfire_tests.gd` (3), and `tests/discovery_tests.gd` (4) -
 against the real `GameState`/`AudioManager` autoloads, and prints `PASS`/`FAIL` per test plus
-a summary line (**64 tests total**); exits non-zero if anything failed. See
+a summary line (**68 tests total**); exits non-zero if anything failed. See
 `tests/test_runner.gd` for the
 (small, custom, no third-party dependency) runner — it discovers every `test_*` method on
 each registered test class, resets `GameState` via `GameState.reset_state()` before each one

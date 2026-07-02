@@ -14,6 +14,7 @@ signal pet_unlocked(pet_id: String)
 signal pet_changed
 signal creature_met(creature_id: String)
 signal keepsake_awarded(keepsake_id: String)
+signal place_discovered(place_id: String)
 
 const SAVE_PATH := "user://savegame.json"
 const SAVE_VERSION := 3
@@ -66,6 +67,9 @@ var creatures_met: Dictionary = {}
 # mirroring creatures_met's shape exactly - same idempotent record/has pair, same
 # save/load/reset handling, same bonus-only "can only gain, never lose" rule.
 var keepsakes: Dictionary = {}
+# "Places discovered" codex: permanent world-knowledge earned from finding hidden sparkle
+# spots across the map. Maps place_id -> true, mirroring creatures_met/keepsakes exactly.
+var places_discovered: Dictionary = {}
 
 var elder_quest_started: bool = false
 var elder_quest_completed: bool = false
@@ -86,6 +90,7 @@ func _ready() -> void:
     pet_changed.connect(_on_pet_changed_autosave)
     creature_met.connect(_on_creature_met_autosave)
     keepsake_awarded.connect(_on_keepsake_awarded_autosave)
+    place_discovered.connect(_on_place_discovered_autosave)
     load_game()
 
 func _process(delta: float) -> void:
@@ -321,6 +326,18 @@ func award_keepsake(keepsake_id: String) -> void:
 func has_keepsake(keepsake_id: String) -> bool:
     return keepsakes.has(keepsake_id)
 
+func discover_place(place_id: String) -> void:
+    # Idempotent: only the first discovery emits place_discovered, mirroring
+    # record_creature_met()/award_keepsake()'s bonus-only, gain-only rule exactly.
+    if places_discovered.has(place_id):
+        return
+
+    places_discovered[place_id] = true
+    place_discovered.emit(place_id)
+
+func has_discovered_place(place_id: String) -> bool:
+    return places_discovered.has(place_id)
+
 func get_combat_multiplier() -> float:
     return 1.0 + combat_streak * COMBAT_MULTIPLIER_PER_STACK
 
@@ -369,6 +386,7 @@ func save_game() -> void:
         "equipped_pet": equipped_pet,
         "creatures_met": creatures_met,
         "keepsakes": keepsakes,
+        "places_discovered": places_discovered,
     }
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if not file:
@@ -432,6 +450,12 @@ func load_game() -> void:
     for keepsake_id in loaded_keepsakes.keys():
         keepsakes[keepsake_id] = true
 
+    # Same Dictionary coercion pattern as creatures_met/keepsakes above.
+    var loaded_places: Dictionary = data.get("places_discovered", {})
+    places_discovered = {}
+    for place_id in loaded_places.keys():
+        places_discovered[place_id] = true
+
     _refresh_elder_quest_flags()
 
 func _migrate(data: Dictionary) -> Dictionary:
@@ -466,6 +490,7 @@ func reset_state() -> void:
     equipped_pet = ""
     creatures_met = {}
     keepsakes = {}
+    places_discovered = {}
     combat_streak = 0
     _time_since_last_correct_answer = 0.0
     _player_hit_cooldown_remaining = 0.0
@@ -497,4 +522,7 @@ func _on_creature_met_autosave(_id: String) -> void:
     save_game()
 
 func _on_keepsake_awarded_autosave(_keepsake_id: String) -> void:
+    save_game()
+
+func _on_place_discovered_autosave(_place_id: String) -> void:
     save_game()

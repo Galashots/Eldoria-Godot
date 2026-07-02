@@ -43,6 +43,7 @@
 [ext_resource type="PackedScene" path="res://scenes/props/Campfire.tscn" id="40_campfire"]
 [ext_resource type="Script" path="res://scripts/props/Campfire.gd" id="41_campfire_script"]
 [ext_resource type="PackedScene" path="res://scenes/ui/RestFadeOverlay.tscn" id="42_rest_fade"]
+[ext_resource type="PackedScene" path="res://scenes/items/SparkleSpot.tscn" id="40_sparkle"]
 
 [node name="Main" type="Node2D" unique_id=280939621]
 
@@ -217,6 +218,25 @@ position = Vector2(1552, 976)
 y_sort_enabled = true
 position = Vector2(1288, 588)
 script = ExtResource("41_campfire_script")
+[node name="FlowerMeadowSparkle" type="Area2D" parent="." instance=ExtResource("40_sparkle")]
+position = Vector2(1680, 1360)
+place_id = "flower_meadow_sparkle"
+coin_reward = 2
+
+[node name="ForestEdgeSparkle" type="Area2D" parent="." instance=ExtResource("40_sparkle")]
+position = Vector2(288, 1600)
+place_id = "forest_edge_sparkle"
+coin_reward = 2
+
+[node name="LakeShoreSparkle" type="Area2D" parent="." instance=ExtResource("40_sparkle")]
+position = Vector2(1728, 864)
+place_id = "lake_shore_sparkle"
+coin_reward = 1
+
+[node name="RockyBorderSparkle" type="Area2D" parent="." instance=ExtResource("40_sparkle")]
+position = Vector2(3360, 320)
+place_id = "rocky_border_sparkle"
+coin_reward = 2
 
 [connection signal="combat_question_requested" from="Player" to="CombatQuestion" method="show_question"]
 [connection signal="dialogue_requested" from="Player" to="DialogueBox" method="show_dialogue"]

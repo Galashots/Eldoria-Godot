@@ -77,6 +77,14 @@ autowrap_mode = 2
 [node name="KeepsakesList" type="VBoxContainer" parent="PanelContainer/VBoxContainer"]
 layout_mode = 2
 
+[node name="PlacesLabel" type="Label" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+text = "Places discovered:"
+autowrap_mode = 2
+
+[node name="PlacesList" type="VBoxContainer" parent="PanelContainer/VBoxContainer"]
+layout_mode = 2
+
 [node name="ResetButton" type="Button" parent="PanelContainer/VBoxContainer"]
 layout_mode = 2
 text = "Reset Progress..."

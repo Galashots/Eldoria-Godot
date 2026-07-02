@@ -163,3 +163,34 @@ static func get_creature_label(creature_id: String) -> String:
 static func get_creature_fact(creature_id: String) -> String:
     var creature: Dictionary = CREATURE_FACTS.get(creature_id, {})
     return creature.get("fact", "")
+
+## "Places discovered" codex factoids (display-only text, no stats), mirroring
+## CREATURE_FACTS/KEEPSAKE_FACTS' plain-dictionary shape exactly - four entries, one per
+## sparkle spot, well under the repo's "more content, or a second consumer needing
+## structured data" bar for Resource promotion (see AGENTS.md).
+const PLACE_FACTS := {
+    "flower_meadow_sparkle": {
+        "label": "Flower Meadow Sparkle",
+        "fact": "A shimmering patch of wildflowers south of the village green.",
+    },
+    "forest_edge_sparkle": {
+        "label": "Forest Edge Hollow",
+        "fact": "A quiet, shady hollow tucked into the forest's edge.",
+    },
+    "lake_shore_sparkle": {
+        "label": "Lake Shore Glint",
+        "fact": "A glint of light on the sandy shore near the lake.",
+    },
+    "rocky_border_sparkle": {
+        "label": "Rocky Border Nook",
+        "fact": "A hidden nook tucked against the map's rocky far edge.",
+    },
+}
+
+static func get_place_label(place_id: String) -> String:
+    var place: Dictionary = PLACE_FACTS.get(place_id, {})
+    return place.get("label", place_id)
+
+static func get_place_fact(place_id: String) -> String:
+    var place: Dictionary = PLACE_FACTS.get(place_id, {})
+    return place.get("fact", "")
