@@ -342,6 +342,34 @@ atmosphere. Test suite grew to 61 (6 new `AudioTests` cases: in-rect lookups for
 regions, first-match-wins on overlap, outside-all-rects fallback, inclusive/exclusive rect
 boundary edges, and the cross-fade easing's endpoints/midpoint/clamping).
 
+**Ambient particle pass (expansion backlog): done.** Adds soft, region-flavored ambient
+particles so the map feels alive across senses, per `docs/design/NORTH_STAR.md` pillar 1 and
+`docs/art/STYLE_GUIDE.md`'s "gentle motion" art-direction lever. Deliberately the cheaper of
+the spec's two options: a few small **fixed** `CPUParticles2D` emitters (one per flavored
+region) rather than one emitter that follows the player and polls every frame. A new
+`scripts/fx/AmbientParticles.gd` (`scenes/fx/AmbientParticles.tscn`) wraps a single
+`CPUParticles2D` child and applies a named preset from a small `PRESETS` dictionary in
+`_ready()`, exported as `region: String` per instance (mirroring `SparkleSpot.tscn`'s exported
+`place_id` pattern). Three presets exist so far — `flower_meadow` (soft drifting pollen, warm
+yellow, upward gravity), `forest_edge` (a few slow fireflies, warm glow, no directional drift),
+and `lake` (a handful of pale glints near the shore) — all deliberately sparse (5-10 particles),
+slow (initial velocity 3-10 px/s), and low-alpha (<=0.4), per the kid-audience "few, soft
+particles" rule; colors are drawn from/near the existing `gen_tileset.py` flower palette so the
+particles stay in the same harmonized palette as the tiles. Three instances are placed in
+`Main.tscn` (`FlowerMeadowParticles`, `ForestEdgeParticles`, `LakeParticles`) at the same
+landmark positions the "Discovery sparkle-spots" slice already anchored its `SparkleSpot`
+props to, each confirmed (by test) to fall inside its matching rect in
+**`AudioManager.REGION_RECTS`**, reusing `AudioManager.region_for_position()` as-is (already a
+pure static function, so no refactor was needed) rather than duplicating region geometry — the
+slice's explicit sequencing/cohesion requirement. `village_green` and `rocky_border` are
+deliberately left without a particle preset (not every region needs one; `get_preset()` returns
+an empty dict for regions with no entry, which `apply_preset()` treats as "stay off" rather than
+erroring). No collision, no gameplay effect — purely visual, verified by a headless
+node-carries-no-collision assertion. A new isolated `tests/particle_tests.gd` (9 tests:
+preset lookup for known/unknown regions, sparse/gentle preset bounds, `apply_preset()`
+enabling/disabling emission, and per-region Main.tscn position + region-membership assertions
+for all three emitters) is registered in `tests/test_runner.gd`. Test suite grew to 100.
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.

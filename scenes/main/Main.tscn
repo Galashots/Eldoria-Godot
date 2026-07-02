@@ -48,6 +48,7 @@
 [ext_resource type="PackedScene" path="res://scenes/fx/LakeShimmer.tscn" id="43_lake_shimmer"]
 [ext_resource type="PackedScene" path="res://scenes/ui/ComprehensionCheck.tscn" id="43_comprehension"]
 [ext_resource type="Script" path="res://scripts/ui/ComprehensionCheck.gd" id="44_comprehension_script"]
+[ext_resource type="PackedScene" path="res://scenes/fx/AmbientParticles.tscn" id="45_ambient_particles"]
 
 [node name="Main" type="Node2D" unique_id=280939621]
 
@@ -255,6 +256,18 @@ coin_reward = 1
 position = Vector2(3360, 320)
 place_id = "rocky_border_sparkle"
 coin_reward = 2
+
+[node name="FlowerMeadowParticles" type="Node2D" parent="." instance=ExtResource("45_ambient_particles")]
+position = Vector2(1392, 1216)
+region = "flower_meadow"
+
+[node name="ForestEdgeParticles" type="Node2D" parent="." instance=ExtResource("45_ambient_particles")]
+position = Vector2(336, 1128)
+region = "forest_edge"
+
+[node name="LakeParticles" type="Node2D" parent="." instance=ExtResource("45_ambient_particles")]
+position = Vector2(1552, 928)
+region = "lake"
 
 [connection signal="combat_question_requested" from="Player" to="CombatQuestion" method="show_question"]
 [connection signal="dialogue_requested" from="Player" to="DialogueBox" method="show_dialogue"]
