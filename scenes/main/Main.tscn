@@ -37,6 +37,7 @@
 [ext_resource type="PackedScene" path="res://scenes/props/StandingStone.tscn" id="34_stone"]
 [ext_resource type="Script" path="res://scripts/enemies/Spawner.gd" id="35_spawner"]
 [ext_resource type="PackedScene" path="res://scenes/props/LoneTree.tscn" id="35_tree"]
+[ext_resource type="PackedScene" path="res://scenes/enemies/ElderSlime.tscn" id="36_elder_slime"]
 [ext_resource type="PackedScene" path="res://scenes/props/Bush.tscn" id="38_qcd1j"]
 [ext_resource type="PackedScene" path="res://scenes/props/Dock.tscn" id="39_12hjt"]
 
@@ -145,6 +146,12 @@ script = ExtResource("33_dl125")
 y_sort_enabled = true
 position = Vector2(2088, 968)
 script = ExtResource("33_dl125")
+
+[node name="Bosses" type="Node2D" parent="."]
+
+[node name="ElderSlime" type="CharacterBody2D" parent="Bosses" instance=ExtResource("36_elder_slime")]
+y_sort_enabled = true
+position = Vector2(2350, 1450)
 
 [node name="CombatQuestion" type="CanvasLayer" parent="." unique_id=532605820 instance=ExtResource("28_ftc2p")]
 layer = 91

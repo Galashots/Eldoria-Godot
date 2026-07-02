@@ -81,12 +81,16 @@ const ARMOR_TIER_LABELS := {
 }
 
 ## "Creatures met" codex factoids (display-only text, no stats) - a plain dictionary rather
-## than a .tres Resource, since a single entry doesn't meet the repo's "more content, or a
+## than a .tres Resource, since two entries still doesn't meet the repo's "more content, or a
 ## second consumer needing structured data" bar for Resource promotion (see AGENTS.md).
 const CREATURE_FACTS := {
     "meadow_slime": {
         "label": "Meadow Slime",
         "fact": "A bouncy meadow friend that loves sunny grass — drops a coin when bested!",
+    },
+    "elder_slime": {
+        "label": "Elder Slime",
+        "fact": "A big, wise old slime who winds up before a hop — watch for the glow, then dodge!",
     },
 }
 
@@ -133,6 +137,24 @@ static func get_pet_label(pet_id: String) -> String:
 
 static func get_rarity_color(rarity: String) -> Color:
     return RARITY_COLORS.get(rarity, Color.WHITE)
+
+## Boss keepsake display text (label + one-line flavor), mirroring CREATURE_FACTS' plain-
+## dictionary shape exactly - one entry so far, well under the repo's "more content, or a
+## second consumer needing structured data" bar for Resource promotion (see AGENTS.md).
+const KEEPSAKE_FACTS := {
+    "elder_slime_dewdrop": {
+        "label": "Elder Slime's Dewdrop",
+        "fact": "A cool, glimmering drop left behind by the Elder Slime — proof you outlasted its lunge.",
+    },
+}
+
+static func get_keepsake_label(keepsake_id: String) -> String:
+    var keepsake: Dictionary = KEEPSAKE_FACTS.get(keepsake_id, {})
+    return keepsake.get("label", keepsake_id)
+
+static func get_keepsake_fact(keepsake_id: String) -> String:
+    var keepsake: Dictionary = KEEPSAKE_FACTS.get(keepsake_id, {})
+    return keepsake.get("fact", "")
 
 static func get_creature_label(creature_id: String) -> String:
     var creature: Dictionary = CREATURE_FACTS.get(creature_id, {})

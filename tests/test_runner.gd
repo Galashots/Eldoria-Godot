@@ -6,6 +6,8 @@ const PetTests := preload("res://tests/pet_tests.gd")
 const SpawnerTests := preload("res://tests/spawner_tests.gd")
 const AudioTests := preload("res://tests/audio_tests.gd")
 const CodexTests := preload("res://tests/codex_tests.gd")
+const ElderSlimeTests := preload("res://tests/elder_slime_tests.gd")
+const KeepsakeTests := preload("res://tests/keepsake_tests.gd")
 const MapTests := preload("res://tests/map_tests.gd")
 
 var _pass_count := 0
@@ -19,6 +21,8 @@ func _ready() -> void:
     _run_suite("SpawnerTests", SpawnerTests.new())
     _run_suite("AudioTests", AudioTests.new())
     _run_suite("CodexTests", CodexTests.new())
+    _run_suite("ElderSlimeTests", ElderSlimeTests.new())
+    _run_suite("KeepsakeTests", KeepsakeTests.new())
     _run_suite("MapTests", MapTests.new())
     print("")
     print("%d passed, %d failed" % [_pass_count, _fail_count])

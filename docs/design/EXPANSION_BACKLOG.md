@@ -67,82 +67,159 @@ out of scope until a future pass has a concrete reason to revisit them).
 
 ## Ready
 
-<!-- Second expansion pass (orchestrator refill, 2026-07-01). The three slices below were
-     added after the first cycles shipped (Legendary weapon = PR #40, landmark props = PR #41,
-     bonus-coin drop = PR #39). They are ordered best-next-first AND by how conflict-free they
-     are against that still-open PR stack; each carries a "Sequencing" note. The four original
-     slices further down keep their status; PRs #39/#40/#41 flip three of them to done on merge. -->
+<!-- Third expansion pass (game-architect refill, 2026-07-01). Planned assuming BOTH the epic
+     region-distinct map pass (village green / flower meadow / forest edge / lake / rocky
+     border) AND the Elder Slime mini-boss have merged — the two in-flight PRs are treated as
+     ground truth here. Research provenance: docs/design/RESEARCH_NOTES.md §8 (kid-stickiness
+     without dark patterns + stealth-learning). Ordered best-next-first, each with a Sequencing
+     note on conflict-risk against the still-settling map/mini-boss code. The prior pass's
+     "Creatures met" codex and Elder Slime slices have shipped/merged and moved to Done. -->
 
-### "Creatures met" codex: permanent world-knowledge from combat
-- **Goal:** The first time the player defeats each monster type, it's recorded and shown as a
-  friendly "Creatures met" entry (name + one-line factoid) in the character panel — so combat
-  leaves behind permanent, collectible world-knowledge, not just coins.
-- **Design rationale:** NORTH_STAR pillar 5 "every short session yields permanent progress
-  (world knowledge, a keepsake, a codex entry)" | research: `RESEARCH_NOTES.md` §7.3 — a
-  bestiary/compendium filled by defeating creatures is a classic low-cost collection loop, each
-  entry paired with a short friendly factoid; bonus-only and non-punitive by construction (you
-  only ever gain entries).
+### Discovery sparkle-spots: hidden finds across the new region map
+- **Goal:** Scatter a few hidden "sparkle spots" across the new region-distinct map (a
+  shimmer in the flower meadow, a hollow at the forest edge, a glint by the lake) that, when
+  found and touched, give a small bonus (a coin or two) and record a permanent "Places
+  discovered" entry — turning the new map's regions into a curiosity/exploration reward loop.
+- **Design rationale:** NORTH_STAR pillar 1 ("cohesion over volume" — deepen the *existing*
+  new map instead of adding a biome) AND pillar 5 (permanent world-knowledge per session) |
+  research: `RESEARCH_NOTES.md` §8.3 — rewarding curiosity (secret groves, sparkle spots,
+  optional finds) is one of the cheapest, strongest joy loops, and optional exploration
+  **rewards the curious without punishing those who miss it** (a perfect fit for the
+  bonus-only rule); §8.4 — the payoff can be the discovery itself, not power.
 - **Acceptance criteria:**
-  - [ ] `GameState` tracks a persisted set of defeated monster type ids (survives save/load and
-        clears on reset), with a `record_creature_defeated(id)` that is idempotent.
-  - [ ] The Meadow Slime records itself as defeated on death (one call from its death path).
-  - [ ] The character panel shows a "Creatures met" section listing each recorded creature's
-        label + a one-line friendly factoid (text-only, no new art).
-  - [ ] Bonus-only: no gameplay/difficulty change; you cannot lose a codex entry.
-  - [ ] Covered by an **isolated new test file** (registered in `test_runner.gd`), not by
-        appending to `game_state_tests.gd`.
-- **Likely files touched:** `scripts/core/GameState.gd`, `scripts/enemies/MeadowSlime.gd` (one
-  line on death), `scripts/ui/CharacterPanel.gd` (+`.tscn`), a small factoid source, new
-  `tests/codex_tests.gd` + `tests/test_runner.gd`.
-- **Curriculum tie-in:** none directly — but the codex is the natural home for later "mastery
-  marks" (`CURRICULUM_MAP.md`'s stealth-assessment bridge) if that's ever built.
-- **Sequencing:** **wait for PR #39 to merge** — the one-line defeat hook is in
-  `MeadowSlime.gd`, which #39 edits; build after #39 lands to avoid a conflict. (`GameState.gd`
-  and `CharacterPanel.gd` are otherwise free.)
-- **Status:** done — shipped on `slice-creature-codex`: `GameState.creatures_met`
-  (Dictionary, save-schema-compatible via `.get()` default) + `record_creature_met(id)`
-  (idempotent, `creature_met` signal fires once) + `has_met_creature(id)`;
-  `MeadowSlime._on_died()` records `meadow_slime`; `ContentDefinitions.CREATURE_FACTS`
-  (plain dictionary, one entry) backs a new "Creatures met" section in `CharacterPanel`;
-  4 new tests in `tests/codex_tests.gd`.
+  - [ ] 3–5 sparkle-spot pickups placed across *distinct regions* of the new map (each in a
+        different region so it showcases the map pass), reusing the existing `Collectible`/
+        `CoinPickup` machinery — no new pickup framework.
+  - [ ] Touching one gives a small additive bonus (a coin or two) AND records a permanent
+        "Places discovered" entry in `GameState` (persisted, save/load-safe via `.get()`
+        default, cleared on reset) — mirroring the `creatures_met` codex shape.
+  - [ ] The character panel shows a "Places discovered" section (label + one-line flavor,
+        text-only) with a "none yet" empty state, matching the other panel sections.
+  - [ ] Bonus-only / non-punitive: a missed sparkle spot never blocks or penalizes anything;
+        there is no timer, no completion pressure, no "you missed one" nag.
+  - [ ] Placeholder art only (a small polygon shimmer/glint, matching the bootstrap-art
+        precedent) — no production art required to prove the loop.
+  - [ ] Covered by an isolated test file for the discovery-tracking logic (record-once,
+        idempotent, save/load, reset), registered in `test_runner.gd`.
+- **Likely files touched:** `scripts/core/GameState.gd`, `scripts/items/` (a small
+  `SparkleSpot` reusing `Collectible.gd`, or a variant), `scenes/items/` + `scenes/main/Main.tscn`
+  (placements), `scripts/core/ContentDefinitions.gd` (place labels/flavor),
+  `scripts/ui/CharacterPanel.gd` (+`.tscn`), new `tests/discovery_tests.gd` + `test_runner.gd`.
+- **Curriculum tie-in:** none — pure systems (a discovery/exploration loop).
+- **Sequencing:** **build after the region-map PR merges** — placements reference the new
+  regions and edit `Main.tscn`, which the map pass heavily rewrites; building before it lands
+  would guarantee a placement conflict. `GameState`/`CharacterPanel` are otherwise free.
+- **Status:** ready
 
-### First mini-boss: Elder Slime (tougher Meadow Slime variant)
-- **Goal:** Give the player one clearly-telegraphed, higher-stakes (but still non-punitive)
-  fight — a larger, tougher Meadow Slime variant with more HP and a single new telegraphed
-  windup move — without building a bespoke boss-fight system.
-- **Design rationale:** NORTH_STAR pillar "Cohesion over volume" (reuses/deepens the
-  existing Meadow Slime component architecture rather than adding a new enemy archetype) |
-  research: "Building Better Bosses" and "Boss Design: How to Make an Unforgettable Boss
-  Battle" (Game Developer / Game Design Skills), and "Encounter" (The Level Design Book),
-  `docs/design/RESEARCH_NOTES.md` §6.3 — mini-bosses are conventionally a tougher variant of
-  a known enemy at a zone's mid-point, and fairness requires every dangerous move be clearly
-  telegraphed well before it lands, functioning as a loose tutorial for the tell.
+### Diegetic session-end "rest" beat: a cozy campfire that banks the session
+- **Goal:** Add a single cozy in-fiction "rest" spot (a campfire or bedroll in the village)
+  the child can walk up to and choose to rest at; resting shows a warm "You rest by the fire —
+  your progress is safe. See you next time!" beat and a gentle fade, giving the session a
+  *satisfying stopping point* instead of an open "one more thing" loop.
+- **Design rationale:** NORTH_STAR pillar 5 (every session yields permanent progress — make
+  that *visible* at the natural stopping point) AND the project's anti-dark-pattern safety
+  posture | research: `RESEARCH_NOTES.md` §8.1 — the CHI 2026 disengagement-friendly study
+  found an in-fiction bedtime/rest beat helps children *anticipate and accept* the end of a
+  session and gives a parent a shared story to end play, the ethical inverse of a retention
+  hook; §8.1 also warns any engagement reward must be additive-only with no penalty/FOMO.
 - **Acceptance criteria:**
-  - [ ] Reuses `scripts/enemies/MeadowSlime.gd`'s existing FSM/components (`HealthComponent`,
-        `HitboxComponent`/`HurtboxComponent`) — implemented as a variant (exported stat
-        overrides, e.g. via a scene inheriting `MeadowSlime.tscn`, or a small subclass), not
-        a new parallel monster script from scratch.
-  - [ ] Has meaningfully more HP than a regular Meadow Slime (tuned in-engine, not just "3x"
-        blindly) and deals contact damage the same way — same non-punitive death rule
-        applies (teleport/heal/friendly line, no game-over).
-  - [ ] Adds exactly one new telegraphed move: a brief, clearly visible wind-up (e.g. a
-        color-flash or a brief pause-then-lunge) before any bigger hit, giving the player a
-        fair visual cue to react to, honoring the telegraphing research above.
-  - [ ] Placed once, at a clear mid-point of the existing M1 zone (not guarding a new area),
-        reusing existing placeholder art techniques (e.g. a scaled-up/recolored variant of
-        the existing `meadow_slime_idle.png`, consistent with `docs/design/
-        MONSTER_CONCEPTS.md`'s "placeholder-first" precedent) rather than requiring new
-        production art before the system is proven.
-  - [ ] No new UI system (health bar, phase indicator) is required to ship this slice — the
-        existing HP/combat feedback the player already has (HUD "On Fire!"/HP readout) is
-        sufficient for a first pass; a boss health bar is explicitly deferred, not part of
-        this slice's acceptance criteria.
-  - [ ] Test suite covers the variant's stat overrides and telegraphed-hit timing at the same
-        pure-logic level M2's combat tests already do.
-- **Likely files touched:** `scripts/enemies/MeadowSlime.gd` (variant hook or a small new
-  subclass), `scenes/enemies/` (new scene, e.g. `ElderSlime.tscn`), `scenes/main/Main.tscn`
-  (one placement), `docs/design/MONSTER_CONCEPTS.md` (append the variant), `tests/`.
-- **Curriculum tie-in:** none — pure systems.
+  - [ ] One interactable "rest" spot (campfire/bedroll) in the village hub; interacting opens
+        a warm, short, profile-aware dialogue confirming progress is saved and inviting the
+        child to stop for now.
+  - [ ] Resting triggers an explicit `GameState.save_game()` and a gentle visual beat (a brief
+        fade or a calm "resting" overlay) — NOT a game-over/quit; the child can keep playing if
+        they choose. The point is a *clean, inviting stopping point*, never a forced exit.
+  - [ ] No streak, no timer, no "come back tomorrow" FOMO, no reward that is *lost* by not
+        resting — purely a positive, penalty-free closure beat (honors §8.1's dark-pattern
+        warning and the bonus-only rule).
+  - [ ] Reuses the existing `DialogueBox` + NPC-interaction pattern; no new persistent state
+        schema needed beyond calling the existing save (so save schema stays put).
+  - [ ] Grade 2 gets a shorter, plainer rest message; Grade 5 a slightly richer one — same
+        two-profile scaffolding as every other piece of text.
+- **Likely files touched:** `scenes/npcs/` or `scenes/props/` (a `Campfire`/`RestSpot` scene +
+  script, mirroring an NPC's interact pattern), `scenes/main/Main.tscn` (one placement),
+  `scripts/ui/DialogueBox.gd` (reuse), possibly a tiny fade overlay in a UI scene, `tests/`
+  only if any pure logic is added (the save call itself is already tested).
+- **Curriculum tie-in:** none — pure systems / player-wellbeing feature.
+- **Sequencing:** **build after the region-map PR merges** (it places a node in `Main.tscn`).
+  Otherwise self-contained; no dependency on the mini-boss or keepsake slices. Independently
+  shippable and low-risk once the map settles.
+- **Status:** ready
+
+### Stealthier numeracy: make one existing coin-comparison check an in-fiction action
+- **Goal:** Convert ONE existing numeracy learning check (Yarrow's Grade 2 "which coin is
+  worth more?" / the analogous Grade 5 numeracy prompt) from an abstract multiple-choice quiz
+  into a small *in-fiction action* — e.g. "hand Yarrow the right number of coins" or "choose
+  the heavier pouch" — so the same already-confirmed skill is exercised through the fiction
+  instead of a bolted-on quiz, while staying strictly bonus-only.
+- **Design rationale:** NORTH_STAR pillar 3 ("quests are playable arcs, not quizzes in
+  disguise") AND pillar 1 (deepen an *existing* quest, don't add a new one) | research:
+  `RESEARCH_NOTES.md` §8.2 — the intrinsic-integration principle: "the work is the game";
+  the named failure mode is the reward-for-work split (a quiz bolted onto play), and the fix
+  is to express the skill as an in-fiction action with natural feedback. This is the honest,
+  in-scope step toward the stealth-assessment bridge `CURRICULUM_MAP.md` already names.
+- **Acceptance criteria:**
+  - [ ] Exactly ONE existing check is reworked (not a new quest, not a new subject) — reuses
+        the **already-confirmed** numeracy competency for that quest, so it does **not** trip
+        the subject-scope CONFIRM gate (see §8.2's note: changing *format* is fine; changing
+        *which subject* is not).
+  - [ ] The check is expressed as an in-fiction choice/action (hand over coins / pick the
+        heavier pouch / count out the right amount) rather than an abstract "which is bigger?"
+        prompt, with the fiction reading naturally for the NPC involved.
+  - [ ] Strictly bonus-only and non-punitive: the quest **always completes** regardless of the
+        answer (unchanged from today); a correct in-fiction action still awards the same bonus
+        badge; a wrong one still completes the quest with no penalty and no scolding — only a
+        gentle, friendly in-fiction acknowledgement.
+  - [ ] Grade 2 and Grade 5 framings both preserved (two-profile scaffolding), each mapping to
+        that quest's existing confirmed competency.
+  - [ ] Existing `LearningCheck` tests still pass; if new branching logic is added, it's
+        covered at the same pure-logic level the current checks are.
+- **Likely files touched:** `scripts/ui/LearningCheck.gd` (or a small sibling UI if the action
+  format diverges enough), the affected NPC script (`scripts/npcs/Yarrow.gd` or similar),
+  `scripts/core/ContentDefinitions.gd` (prompt/flavor text), `tests/game_state_tests.gd` or a
+  focused new test file, `docs/design/CURRICULUM_MAP.md` (note the reworked check's format).
+- **Curriculum tie-in:** **Directly deepens** an existing confirmed-subject check
+  (`CURRICULUM_MAP.md`'s Yarrow row, G2 money/number-sense) — same subject, stealthier format.
+  Does NOT introduce a new subject, so it is NOT CONFIRM-gated.
+- **Sequencing:** Independent of the map/mini-boss PRs (touches quest/UI code, not `Main.tscn`
+  geometry) — can be built any time. Ordered below the map-dependent slices only because the
+  keepsake and discovery slices complete freshly-merged systems; this one is a refinement.
+- **Status:** ready
+
+### Region ambience pass: per-region ambient sound as the player crosses the new map
+- **Goal:** Give each distinct region of the new map its own quiet ambient sound bed (meadow
+  birds in the flower meadow, gentle wind/rustle at the forest edge, soft water lap by the
+  lake) that cross-fades as the player moves between regions — so the region-distinct *visual*
+  map pass is matched by a region-distinct *audio* feel, deepening immersion.
+- **Design rationale:** NORTH_STAR pillar 1 ("cohesion over volume" — make the just-shipped
+  map pass *pay off* across senses rather than adding new content) | research:
+  `RESEARCH_NOTES.md` §8.3/§8.4 — the calm, autonomy-and-immersion Zelda-like feel (the
+  healthy inverse of compulsion) comes from a world that rewards *being there*; §7.1's
+  gentle-feedback rule for a Grade 2/5 audience (soft, never overwhelming) also governs this.
+- **Acceptance criteria:**
+  - [ ] Each new region has its own quiet ambient loop; the current single global meadow
+        ambient (`AudioManager`) is generalized so the *active* region's ambient plays and
+        cross-fades gently when the player crosses a region boundary — no hard cut, no silence
+        gap.
+  - [ ] Region detection is simple and cheap (e.g. rectangular region zones the player's
+        position is tested against, or an `Area2D` per region) — no navmesh, no new heavy
+        system; reuse the existing `AudioManager` autoload rather than adding a parallel one.
+  - [ ] All ambient tracks are self-synthesized or CC0-clean (matching the existing
+        `assets/audio/gen_sfx.py` provenance precedent — no third-party-license risk) and
+        deliberately **soft** (in the existing -18 dB ambient range) for the young audience.
+  - [ ] Any pure logic (which region a position falls in, cross-fade easing) is extracted into
+        testable static functions and covered, mirroring `AudioManager.coins_increased()`'s
+        precedent (`tests/audio_tests.gd`).
+  - [ ] No gameplay change: this is atmosphere only; nothing about combat, quests, or rewards
+        is affected.
+- **Likely files touched:** `scripts/core/AudioManager.gd`, region-zone data (either
+  rectangles in code or `Area2D` nodes in `scenes/main/Main.tscn`), `assets/audio/`
+  (new ambient loops + `gen_sfx.py`), `tests/audio_tests.gd` + possibly `test_runner.gd`.
+- **Curriculum tie-in:** none — pure atmosphere/systems.
+- **Sequencing:** **build after the region-map PR merges** — region boundaries are defined by
+  that map's layout; building before it lands means guessing region geometry that will move.
+  Lower priority than the keepsake/discovery/rest slices (atmosphere, not a progress loop), but
+  a strong cohesion payoff once the map is stable.
 - **Status:** ready
 
 ## Blocked
@@ -167,6 +244,19 @@ out of scope until a future pass has a concrete reason to revisit them).
 ---
 
 ## Done
+
+### Boss keepsake: Elder Slime drops a permanent trophy, not just a stat
+- **Goal:** Defeating the Elder Slime mini-boss grants a one-time **keepsake** — a named
+  trophy shown in a "Keepsakes" line of the character panel (e.g. "Elder Slime's Dewdrop") —
+  so the fight leaves behind a memorable, permanent mark of the achievement rather than only
+  coins or a codex tick.
+- **Status:** done — shipped on `slice-boss-keepsake`: `GameState.keepsakes` (Dictionary,
+  save-schema-compatible via `.get()` default) + idempotent `award_keepsake(id)`
+  (`keepsake_awarded` signal fires once) + `has_keepsake(id)`, mirroring
+  `creatures_met`/`record_creature_met` exactly. `ElderSlime._on_died()` now calls
+  `award_keepsake("elder_slime_dewdrop")` alongside its existing codex record.
+  `ContentDefinitions.KEEPSAKE_FACTS` (plain dictionary, one entry) backs a new "Keepsakes"
+  section in `CharacterPanel`. 4 new tests in `tests/keepsake_tests.gd`.
 
 ### Tie loot rarity to specific enemies (Meadow Slime bonus-chance drop)
 - **Goal:** Give the player an occasional *bonus* chance at coins (or, later, a rarity
@@ -223,6 +313,20 @@ out of scope until a future pass has a concrete reason to revisit them).
 _(Note: the "shop restock reason / coin sink" slice also shipped as the Legendary Dawnbringer
 Blade on branch `slice-legendary-weapon` / PR #40 — its Done entry lives on that branch; these
 two expansion PRs are disjoint in code and will both land here on merge.)_
+
+- **"Creatures met" codex: permanent world-knowledge from combat** → shipped:
+  `GameState.creatures_met` (Dictionary, save-schema-compatible via `.get()` default) +
+  `record_creature_met(id)` (idempotent, `creature_met` signal fires once) +
+  `has_met_creature(id)`; `MeadowSlime._on_died()` records `meadow_slime`;
+  `ContentDefinitions.CREATURE_FACTS` (plain dictionary) backs a new "Creatures met" section
+  in `CharacterPanel`; 4 new tests in `tests/codex_tests.gd`. This is the machinery the new
+  "Boss keepsake" and "Places discovered" Ready slices deliberately mirror.
+
+- **First mini-boss: Elder Slime (tougher Meadow Slime variant)** → shipped/in-flight (treated
+  as merged for this planning pass): a larger, tougher Meadow Slime variant reusing the M2
+  component architecture, more HP, one new telegraphed wind-up move, same non-punitive death
+  rule, placed at a mid-point of the zone — no bespoke boss-UI/health-bar. Its reward payoff is
+  intentionally left thin so the new "Boss keepsake" Ready slice can complete it.
 
 _(further completed slices move here with a one-line note and the PR/commit that shipped them.)_
 

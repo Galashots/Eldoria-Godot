@@ -190,6 +190,49 @@ never lost or gated behind a correct answer. Test suite grew to 32 (a new, isola
 `tests/codex_tests.gd` with 4 tests: first-meet records + signal fires once, repeat meet stays
 idempotent, save/load round trip, reset clears).
 
+**First mini-boss: Elder Slime (expansion backlog): done.** A deliberately tougher *variant*
+of Meadow Slime rather than a new monster archetype, per NORTH_STAR's "cohesion over volume"
+pillar: `scripts/enemies/ElderSlime.gd` is a small subclass of `MeadowSlime.gd`, reusing its
+whole FSM/component architecture (`HealthComponent`, `HitboxComponent`/`HurtboxComponent`)
+rather than a parallel monster script. It's tuned meaningfully tougher (6 hp vs. 3, slower
+`move_speed` 30 vs. 40 so its one new move telegraphs clearly, `coin_drop_value` 3 vs. 1,
+`bonus_coin_chance` 0.35 vs. 0.12) and adds exactly one new telegraphed move: a brief
+pause-and-flash windup (`ElderSlime.telegraph_windup_intensity()`, a pure/unit-tested easing
+mirroring `HealthComponent.hit_reaction_intensity()`'s precedent) followed by a fast lunge at
+the player's position — a fair, clearly-visible tell before the bigger threat, honoring the
+telegraphing research in `docs/design/RESEARCH_NOTES.md` §6.3. No new UI (boss health bar
+etc.) — the existing HP/combat feedback is sufficient for this first pass, deliberately.
+`scenes/enemies/ElderSlime.tscn` is placeholder art: the same `meadow_slime_idle.png`
+texture, scaled 1.5x and tinted deep moss green, so it reads as visually distinct without
+requiring new production art before the system is proven (see `docs/design/
+MONSTER_CONCEPTS.md`). Placed once, at `(2350, 1450)` — a far corner of the M1 zone away from
+the player spawn and existing quest/NPC content — under a new `Bosses` sibling `Node2D` in
+`Main.tscn`, deliberately separate from the `Enemies` node `Spawner.gd` watches: an
+endlessly-respawning mini-boss would cheapen the "first tougher fight" moment, so this is a
+one-per-session encounter by design (not forced by the code — a future slice could add
+deliberate re-fights). Records `elder_slime` in the "Creatures met" codex on death
+(`ContentDefinitions.CREATURE_FACTS` gained a second entry). Test suite grew to 36 (a new,
+isolated `tests/elder_slime_tests.gd` with 4 tests: telegraph-intensity ramp + zero-duration
+edge case, stat-override comparison against the base Meadow Slime defaults, codex fact
+lookup).
+
+**Boss keepsake: Elder Slime drops a permanent trophy (expansion backlog): done.** Completes
+the mini-boss's payoff loop with a text-only, non-stat trophy rather than a power boost, per
+NORTH_STAR pillar 5. `GameState.keepsakes` (a `Dictionary` mapping keepsake id -> `true`)
+mirrors the `creatures_met` codex shape exactly: `award_keepsake(id)` is idempotent, firing a
+new `keepsake_awarded(keepsake_id)` signal only on the first award, and `has_keepsake(id)`
+reads it back. `ElderSlime._on_died()` now calls `award_keepsake("elder_slime_dewdrop")`
+alongside its existing `record_creature_met("elder_slime")` call, so a defeated boss cannot
+re-drop the keepsake and a regular (non-boss) Meadow Slime never grants it.
+`ContentDefinitions.KEEPSAKE_FACTS` is a small plain dictionary (id -> `{"label", "fact"}`,
+one entry so far), the same promotion-bar reasoning as `CREATURE_FACTS`. The character panel
+gained a "Keepsakes" section (`KeepsakesList` `VBoxContainer`, refreshed via
+`_refresh_keepsakes_list()`) listing each earned keepsake as "Label — fact", with a "none yet"
+empty state matching the panel's other sections. Persisted in save/load (no save-schema bump —
+`keepsakes` loads via `.get()` with an in-code default, the same no-op migration policy every
+prior schema-compatible addition has used) and cleared in `reset_state()`. A new, isolated
+`tests/keepsake_tests.gd` (4 tests: first-award fires once, repeat award stays idempotent,
+save/load round trip, reset clears) is registered in `tests/test_runner.gd`.
 **Epic map pass (owner mandate — "make the maps interesting, beautiful, and epic"): done.**
 A direct product-owner directive, not a backlog slice, honoring `docs/design/NORTH_STAR.md`'s
 kid-audience framing (Grade 2/5: bright, readable, colorful, never busy or dark). The M1
@@ -313,6 +356,14 @@ spots; and the camera limits match the new bounds.
 - `scripts/core/ContentDefinitions.gd` (codex addition): `CREATURE_FACTS` (plain dictionary, id -> `{label, fact}`) + `get_creature_label(id)`/`get_creature_fact(id)`.
 - `scripts/ui/CharacterPanel.gd`/`.tscn` (codex addition): a "Creatures met" section (`CreaturesList` `VBoxContainer`) listing each met creature as "Label — fact", refreshed on `GameState.creature_met`.
 - `tests/codex_tests.gd`: a fourth isolated test suite (4 tests) for the "Creatures met" codex, registered in `tests/test_runner.gd`.
+- `scripts/enemies/ElderSlime.gd` / `scenes/enemies/ElderSlime.tscn` (first mini-boss): a small subclass of `MeadowSlime.gd` reusing its FSM/components, tuned tougher (6 hp, slower `move_speed`, bigger coin drop/bonus chance) and adding one telegraphed pause-flash-then-lunge move (`telegraph_windup_intensity()`, pure/unit-tested). Placeholder art: the Meadow Slime texture scaled 1.5x and tinted deep moss green. Placed once at `(2350, 1450)` under a new `Bosses` sibling node in `Main.tscn` (not under `Enemies`/`Spawner.gd`, so it does not respawn). Records `elder_slime` in the codex on death.
+- `scripts/core/ContentDefinitions.gd` (Elder Slime addition): a second `CREATURE_FACTS` entry, `elder_slime`.
+- `tests/elder_slime_tests.gd`: a fifth isolated test suite (4 tests) for the Elder Slime mini-boss, registered in `tests/test_runner.gd`.
+- `scripts/core/GameState.gd` (boss keepsake addition): `keepsakes: Dictionary`, `award_keepsake(id)` (idempotent, fires `keepsake_awarded(keepsake_id)` once per new id), `has_keepsake(id)`, persisted via `save_game()`/`load_game()`/cleared in `reset_state()`.
+- `scripts/core/ContentDefinitions.gd` (boss keepsake addition): `KEEPSAKE_FACTS` (plain dictionary, id -> `{label, fact}`) + `get_keepsake_label(id)`/`get_keepsake_fact(id)`.
+- `scripts/enemies/ElderSlime.gd` (boss keepsake addition): `_on_died()` now also calls `GameState.award_keepsake("elder_slime_dewdrop")`.
+- `scripts/ui/CharacterPanel.gd`/`.tscn` (boss keepsake addition): a "Keepsakes" section (`KeepsakesList` `VBoxContainer`) listing each earned keepsake as "Label — fact", refreshed on `GameState.keepsake_awarded`.
+- `tests/keepsake_tests.gd`: a sixth isolated test suite (4 tests) for boss keepsakes, registered in `tests/test_runner.gd`.
 
 ## How to run
 
@@ -324,9 +375,10 @@ Open `project.godot` with Godot 4.x standard and press F5.
 Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
 ```
 
-Runs `tests/game_state_tests.gd`, `tests/hit_flash_tests.gd`, `tests/pet_tests.gd`, and
-`tests/codex_tests.gd` against the real `GameState` autoload and prints `PASS`/`FAIL` per test
-plus a summary line (32 tests total); exits non-zero if anything failed. See `tests/test_runner.gd` for the
+Runs `tests/game_state_tests.gd`, `tests/hit_flash_tests.gd`, `tests/pet_tests.gd`,
+`tests/codex_tests.gd`, and `tests/elder_slime_tests.gd` against the real `GameState` autoload
+and prints `PASS`/`FAIL` per test plus a summary line (36 tests total); exits non-zero if
+anything failed. See `tests/test_runner.gd` for the
 (small, custom, no third-party dependency) runner — it discovers every `test_*` method on
 each registered test class, resets `GameState` via `GameState.reset_state()` before each one
 for isolation, and reports results.
