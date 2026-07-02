@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/VignetteOverlay.gd" id="1_vignette_script"]
+[ext_resource type="Texture2D" path="res://assets/ui/vignette_gradient.tres" id="2_vignette_gradient"]
+
+[node name="VignetteOverlay" type="CanvasLayer"]
+layer = 0
+script = ExtResource("1_vignette_script")
+
+[node name="Vignette" type="TextureRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+texture = ExtResource("2_vignette_gradient")
+expand_mode = 1
+stretch_mode = 6

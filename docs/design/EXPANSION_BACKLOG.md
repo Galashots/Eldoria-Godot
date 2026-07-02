@@ -88,37 +88,6 @@ a parallel system).
      none trip the CONFIRM gate) and is strictly bonus-only. Slices are independent unless a
      Sequencing note says otherwise. -->
 
-### Day-warmth atmosphere pass: a warm CanvasModulate wash + subtle vignette
-- **Goal:** Give the whole map a warm, golden-hour storybook mood in one pass — a single
-  `CanvasModulate` tint plus a gentle full-screen vignette — so the flat-lit region map reads as
-  a cohesive, inviting world instead of evenly-lit tiles, with zero new art.
-- **Design rationale:** NORTH_STAR pillar 1 ("cohesion over volume" — unify the *existing* map's
-  mood, don't add content) and the owner's "cool backgrounds / epic art" mandate | research:
-  `RESEARCH_NOTES.md` §9.1 — a single `CanvasModulate` tints the whole 2D canvas at once and is
-  the cheapest, highest-ratio "epic feel"; §9.1's kid-audience caveat that the tint stay *subtle*
-  (bright and cheerful, never dark/heavy). `docs/art/STYLE_GUIDE.md`'s new one-pager (lever 2).
-- **Acceptance criteria:**
-  - [ ] One `CanvasModulate` node added to `Main.tscn` (or the world layer) with a faint warm
-        amber tint — subtle enough that the world still reads bright; tune the exact color
-        in-engine, not a hardcoded guess.
-  - [ ] A subtle full-screen vignette (a `ColorRect` with a radial `GradientTexture2D`, or a tiny
-        `canvas_item` shader) layered under the HUD/UI so it never darkens text or buttons.
-  - [ ] Verifiable headlessly (the nodes exist with expected properties, e.g. an isolated test
-        instances `Main.tscn` and asserts the `CanvasModulate` is present) AND via a live
-        screenshot showing the warm mood without washing out sprite readability.
-  - [ ] Placeholder-fallback-safe: if the vignette is a shader and the shader fails to compile,
-        the scene still runs (vignette simply absent), never a crash.
-  - [ ] Gentle per the kid audience: no pulsing, no strong color cast, readability of player /
-        NPCs / items preserved.
-- **Likely files touched:** `scenes/main/Main.tscn` (add `CanvasModulate` + a vignette `ColorRect`/
-  `CanvasLayer`), possibly a small `shaders/vignette.gdshader` or a `GradientTexture2D` resource,
-  a new `tests/atmosphere_tests.gd` (node-presence assertions) + `test_runner.gd`.
-- **Curriculum tie-in:** none — pure atmosphere/art.
-- **Sequencing:** Independent of the three in-flight slices (they touch `Main.tscn` too, so land
-  this after they merge to avoid a `Main.tscn` merge conflict, but there is no logic dependency).
-  Highest priority of this pass: biggest visible "epic" payoff for the least effort and risk.
-- **Status:** ready
-
 ### Ambient particle pass: drifting pollen and gentle fireflies per region
 - **Goal:** Add soft, slow ambient particles that make the map feel alive — drifting pollen
   motes over the flower meadow, a few gentle fireflies near the forest edge and lake at the warm
@@ -364,6 +333,24 @@ a parallel system).
 <!-- Moved from Ready in the fourth pass (2026-07-01): the prior pass's three slices are now
      merged/in-flight ground truth (see this pass's Planning baseline), and the Yarrow numeracy
      reframe shipped. -->
+
+- **Day-warmth atmosphere pass: a warm CanvasModulate wash + subtle vignette** → shipped:
+  `World/DayWarmth` is a `CanvasModulate` (`Color(1.0, 0.965, 0.902, 1.0)`, a very slightly
+  golden-white — chosen deliberately subtle given the repo's history of tint-related visibility
+  bugs, e.g. Mossy green-on-green and Elder Slime camouflage) added under `World` in
+  `scenes/main/Main.tscn`, so it tints the world only, never the UI (`CanvasLayer`s ignore
+  `CanvasModulate` by construction — confirmed by a headless test). The vignette is a new
+  `VignetteOverlay` `CanvasLayer` (`scenes/ui/VignetteOverlay.tscn`/`scripts/ui/
+  VignetteOverlay.gd`, `layer = 0`, below every interactive UI `CanvasLayer`, all of which sit at
+  `layer >= 1`) with a full-screen `TextureRect` showing a radial `GradientTexture2D`
+  (`assets/ui/vignette_gradient.tres`, transparent center fading to `Color(0,0,0,0.35)` at the
+  edge from 55% radius outward), `mouse_filter = MOUSE_FILTER_IGNORE` so it never blocks input.
+  No shader used — a plain resource-backed texture satisfies the placeholder-fallback-safe
+  criterion trivially (nothing to fail to compile). `RESEARCH_NOTES.md` §9.1;
+  `docs/art/STYLE_GUIDE.md`'s art-direction one-pager. A new isolated `tests/atmosphere_tests.gd`
+  (3 tests) is registered in `tests/test_runner.gd`: the `CanvasModulate` exists with bright/
+  warm-leaning bounds, the vignette overlay exists and ignores mouse input, and its layer sits
+  below every named interactive UI `CanvasLayer`. Suite total is now 71.
 
 - **Stealthier numeracy: Yarrow's coin check as an in-fiction action** → shipped. Yarrow's
   Grade 2 prompt reframed from an abstract "Which coin is worth more?" to the in-fiction "The
