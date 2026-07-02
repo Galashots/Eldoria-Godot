@@ -148,10 +148,18 @@ func _refresh_weapons_list() -> void:
             button.disabled = true
         else:
             button.text = "Equip"
-            button.pressed.connect(GameState.equip_weapon.bind(gear_id))
+            button.pressed.connect(_on_equip_weapon_pressed.bind(gear_id))
         row.add_child(button)
 
         weapons_list.add_child(row)
+
+func _on_equip_weapon_pressed(gear_id: String) -> void:
+    AudioManager.play_sfx("ui_click")
+    GameState.equip_weapon(gear_id)
+
+func _on_equip_pet_pressed(pet_id: String) -> void:
+    AudioManager.play_sfx("ui_click")
+    GameState.equip_pet(pet_id)
 
 func _refresh_pets_list() -> void:
     for child in pets_list.get_children():
@@ -173,10 +181,10 @@ func _refresh_pets_list() -> void:
         var button := Button.new()
         if GameState.equipped_pet == pet_id:
             button.text = "Unequip"
-            button.pressed.connect(GameState.equip_pet.bind(""))
+            button.pressed.connect(_on_equip_pet_pressed.bind(""))
         else:
             button.text = "Equip"
-            button.pressed.connect(GameState.equip_pet.bind(pet_id))
+            button.pressed.connect(_on_equip_pet_pressed.bind(pet_id))
         row.add_child(button)
 
         pets_list.add_child(row)

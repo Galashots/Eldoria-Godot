@@ -213,6 +213,7 @@ the cap and due-time math.
 - `assets/manifests/{mage,adventurer}_body_idle_tier1_{s,se,e,ne,n}.manifest.json` (10 manifests), `assets/source/generated/{mage,adventurer}_body_idle_tier1_sheet/source.png` (one shared 5-direction grid sheet per character, a ChatGPT in-place edit of the base idle sheet adding leather armor), and `assets/sprites/characters/{mage,adventurer}_body_idle_tier1_*.png`: Tier 1 (Leather) armor art, see `docs/design/ARMOR_TIERS.md`. Normalized as full replacement body sprite sets (not a transparent overlay — see that doc for why the original diff-based overlay plan was dropped). Now wired into `Player.gd`/`GameState.gd`: completing all three quests auto-equips it (see above); no manual equip/unequip UI exists.
 - `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). `tests/hit_flash_tests.gd` adds a second, isolated 5-test suite, and `tests/pet_tests.gd` adds a third, isolated 5-test suite (grant-gate ordering, grant-heal + idempotence, ownership/clamp/no-auto-heal on equip, save/load round trip, reset) — both registered in `test_runner.gd`. Suite total is now 28. See "How to run the GDScript test suite" below.
 - `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). `tests/hit_flash_tests.gd` adds a second, isolated 5-test suite registered in `test_runner.gd`. `tests/spawner_tests.gd` adds a third, isolated 7-test suite (the coin-faucet respawn cap/cadence pure logic) registered the same way. See "How to run the GDScript test suite" below.
+- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). `tests/hit_flash_tests.gd` adds a second, isolated 5-test suite, and `tests/audio_tests.gd` adds a third, isolated 3-test suite (`AudioManager.coins_increased()`, unknown-name no-op) — both registered in `test_runner.gd`. Suite total is now 26. See "How to run the GDScript test suite" below.
 - `scripts/core/GearDefinition.gd` and `data/gear/{worn_dagger,iron_sword,oakheart_blade,dawnbringer_blade}.tres`: the gear-stats Resource, mirroring `ItemDefinition.gd` — id/label/rarity/damage_bonus/price per weapon (`dawnbringer_blade` is the Legendary top tier added by the expansion loop).
 - `scripts/items/CoinPickup.gd` / `scenes/items/CoinPickup.tscn`: coin pickup, mirroring `Collectible.gd`; spawned (deferred) by `MeadowSlime._on_died()`.
 - `scripts/npcs/Merchant.gd` / `scenes/npcs/Merchant.tscn`: the gear vendor NPC. Interacting opens `ShopUI` directly (no dialogue box needed).
@@ -225,6 +226,26 @@ the cap and due-time math.
 - `scripts/player/Player.gd` (pet addition): spawns/despawns the equipped pet as a sibling node on `GameState.pet_changed`, and on `_ready()` if a loaded save already has a pet equipped.
 - `scripts/ui/CharacterPanel.gd` (pet addition): a new Pets section lists every owned pet ("Label (Rarity) +N Max HP", tinted by rarity color) with an Equip/Unequip button each; the equipped pet is included in the equipment summary line.
 - `docs/design/PETS.md`: locks the M4 pet unlock/equip rules, Mossy's stats, and the follow-AI parameters for future pet additions.
+- **Audio (sound pass v1, expansion backlog): done.** The game previously had zero audio. A
+  new `AudioManager` autoload (`scripts/core/AudioManager.gd`, registered in `project.godot`
+  after `GameState`) owns every `AudioStreamPlayer` in the game, created in code in its own
+  `_ready()` — no scene-file edits to `Main.tscn` needed. One looping ambient meadow track
+  plays quietly in the background (-18 dB, replayed on `finished` rather than relying on
+  import-time loop flags), plus a small pool of one-shot SFX players (-10 dB) for `swing`,
+  `slime_boing`, `coin_chime`, `quest_fanfare`, and `ui_click`, looked up by name via
+  `play_sfx(name)` (an unknown name is a silent no-op with `push_warning`, never a crash).
+  `AudioManager` connects directly to `GameState.coins_changed` (plays `coin_chime` only when
+  coins actually increased, via the pure/unit-tested `AudioManager.coins_increased()` helper)
+  and `GameState.quest_changed` (plays `quest_fanfare` on `QUEST_COMPLETED`). One-line hooks
+  call `AudioManager.play_sfx(...)` from `Player._swing_attack()` (swing),
+  `MeadowSlime._on_died()` (slime_boing), `ShopUI._on_buy_pressed()` (ui_click), and a new
+  `CharacterPanel._on_equip_weapon_pressed()` wrapper around the existing
+  `GameState.equip_weapon` call (ui_click). All 6 WAVs are self-synthesized (no third-party
+  license concerns) under `assets/audio/` — `assets/audio/gen_sfx.py` is the generator script,
+  kept for provenance/reproducibility. Volumes are deliberately soft per
+  `docs/design/NORTH_STAR.md`'s kid-audience (Grade 2/5) gentle-feedback rule. A new isolated
+  `tests/audio_tests.gd` (registered in `tests/test_runner.gd`) adds 3 tests for the pure
+  `coins_increased()` helper and the unknown-name no-op.
 
 ## How to run
 
@@ -242,6 +263,12 @@ against the real `GameState` autoload and prints `PASS`/`FAIL` per test plus a s
 (small, custom, no third-party dependency) runner — it discovers every `test_*` method on
 each registered test class, resets `GameState` via `GameState.reset_state()` before each one
 for isolation, and reports results.
+Runs `tests/game_state_tests.gd`, `tests/hit_flash_tests.gd`, and `tests/audio_tests.gd`
+against the real `GameState`/`AudioManager` autoloads and prints `PASS`/`FAIL` per test plus
+a summary line (26 tests total); exits non-zero if anything failed. See
+`tests/test_runner.gd` for the (small, custom, no third-party dependency) runner — it
+discovers every `test_*` method on each registered test class, resets `GameState` via
+`GameState.reset_state()` before each one for isolation, and reports results.
 
 **This writes to the real `user://savegame.json`** (deleted by the final test, but present
 mid-run) — `--user-data-dir <path>` normally isolates this, but combining it with a custom
