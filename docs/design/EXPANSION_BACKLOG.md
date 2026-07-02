@@ -226,7 +226,7 @@ a parallel system).
 - **Sequencing:** Independent of the three in-flight slices (touches shop/UI code, not `Main.tscn`
   geometry) — can be built any time. Highest-value learning slice: it turns an existing daily
   action (buying gear) into practice, exactly the owner's "learning out the wazoo" ask.
-- **Status:** ready
+- **Status:** done
 
 ### Elder's "what did you notice?": bonus-only reading comprehension on codex/keepsake flavor
 - **Goal:** After the child earns a new "Creatures met" entry or a keepsake, let the Elder offer

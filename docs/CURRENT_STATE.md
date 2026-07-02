@@ -466,6 +466,29 @@ boundary edges, and the cross-fade easing's endpoints/midpoint/clamping).
   discovery stays idempotent, save/load round trip, reset clears) is registered in
   `tests/test_runner.gd`.
 
+**Count-out-the-coins at the Merchant (expansion backlog): done.** Extends the shipped Yarrow
+"pay the right coin" reframe (`docs/design/RESEARCH_NOTES.md` §9.2, the §8.2 precedent) to the
+`ShopUI` weapon-purchase flow: buying a weapon in `ShopUI` still always completes exactly as
+before, and now opens an optional, skippable bonus "count out the coins" beat afterward. Grade
+2 picks any set of coin buttons (denominations 10/5/1, a small fixed set used only for this
+mini-game, separate from the game's flat real-coin economy) that sum to the weapon's price;
+Grade 5 must also match the fewest-coins solution. A correct answer awards exactly one bonus
+coin via the existing `GameState.add_coins()` (additive-only, no new bonus-flag system needed);
+a wrong or skipped attempt closes the panel with a warm line and changes nothing else — the
+weapon was already bought before the panel ever opened. `scripts/core/CoinCounting.gd` is a
+new static-function-only module (`sum_matches_price()`, `is_fewest_coins()`,
+`minimum_coin_count()`, mirroring `MeadowSlime.rolls_bonus_coin()`'s deterministic-test
+precedent) with zero scene/RNG dependency. `scenes/ui/ShopUI.tscn` gained one hidden sibling
+`CoinCountPanel` (coin-denomination buttons built at runtime from
+`CoinCounting.DENOMINATIONS`, a running total label, Start Over/Confirm/Skip buttons, a
+feedback label); `scripts/ui/ShopUI.gd`'s `_on_buy_pressed()` opens it right after a
+successful `GameState.buy_gear()` call. Reuses the already-confirmed G2/G5 money/number-sense
+competency — no new subject, no new quest, does not touch the CONFIRM-gated subject-scope
+table (`docs/design/CURRICULUM_MAP.md` updated with a note mirroring the Yarrow reframe entry).
+A new isolated `tests/coin_counting_tests.gd` (8 tests: sum-matches-price true/false/empty
+cases, greedy minimum-coin-count including a non-positive-amount edge case, fewest-coins
+true/false-with-correct-total/false-with-wrong-total) is registered in `tests/test_runner.gd`.
+
 ## How to run
 
 Open `project.godot` with Godot 4.x standard and press F5.
@@ -476,12 +499,13 @@ Open `project.godot` with Godot 4.x standard and press F5.
 Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
 ```
 
-Runs all 11 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
+Runs all 12 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
 (18), `tests/hit_flash_tests.gd` (5), `tests/pet_tests.gd` (5), `tests/spawner_tests.gd` (7),
 `tests/audio_tests.gd` (9), `tests/codex_tests.gd` (4), `tests/elder_slime_tests.gd` (4),
-`tests/keepsake_tests.gd` (4), `tests/map_tests.gd` (5), `tests/campfire_tests.gd` (3), and `tests/discovery_tests.gd` (4) -
+`tests/keepsake_tests.gd` (4), `tests/map_tests.gd` (5), `tests/campfire_tests.gd` (3),
+`tests/discovery_tests.gd` (4), and `tests/coin_counting_tests.gd` (8) -
 against the real `GameState`/`AudioManager` autoloads, and prints `PASS`/`FAIL` per test plus
-a summary line (**68 tests total**); exits non-zero if anything failed. See
+a summary line (**76 tests total**); exits non-zero if anything failed. See
 `tests/test_runner.gd` for the
 (small, custom, no third-party dependency) runner — it discovers every `test_*` method on
 each registered test class, resets `GameState` via `GameState.reset_state()` before each one
