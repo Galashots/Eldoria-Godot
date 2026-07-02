@@ -141,23 +141,23 @@ flagged. A genuine 5th quest / new subject remains `blocked: needs-user-input` b
   a wider pool "in different difficulties" is both more motivating and better for understanding,
   and a cheap no-immediate-repeat draw gets most of the spaced-repetition benefit without an SRS.
 - **Acceptance criteria:**
-  - [ ] Stays strictly inside the **already-confirmed numeracy** subject (`CombatQuestion.gd` is
+  - [x] Stays strictly inside the **already-confirmed numeracy** subject (`CombatQuestion.gd` is
         numeracy-only by explicit design) — a breadth/format change, NOT a new subject or quest,
         so it does **not** trip the CONFIRM gate. **Do NOT add a literacy question type to combat**
         (that would be a scope change — see Slice 6 and the CONFIRM reminder in the planning
         baseline).
-  - [ ] Each profile's pool grows to **at least 12 items**, ordered as a gentle ramp — Grade 2:
+  - [x] Each profile's pool grows to **at least 12 items**, ordered as a gentle ramp — Grade 2:
         +1/+2 sums → small teen sums → simple more/less compares; Grade 5: single-digit × →
         two-digit × → halves → quarters/thirds — all two-choice, one plausible distractor, matching
         the existing item shape. Text stays short/plain for G2 per `STYLE_GUIDE.md`.
-  - [ ] The draw **avoids re-serving the item just shown** (track the last index; pick from the
+  - [x] The draw **avoids re-serving the item just shown** (track the last index; pick from the
         rest) so back-to-back repeats don't happen — implemented as a small **pure, testable**
         function (e.g. `CombatQuestion.pick_next_index(pool_size, last_index, roll)`), mirroring
         `MeadowSlime.rolls_bonus_coin()`'s deterministic-test precedent; a single-item pool must
         not divide-by-zero or loop forever (edge case covered).
-  - [ ] Bonus-only unchanged: a correct answer still bumps the streak, a wrong/skipped answer never
+  - [x] Bonus-only unchanged: a correct answer still bumps the streak, a wrong/skipped answer never
         penalizes — pure content/variety expansion, no rule change.
-  - [ ] A new isolated `tests/combat_question_tests.gd` (registered in `test_runner.gd`) covers the
+  - [x] A new isolated `tests/combat_question_tests.gd` (registered in `test_runner.gd`) covers the
         no-repeat draw (never returns `last_index` for pool size > 1; valid index for size 1) and
         asserts each profile pool has the target minimum item count.
 - **Likely files touched:** `scripts/ui/CombatQuestion.gd` (expand `QUESTION_POOL`, add the pure
@@ -169,7 +169,7 @@ flagged. A genuine 5th quest / new subject remains `blocked: needs-user-input` b
 - **Sequencing:** Independent of every Main.tscn slice (touches only `CombatQuestion.gd` + a new
   test) — can run in parallel with any FRONT A prop slice. Highest-value learning slice this pass:
   it fixes a live, owner-visible weakness (the same 3 questions repeat) with a tiny pure change.
-- **Status:** ready
+- **Status:** done
 
 ### 3. Gentle pickup pop: a squash-and-stretch tween on coins and collectibles
 - **Goal:** When the player grabs a coin or a collectible/sparkle-spot, give it a brief
