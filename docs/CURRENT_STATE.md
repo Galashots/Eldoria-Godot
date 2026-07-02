@@ -202,10 +202,12 @@ mirroring `HealthComponent.hit_reaction_intensity()`'s precedent) followed by a 
 the player's position — a fair, clearly-visible tell before the bigger threat, honoring the
 telegraphing research in `docs/design/RESEARCH_NOTES.md` §6.3. No new UI (boss health bar
 etc.) — the existing HP/combat feedback is sufficient for this first pass, deliberately.
-`scenes/enemies/ElderSlime.tscn` is placeholder art: the same `meadow_slime_idle.png`
-texture, scaled 1.5x and tinted deep moss green, so it reads as visually distinct without
-requiring new production art before the system is proven (see `docs/design/
-MONSTER_CONCEPTS.md`). Placed once, at `(2350, 1450)` — a far corner of the M1 zone away from
+`scenes/enemies/ElderSlime.tscn` is placeholder art: the same `meadow_slime_idle.png` texture,
+scaled 1.9x, tinted a regal gold (a later "boss visual polish" pass replaced the original
+moss-green tint), with a small gold `Crown` `Polygon2D` above it, so it reads as visually
+distinct and unmistakably a boss without requiring new production art before the system is
+proven (see `docs/design/MONSTER_CONCEPTS.md`). Placed once, at `(2350, 1450)` — a far corner
+of the M1 zone away from
 the player spawn and existing quest/NPC content — under a new `Bosses` sibling `Node2D` in
 `Main.tscn`, deliberately separate from the `Enemies` node `Spawner.gd` watches: an
 endlessly-respawning mini-boss would cheapen the "first tougher fight" moment, so this is a
@@ -330,10 +332,7 @@ the updated check text and the note that this does not touch the CONFIRM-gated s
 - `assets/manifests/mage_body_idle_{s,se,e,ne,n}.manifest.json`, `assets/source/generated/mage_body_idle_sheet/source.png` (a single shared 5-panel source sheet, generated in one ChatGPT response and addressed per direction via `sourceCell` on a 5-col grid), and `assets/sprites/characters/mage_body_idle_*.png`: production art for Grade 2 Mage, matching the brown-haired, navy/gold-tunic design from the V2 style reference. Only `_s` (south) is currently wired into `Player.gd`.
 - `assets/manifests/{mage,adventurer}_body_walk{1,2}_{s,se,e,ne,n}.manifest.json` (20 manifests), `assets/source/generated/{mage,adventurer}_body_walk_sheet/source.png` (one shared 5-direction x 2-pose grid sheet per character, generated in one ChatGPT response each, addressed via `sourceCell` on a 5-col x 2-row grid), and `assets/sprites/characters/{mage,adventurer}_body_walk{1,2}_*.png`: the two new mid-stride poses per direction per character that drive the walk-cycle animation (see `Player.gd` above). `walk1`/`walk2` combine with the existing `idle` pose at runtime — no third pose was generated for "neutral", since idle already serves that role.
 - `assets/manifests/{mage,adventurer}_body_idle_tier1_{s,se,e,ne,n}.manifest.json` (10 manifests), `assets/source/generated/{mage,adventurer}_body_idle_tier1_sheet/source.png` (one shared 5-direction grid sheet per character, a ChatGPT in-place edit of the base idle sheet adding leather armor), and `assets/sprites/characters/{mage,adventurer}_body_idle_tier1_*.png`: Tier 1 (Leather) armor art, see `docs/design/ARMOR_TIERS.md`. Normalized as full replacement body sprite sets (not a transparent overlay — see that doc for why the original diff-based overlay plan was dropped). Now wired into `Player.gd`/`GameState.gd`: completing all three quests auto-equips it (see above); no manual equip/unequip UI exists.
-- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). `tests/hit_flash_tests.gd` adds a second, isolated 5-test suite, and `tests/pet_tests.gd` adds a third, isolated 5-test suite (grant-gate ordering, grant-heal + idempotence, ownership/clamp/no-auto-heal on equip, save/load round trip, reset) — both registered in `test_runner.gd`. Suite total is now 28. See "How to run the GDScript test suite" below.
-- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). `tests/hit_flash_tests.gd` adds a second, isolated 5-test suite registered in `test_runner.gd`. `tests/spawner_tests.gd` adds a third, isolated 7-test suite (the coin-faucet respawn cap/cadence pure logic) registered the same way. See "How to run the GDScript test suite" below.
-- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). `tests/hit_flash_tests.gd` adds a second, isolated 5-test suite, and `tests/audio_tests.gd` adds a third, isolated 3-test suite (`AudioManager.coins_increased()`, unknown-name no-op) — both registered in `test_runner.gd`. Suite total is now 26. See "How to run the GDScript test suite" below.
-- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). `tests/hit_flash_tests.gd` adds a second, isolated 5-test suite, `tests/pet_tests.gd` adds a third, isolated 5-test suite (grant-gate ordering, grant-heal + idempotence, ownership/clamp/no-auto-heal on equip, save/load round trip, reset), and `tests/codex_tests.gd` adds a fourth, isolated 4-test suite (first-meet records + signal fires once, repeat meet stays idempotent, save/load round trip, reset clears) — all registered in `test_runner.gd`. Suite total is now 32. See "How to run the GDScript test suite" below.
+- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). Eight more isolated suites are registered alongside it in `test_runner.gd`: `tests/hit_flash_tests.gd` (5), `tests/pet_tests.gd` (5: grant-gate ordering, grant-heal + idempotence, ownership/clamp/no-auto-heal on equip, save/load round trip, reset), `tests/spawner_tests.gd` (7: coin-faucet respawn cap/cadence pure logic), `tests/audio_tests.gd` (3: `AudioManager.coins_increased()`, unknown-name no-op), `tests/codex_tests.gd` (4: first-meet records + signal fires once, repeat meet stays idempotent, save/load round trip, reset clears), `tests/elder_slime_tests.gd` (4: telegraph-intensity ramp + zero-duration edge case, stat-override comparison, codex fact lookup), `tests/keepsake_tests.gd` (4: first-award fires once, repeat award stays idempotent, save/load round trip, reset clears), and `tests/map_tests.gd` (5: the Epic map pass geometry/position assertions). Suite total is **55 tests**. See "How to run the GDScript test suite" below.
 - `scripts/core/GearDefinition.gd` and `data/gear/{worn_dagger,iron_sword,oakheart_blade,dawnbringer_blade}.tres`: the gear-stats Resource, mirroring `ItemDefinition.gd` — id/label/rarity/damage_bonus/price per weapon (`dawnbringer_blade` is the Legendary top tier added by the expansion loop).
 - `scripts/items/CoinPickup.gd` / `scenes/items/CoinPickup.tscn`: coin pickup, mirroring `Collectible.gd`; spawned (deferred) by `MeadowSlime._on_died()`.
 - `scripts/npcs/Merchant.gd` / `scenes/npcs/Merchant.tscn`: the gear vendor NPC. Interacting opens `ShopUI` directly (no dialogue box needed).
@@ -389,19 +388,15 @@ Open `project.godot` with Godot 4.x standard and press F5.
 Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
 ```
 
-Runs `tests/game_state_tests.gd`, `tests/hit_flash_tests.gd`, `tests/pet_tests.gd`,
-`tests/codex_tests.gd`, and `tests/elder_slime_tests.gd` against the real `GameState` autoload
-and prints `PASS`/`FAIL` per test plus a summary line (36 tests total); exits non-zero if
-anything failed. See `tests/test_runner.gd` for the
+Runs all 9 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
+(18), `tests/hit_flash_tests.gd` (5), `tests/pet_tests.gd` (5), `tests/spawner_tests.gd` (7),
+`tests/audio_tests.gd` (3), `tests/codex_tests.gd` (4), `tests/elder_slime_tests.gd` (4),
+`tests/keepsake_tests.gd` (4), and `tests/map_tests.gd` (5) - against the real `GameState`/
+`AudioManager` autoloads, and prints `PASS`/`FAIL` per test plus a summary line (**55 tests
+total**); exits non-zero if anything failed. See `tests/test_runner.gd` for the
 (small, custom, no third-party dependency) runner — it discovers every `test_*` method on
 each registered test class, resets `GameState` via `GameState.reset_state()` before each one
 for isolation, and reports results.
-Runs `tests/game_state_tests.gd`, `tests/hit_flash_tests.gd`, and `tests/audio_tests.gd`
-against the real `GameState`/`AudioManager` autoloads and prints `PASS`/`FAIL` per test plus
-a summary line (26 tests total); exits non-zero if anything failed. See
-`tests/test_runner.gd` for the (small, custom, no third-party dependency) runner — it
-discovers every `test_*` method on each registered test class, resets `GameState` via
-`GameState.reset_state()` before each one for isolation, and reports results.
 
 **This writes to the real `user://savegame.json`** (deleted by the final test, but present
 mid-run) — `--user-data-dir <path>` normally isolates this, but combining it with a custom
@@ -614,6 +609,32 @@ diagnosed; skip it for now and expect the suite to touch your local save file tr
       with the pet still following).
 - [ ] All 4 NPC quests, combat, and the shop still work normally with Mossy present.
 
+### Audio regression
+
+- [ ] A quiet ambient meadow track loops in the background from the moment the game starts,
+      and never abruptly cuts out or clips when it loops.
+- [ ] Swinging (Space or left click) plays a soft swish sound.
+- [ ] Defeating a Meadow Slime or Elder Slime plays a "boing"-style sound.
+- [ ] Picking up a coin plays a chime, and it does not play on any other pickup.
+- [ ] Completing a quest plays a fanfare sound.
+- [ ] Clicking Buy in the shop or Equip in the character panel plays a soft UI click.
+- [ ] All sounds are gentle/soft in volume, never sudden or harsh, appropriate for a Grade 2/5
+      audience.
+
+### Creatures codex & mini-boss regression
+
+- [ ] Defeating a Meadow Slime for the first time records it in the character panel's
+      "Creatures met" section ("Meadow Slime — <fact>"); defeating more does not duplicate it.
+- [ ] The Elder Slime (a larger, gold-tinted slime wearing a small crown, in the far corner of
+      the map) is visibly tougher than a regular Meadow Slime and telegraphs a pause-and-flash
+      windup before lunging at the player, giving a fair, readable warning before the hit.
+- [ ] Defeating the Elder Slime records `Elder Slime` in the "Creatures met" section and awards
+      a keepsake shown in a new "Keepsakes" section of the character panel (e.g. "Elder Slime's
+      Dewdrop — <fact>"); re-encountering it (if it ever respawned) would not re-award the
+      keepsake.
+- [ ] Neither the codex entries nor the keepsake are ever lost or gated behind a correct
+      learning-check answer — bonus-only, non-punitive.
+
 ## Next milestone
 
 A design north-star doc set lives in `docs/design/` (`NORTH_STAR.md`, `CURRICULUM_MAP.md`, `VISUAL_CONTRACT.md`, `RESEARCH_NOTES.md`) to anchor future work. The learning checks now follow its bonus-only rule: each quest completes on item return regardless of answer, and a correct answer adds a bonus via `GameState.award_quest_bonus()`.
@@ -713,12 +734,29 @@ see `docs/design/GEAR_AND_ECONOMY.md`.
 
 **M4 (pets) is done** (see above): `PetDefinition`, the first and only pet Mossy (Rare, +2 Max
 HP), follow-only AI with no combat, the same all-four-quests auto-grant gate as Tier 1 armor,
-and a Pets section in the character panel — see `docs/design/PETS.md`. Next up per the Phase 2
-plan: **M5 — bigger world & traversal**. Real tile art to replace the placeholder tileset,
-Tier 1 walk-cycle armor art, Tier 2 (Bronze) armor, real coin/gear icon art, and real pet art
-(currently placeholder polygons) all remain open art backlog items, lower priority than the
-Phase 2 milestone chain.
+and a Pets section in the character panel — see `docs/design/PETS.md`. Real tile art to
+replace the placeholder tileset, Tier 1 walk-cycle armor art, Tier 2 (Bronze) armor, real
+coin/gear icon art, and real pet art (currently placeholder polygons) all remain open art
+backlog items, lower priority than the Phase 2 milestone chain.
 
-Separately, the autonomous expansion loop (`docs/design/EXPANSION_BACKLOG.md`) has started
-shipping small post-M3 slices on top of the gear/economy loop: the Meadow Slime bonus-chance
-coin drop (see above) is the first one, done.
+Since M4, the autonomous expansion loop (`docs/design/EXPANSION_BACKLOG.md`) has shipped a
+run of small, additive slices on top of the gear/economy/pets base (see each one's writeup
+above, in order): the Meadow Slime bonus-chance coin drop, the gentle repeatable coin faucet
+(`Spawner.gd`), a sound pass v1 (`AudioManager` autoload, ambient + SFX), the "Creatures met"
+codex, the first mini-boss (Elder Slime) plus its boss keepsake payoff, the epic region-distinct
+map pass (220x140 tiles: village green / flower meadow / forest edge / lake+dock / rocky
+border), and the stealthier in-fiction reframe of Yarrow's numeracy check. Test suite grew to
+**55 tests across 9 isolated suites** (see "How to run the GDScript test suite" below). This
+run of slices also stands in for a meaningful chunk of the Phase 2 plan's **M5 — bigger world
+& traversal** milestone (the map is now ~1.9x its original area with distinct readable
+regions), though M5 was never formally kicked off as its own milestone — it happened
+organically through the expansion backlog instead.
+
+The current frontier (in progress, not yet merged) is three more `ready` expansion-backlog
+slices sequenced after the map pass — discovery sparkle-spots (hidden exploration finds across
+the new regions), a diegetic campfire "rest" beat (a cozy, non-punitive session-end stopping
+point), and a region ambience pass (per-region ambient sound cross-fading as the player
+crosses the map) — alongside a fresh art/learning research pass per the owner's "cool
+backgrounds, epic art, learning out the wazoo" mandate. See
+`docs/agent-workflow/CONDUCTOR_DIRECTIVE.md` for the current build-order snapshot and
+`docs/design/EXPANSION_BACKLOG.md` for each slice's full acceptance criteria.

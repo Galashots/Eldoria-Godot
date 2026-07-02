@@ -1,68 +1,60 @@
 # Conductor Directive (2026-07-01)
 
 Standing orders for every AI tool working this repo (Claude, Codex, Antigravity, and the
-`.claude/agents/` subagent suite). Written after a full repo audit. Read `AGENTS.md` and
-`docs/design/NORTH_STAR.md` first; this file tells you **what to build next and in what
-order**, and the process rules that keep parallel agents from colliding.
+`.claude/agents/` subagent suite). Read `AGENTS.md` and `docs/design/NORTH_STAR.md` first;
+this file tells you **what to build next and in what order**, and the process rules that
+keep parallel agents from colliding.
 
-## Audit snapshot
+## Audit snapshot (updated post-#56)
 
-- `main` ends at #38 (backlog v1). Suite on main: **16/16 green** via
+- `main` now includes **PRs #45 through #56**, all merged: this conductor directive, the M4
+  pets rebuild (Mossy, follow AI, panel UI, save v3), a gitlink fix, the Meadow Slime respawn
+  faucet, sound pass v1 (`AudioManager` autoload + ambient/SFX), the "Creatures met" codex,
+  the first mini-boss (Elder Slime), a backlog refill (v3), the boss keepsake payoff, the
+  epic region-distinct map pass (220x140 tiles: village green / flower meadow / forest edge /
+  lake+dock / rocky border), Yarrow's numeracy in-fiction reframe, and boss visual polish
+  (Elder Slime is now gold-tinted with a crown).
+- Suite on main: **55/55 green** across 9 isolated suites in `tests/test_runner.gd`, via
   `Godot --headless --path . res://tests/TestRunner.tscn`.
-- Six mergeable PRs are queued: #39 (slime coin drop, verified 17/17), #40 (Legendary
-  Dawnbringer Blade), #41 (landmark props), #42 (backlog refill v2 + research §7),
-  #43 (hit-flash juice), #44 (HUD coin counter). All were headless-tested AND
-  live-gameplay-tested before opening.
-- #36 (M4 pets) is **orphaned**: it targets the already-squash-merged
-  `m3-gear-economy-shop` branch. Decision: **close #36 and rebuild pets fresh** from the
-  approved design below once the queue merges. Do not try to rebase it.
-- The game has **zero audio** — no AudioStreamPlayer nodes, no sound assets. This is now a
-  first-class priority (see build order).
+- The prior audit's two open risks are both resolved: #36 (orphaned M4 pets PR) was closed
+  and pets were rebuilt fresh per the locked design below (now shipped); the game is no
+  longer silent — `AudioManager` (sound pass v1) has shipped.
+- The merge queue from the prior audit (#39–#44 plus M4/audio/codex/faucet/boss) is fully
+  drained — there is no stale queue to track right now. See "Current frontier" below for
+  what's in flight.
 
-## Merge queue (human merges; agents never merge)
+## Current frontier
 
-Recommended order: **#39 → #42 → #40 → #41 → #43 → #44**, then close #36.
-Only expected conflict: #39 and #40 both append to `tests/game_state_tests.gd` and
-`docs/design/GEAR_AND_ECONOMY.md` — both purely additive, keep both sides.
+Three `ready` slices from `docs/design/EXPANSION_BACKLOG.md`, sequenced to build after the
+region-map pass (all reference the new map geometry or its readable regions):
 
-## Build order after the queue merges
+1. **Discovery sparkle-spots** — hidden exploration finds scattered across the new map's
+   distinct regions, reusing `Collectible`/`CoinPickup` machinery, recording a permanent
+   "Places discovered" codex entry (mirroring `creatures_met`).
+2. **Diegetic campfire "rest" beat** — a cozy, in-fiction session-end stopping point in the
+   village hub (explicit save + a gentle fade), strictly additive/non-punitive, no FOMO.
+3. **Region ambience pass** — per-region ambient sound (meadow birds, forest wind, lake
+   water) cross-fading as the player crosses region boundaries, generalizing the existing
+   single global `AudioManager` ambient track.
+
+Alongside these, a fresh **art/learning research pass** is under way per the owner's mandate
+("cool backgrounds, epic art, learning out the wazoo") — expect the `game-architect` to
+refill `EXPANSION_BACKLOG.md` with slices drawing on that research once it lands; do not
+build ahead of it speculatively.
+
+## Build order
 
 Priorities chosen for maximum kid-delight per unit of risk, honoring NORTH_STAR
-("cohesion over volume", bonus-only/non-punitive learning, resist feature equity).
+("cohesion over volume", bonus-only/non-punitive learning, resist feature equity). The
+original P0/P1/P2 list from the first audit (sound pass, M4 pets, codex, coin faucet, Elder
+Slime mini-boss, real-art pass) is **fully shipped** — see the audit snapshot above. Next in
+line is the "Current frontier" list above, in the order given, followed by:
 
-1. **P0 — Sound pass v1.** The game is silent. Add a handful of gentle SFX (sword swish,
-   slime hit "boing", coin pickup chime, quest-complete fanfare, UI click) via
-   AudioStreamPlayer/AudioStreamPlayer2D, plus one looping ambient/meadow track at low
-   volume. Source: CC0 packs (Kenney.nl audio is the default choice — same source family
-   as prior art norms) checked into `assets/audio/` with attribution noted in the PR.
-   Keep volumes soft; audience is 7–11.
-2. **P0 — M4 pets** (design locked, user-approved; summary below). The single biggest
-   "wow" for the kids.
-3. **P1 — "Creatures met" codex** (backlog slice, needs #39's MeadowSlime.gd).
-4. **P1 — Gentle repeatable coin faucet** (backlog slice, needs #41's Main.tscn; fixes
-   the real economy bottleneck of 3 non-respawning slimes).
-5. **P2 — Elder Slime mini-boss** (backlog slice, needs #39).
-6. **P2 — Real-art pass** replacing placeholder polygons (landmarks, coin, pet) via the
-   asset pipeline + `asset-normalizer`, honoring `docs/design/VISUAL_CONTRACT.md`.
-7. **P3 — Second biome scaffold** (new zone + transition) — only after the above; refill
-   the backlog via game-architect research first.
-
-## M4 pets — locked design (rebuild fresh, do not resurrect #36)
-
-- Unlock: completing all 4 village quests (same gate as the Tier 1 armor grant in
-  `GameState._check_and_grant_tier1_armor()`); auto-equip on grant so the reward is felt.
-- One pet species to start, placeholder art first. Follow-only AI (CharacterBody2D,
-  move toward player when > 24px away, speed ~220 > player 160, y-sorted). No pet combat.
-- Data shape mirrors gear: `PetDefinition` resource (`id`, `label`, `rarity`, `hp_bonus`),
-  `owned_pets: Array[String]` + `equipped_pet: String` in GameState, `pet_changed`/
-  `pet_unlocked` signals, `get_effective_max_hp()` composing the bonus, SAVE_VERSION 3.
-- Character panel gets a Pets section (equip/unequip rows, stat lines, same dynamic-list
-  pattern as the M3 weapons list). HUD `_ready()` must read `get_effective_max_hp()`,
-  not the raw `PLAYER_MAX_HP` constant.
-- Spawn/despawn wired from `Player.gd` on `pet_changed` (same sibling-add pattern as
-  `MeadowSlime._spawn_coin_drop()`).
-- Full verification: headless suite extended (~19–20 tests) AND a live playtest of the
-  unlock → follow → unequip/re-equip → save/reload loop.
+- **Real-art pass** replacing remaining placeholder polygons (pet, landmarks, coin/gear
+  icons) via the asset pipeline + `asset-normalizer`, honoring
+  `docs/design/VISUAL_CONTRACT.md` — still open, lower priority than the frontier slices.
+- **Second biome scaffold** (new zone + transition) — only after the above; refill the
+  backlog via game-architect research first.
 
 ## Process rules (non-negotiable, learned the hard way this run)
 
