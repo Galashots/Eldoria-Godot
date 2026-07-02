@@ -171,6 +171,25 @@ decisions live in pure static functions (`Spawner.should_schedule_respawn()`,
 from "flagged" to "addressed". A new isolated `tests/spawner_tests.gd` suite (7 tests) covers
 the cap and due-time math.
 
+**"Creatures met" codex (expansion backlog): done.** A tight, text-only collection loop per
+`docs/design/NORTH_STAR.md` pillar 5 ("every short session yields permanent progress... a
+codex entry"): `GameState.creatures_met` (a `Dictionary` mapping creature id -> `true`,
+mirroring `collected_items`' shape) records the first time the player defeats each monster
+type via `record_creature_met(id)` — idempotent, emitting a new `creature_met(creature_id)`
+signal only on the first meeting — and `has_met_creature(id)`. `MeadowSlime._on_died()` gained
+one line recording `"meadow_slime"`. `ContentDefinitions.CREATURE_FACTS` is a small plain
+dictionary (id -> `{"label", "fact"}`, one entry so far), deliberately not a `.tres`
+`Resource` since it doesn't meet the repo's "more content, or a second consumer" bar for
+promotion. The character panel gained a "Creatures met" section (`CreaturesList`
+`VBoxContainer`, refreshed via `_refresh_creatures_list()`) listing each met creature as
+"Label — fact", with a "none yet" empty state matching the panel's other sections. Persisted
+in save/load (save schema stays at version 3 — the new `creatures_met` key loads via `.get()`
+with an in-code default, the same no-op migration policy every prior schema-compatible
+addition has used) and cleared in `reset_state()`. Bonus-only by construction: entries are
+never lost or gated behind a correct answer. Test suite grew to 32 (a new, isolated
+`tests/codex_tests.gd` with 4 tests: first-meet records + signal fires once, repeat meet stays
+idempotent, save/load round trip, reset clears).
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
@@ -214,6 +233,7 @@ the cap and due-time math.
 - `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). `tests/hit_flash_tests.gd` adds a second, isolated 5-test suite, and `tests/pet_tests.gd` adds a third, isolated 5-test suite (grant-gate ordering, grant-heal + idempotence, ownership/clamp/no-auto-heal on equip, save/load round trip, reset) — both registered in `test_runner.gd`. Suite total is now 28. See "How to run the GDScript test suite" below.
 - `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). `tests/hit_flash_tests.gd` adds a second, isolated 5-test suite registered in `test_runner.gd`. `tests/spawner_tests.gd` adds a third, isolated 7-test suite (the coin-faucet respawn cap/cadence pure logic) registered the same way. See "How to run the GDScript test suite" below.
 - `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). `tests/hit_flash_tests.gd` adds a second, isolated 5-test suite, and `tests/audio_tests.gd` adds a third, isolated 3-test suite (`AudioManager.coins_increased()`, unknown-name no-op) — both registered in `test_runner.gd`. Suite total is now 26. See "How to run the GDScript test suite" below.
+- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). `tests/hit_flash_tests.gd` adds a second, isolated 5-test suite, `tests/pet_tests.gd` adds a third, isolated 5-test suite (grant-gate ordering, grant-heal + idempotence, ownership/clamp/no-auto-heal on equip, save/load round trip, reset), and `tests/codex_tests.gd` adds a fourth, isolated 4-test suite (first-meet records + signal fires once, repeat meet stays idempotent, save/load round trip, reset clears) — all registered in `test_runner.gd`. Suite total is now 32. See "How to run the GDScript test suite" below.
 - `scripts/core/GearDefinition.gd` and `data/gear/{worn_dagger,iron_sword,oakheart_blade,dawnbringer_blade}.tres`: the gear-stats Resource, mirroring `ItemDefinition.gd` — id/label/rarity/damage_bonus/price per weapon (`dawnbringer_blade` is the Legendary top tier added by the expansion loop).
 - `scripts/items/CoinPickup.gd` / `scenes/items/CoinPickup.tscn`: coin pickup, mirroring `Collectible.gd`; spawned (deferred) by `MeadowSlime._on_died()`.
 - `scripts/npcs/Merchant.gd` / `scenes/npcs/Merchant.tscn`: the gear vendor NPC. Interacting opens `ShopUI` directly (no dialogue box needed).
@@ -246,6 +266,10 @@ the cap and due-time math.
   `docs/design/NORTH_STAR.md`'s kid-audience (Grade 2/5) gentle-feedback rule. A new isolated
   `tests/audio_tests.gd` (registered in `tests/test_runner.gd`) adds 3 tests for the pure
   `coins_increased()` helper and the unknown-name no-op.
+- `scripts/core/GameState.gd` ("Creatures met" codex additions): `creatures_met: Dictionary`, `record_creature_met(id)` (idempotent, fires `creature_met(creature_id)` once per new id), `has_met_creature(id)`, persisted via `save_game()`/`load_game()`/cleared in `reset_state()`.
+- `scripts/core/ContentDefinitions.gd` (codex addition): `CREATURE_FACTS` (plain dictionary, id -> `{label, fact}`) + `get_creature_label(id)`/`get_creature_fact(id)`.
+- `scripts/ui/CharacterPanel.gd`/`.tscn` (codex addition): a "Creatures met" section (`CreaturesList` `VBoxContainer`) listing each met creature as "Label — fact", refreshed on `GameState.creature_met`.
+- `tests/codex_tests.gd`: a fourth isolated test suite (4 tests) for the "Creatures met" codex, registered in `tests/test_runner.gd`.
 
 ## How to run
 
@@ -257,9 +281,9 @@ Open `project.godot` with Godot 4.x standard and press F5.
 Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
 ```
 
-Runs `tests/game_state_tests.gd`, `tests/hit_flash_tests.gd`, and `tests/pet_tests.gd`
-against the real `GameState` autoload and prints `PASS`/`FAIL` per test plus a summary line
-(28 tests total); exits non-zero if anything failed. See `tests/test_runner.gd` for the
+Runs `tests/game_state_tests.gd`, `tests/hit_flash_tests.gd`, `tests/pet_tests.gd`, and
+`tests/codex_tests.gd` against the real `GameState` autoload and prints `PASS`/`FAIL` per test
+plus a summary line (32 tests total); exits non-zero if anything failed. See `tests/test_runner.gd` for the
 (small, custom, no third-party dependency) runner — it discovers every `test_*` method on
 each registered test class, resets `GameState` via `GameState.reset_state()` before each one
 for isolation, and reports results.

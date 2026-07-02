@@ -90,6 +90,7 @@ func _pick_wander_target() -> void:
 	_state = State.WANDER
 
 func _on_died() -> void:
+	GameState.record_creature_met("meadow_slime")
 	hurtbox.set_deferred("monitoring", false)
 	contact_hitbox.set_deferred("monitorable", false)
 	_spawn_coin_drop.call_deferred()

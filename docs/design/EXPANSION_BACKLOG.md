@@ -99,7 +99,12 @@ out of scope until a future pass has a concrete reason to revisit them).
 - **Sequencing:** **wait for PR #39 to merge** — the one-line defeat hook is in
   `MeadowSlime.gd`, which #39 edits; build after #39 lands to avoid a conflict. (`GameState.gd`
   and `CharacterPanel.gd` are otherwise free.)
-- **Status:** ready
+- **Status:** done — shipped on `slice-creature-codex`: `GameState.creatures_met`
+  (Dictionary, save-schema-compatible via `.get()` default) + `record_creature_met(id)`
+  (idempotent, `creature_met` signal fires once) + `has_met_creature(id)`;
+  `MeadowSlime._on_died()` records `meadow_slime`; `ContentDefinitions.CREATURE_FACTS`
+  (plain dictionary, one entry) backs a new "Creatures met" section in `CharacterPanel`;
+  4 new tests in `tests/codex_tests.gd`.
 
 ### First mini-boss: Elder Slime (tougher Meadow Slime variant)
 - **Goal:** Give the player one clearly-telegraphed, higher-stakes (but still non-punitive)

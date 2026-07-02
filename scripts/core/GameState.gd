@@ -12,6 +12,7 @@ signal coins_changed(coins: int)
 signal gear_changed
 signal pet_unlocked(pet_id: String)
 signal pet_changed
+signal creature_met(creature_id: String)
 
 const SAVE_PATH := "user://savegame.json"
 const SAVE_VERSION := 3
@@ -57,6 +58,9 @@ var owned_gear: Array[String] = []
 var equipped_weapon: String = ""
 var owned_pets: Array[String] = []
 var equipped_pet: String = ""
+# "Creatures met" codex: permanent world-knowledge earned from combat. Maps creature_id -> true;
+# a Dictionary (not an Array) mirrors collected_items' shape and gives O(1) has_met_creature().
+var creatures_met: Dictionary = {}
 
 var elder_quest_started: bool = false
 var elder_quest_completed: bool = false
@@ -75,6 +79,7 @@ func _ready() -> void:
     coins_changed.connect(_on_coins_changed_autosave)
     gear_changed.connect(_on_gear_changed_autosave)
     pet_changed.connect(_on_pet_changed_autosave)
+    creature_met.connect(_on_creature_met_autosave)
     load_game()
 
 func _process(delta: float) -> void:
@@ -286,6 +291,18 @@ func _check_and_grant_first_pet() -> void:
     player_damaged.emit(player_hp, get_effective_max_hp())
     pet_unlocked.emit("mossy")
 
+func record_creature_met(creature_id: String) -> void:
+    # Idempotent: only the first meeting emits creature_met, matching the bonus-only,
+    # you-can-only-gain-entries rule the codex slice requires.
+    if creatures_met.has(creature_id):
+        return
+
+    creatures_met[creature_id] = true
+    creature_met.emit(creature_id)
+
+func has_met_creature(creature_id: String) -> bool:
+    return creatures_met.has(creature_id)
+
 func get_combat_multiplier() -> float:
     return 1.0 + combat_streak * COMBAT_MULTIPLIER_PER_STACK
 
@@ -332,6 +349,7 @@ func save_game() -> void:
         "equipped_weapon": equipped_weapon,
         "owned_pets": owned_pets,
         "equipped_pet": equipped_pet,
+        "creatures_met": creatures_met,
     }
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if not file:
@@ -381,6 +399,14 @@ func load_game() -> void:
     for item_id in loaded_items.keys():
         collected_items[item_id] = int(loaded_items[item_id])
 
+    # Same Dictionary coercion pattern as collected_items above - values are just `true`
+    # booleans (bools round-trip through JSON fine), but rebuild the dict explicitly for
+    # symmetry and to guard against unexpected key types.
+    var loaded_creatures: Dictionary = data.get("creatures_met", {})
+    creatures_met = {}
+    for creature_id in loaded_creatures.keys():
+        creatures_met[creature_id] = true
+
     _refresh_elder_quest_flags()
 
 func _migrate(data: Dictionary) -> Dictionary:
@@ -413,6 +439,7 @@ func reset_state() -> void:
     equipped_weapon = ""
     owned_pets = []
     equipped_pet = ""
+    creatures_met = {}
     combat_streak = 0
     _time_since_last_correct_answer = 0.0
     _player_hit_cooldown_remaining = 0.0
@@ -438,4 +465,7 @@ func _on_gear_changed_autosave() -> void:
     save_game()
 
 func _on_pet_changed_autosave() -> void:
+    save_game()
+
+func _on_creature_met_autosave(_id: String) -> void:
     save_game()
