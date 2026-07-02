@@ -1,0 +1,32 @@
+[gd_scene format=3]
+
+; Placeholder wetland/region-signature prop (bootstrap-polygon art, matching the
+; StandingStone/LoneTree/Bush/PineTree convention). Purely visual: no collision, no script.
+; A small cluster of thin, tall vertical reed-blade silhouettes at a slight lean, plus a
+; low sandy tuft base, so it reads as a lake-shore reed cluster at a glance. Colors from the
+; locked shared palette (STYLE_GUIDE.md: forest_floor #216633 / grass_dark #288A36, with a
+; sand #E7CD92 base to ground it in the shore). Authored from the node origin (base at y~0)
+; upward so y_sort uses the base as the sort key, like the other props.
+
+[node name="Reeds" type="Node2D"]
+y_sort_enabled = true
+
+[node name="SandBase" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-14, 0, -16, -4, -10, -7, 0, -8, 10, -7, 16, -4, 14, 0)
+color = Color(0.906, 0.804, 0.573, 1)
+
+[node name="BladeLeft" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-10, 0, -12, -46, -9, -50, -8, -46, -6, 0)
+color = Color(0.13, 0.4, 0.2, 1)
+
+[node name="BladeCenterLeft" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-3, 0, -4, -60, -1, -64, 0, -60, -1, 0)
+color = Color(0.157, 0.541, 0.212, 1)
+
+[node name="BladeCenter" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(1, 0, 1, -54, 4, -58, 5, -54, 3, 0)
+color = Color(0.13, 0.4, 0.2, 1)
+
+[node name="BladeRight" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(6, 0, 7, -40, 10, -44, 11, -40, 9, 0)
+color = Color(0.157, 0.541, 0.212, 1)

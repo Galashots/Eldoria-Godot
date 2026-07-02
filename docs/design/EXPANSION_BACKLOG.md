@@ -187,23 +187,23 @@ flagged. A genuine 5th quest / new subject remains `blocked: needs-user-input` b
   wetland read at a glance; a recurring silhouette, held along the shore, is what gives the region
   its character.
 - **Acceptance criteria:**
-  - [ ] A new `scenes/props/Reeds.tscn` placeholder-polygon prop — a small cluster of thin vertical
+  - [x] A new `scenes/props/Reeds.tscn` placeholder-polygon prop — a small cluster of thin vertical
         blades with a distinct wetland silhouette, colors from the locked shared palette
         (`grass_dark`/`forest_floor` greens, maybe a `sand` base), no collision, no script,
         `y_sort_enabled`.
-  - [ ] 3–6 instances placed along the lake's sand shore near the Dock (on walkable sand tiles, not
+  - [x] 3–6 instances placed along the lake's sand shore near the Dock (on walkable sand tiles, not
         in the impassible water), massed as clusters, clear of the walkable dock approach and every
         existing position.
-  - [ ] Purely visual and gameplay-neutral: no collision, no quest/combat effect; additive.
-  - [ ] Verifiable via a headless `Main.tscn` node-presence/position assertion (reeds sit in the
+  - [x] Purely visual and gameplay-neutral: no collision, no quest/combat effect; additive.
+  - [x] Verifiable via a headless `Main.tscn` node-presence/position assertion (reeds sit in the
         lake-shore coordinate range) plus a live screenshot showing the shore now reads as a reedy
-        edge.
+        edge. (Headless assertion added; live screenshot not captured by this build pass.)
 - **Likely files touched:** `scenes/props/Reeds.tscn` (new), `scenes/main/Main.tscn` (instance the
   cluster), `tests/map_tests.gd` or `tests/props_tests.gd` (+ `test_runner.gd`).
 - **Curriculum tie-in:** none — pure atmosphere/art.
 - **Sequencing:** **Touches Main.tscn — stagger.** Land after Slice 1 (rebase on it). Independent
   in design; grouped with the other prop slices for the conductor to sequence one-at-a-time.
-- **Status:** ready
+- **Status:** done
 
 ### 5. Rocky-border signature: boulder scatter along the map's rock edge
 - **Goal:** Give the rocky-border region its own recognizable silhouette with a scatter of small

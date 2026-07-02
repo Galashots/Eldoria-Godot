@@ -15,6 +15,10 @@ const EXPECTED_PINE_NAMES := [
     "PineCluster1", "PineCluster2", "PineCluster3", "PineCluster4", "PineCluster5",
 ]
 
+const EXPECTED_REED_NAMES := [
+    "ReedCluster1", "ReedCluster2", "ReedCluster3", "ReedCluster4", "ReedCluster5",
+]
+
 
 func test_pine_cluster_nodes_exist_in_main_scene() -> Dictionary:
     var failures: Array[String] = []
@@ -61,6 +65,54 @@ func test_pine_tree_scene_has_no_collision_and_is_y_sorted() -> Dictionary:
     _check(failures, not has_collision, "expected PineTree to have no collision nodes")
 
     pine.free()
+    return {"ok": failures.is_empty(), "failures": failures}
+
+
+func test_reed_cluster_nodes_exist_in_main_scene() -> Dictionary:
+    var failures: Array[String] = []
+    var main: Node = load(MAIN_SCENE_PATH).instantiate()
+
+    for node_name in EXPECTED_REED_NAMES:
+        var node := main.get_node_or_null(NodePath(node_name)) as Node2D
+        _check(failures, node != null, "expected reed node '%s' to exist" % node_name)
+
+    main.free()
+    return {"ok": failures.is_empty(), "failures": failures}
+
+
+func test_every_reed_cluster_sits_in_the_lake_region() -> Dictionary:
+    var failures: Array[String] = []
+    var main: Node = load(MAIN_SCENE_PATH).instantiate()
+
+    for node_name in EXPECTED_REED_NAMES:
+        var node := main.get_node_or_null(NodePath(node_name)) as Node2D
+        if node == null:
+            failures.append("expected reed node '%s' to exist" % node_name)
+            continue
+        var region := AudioManager.region_for_position(
+            node.position, AudioManager.REGION_RECTS, AudioManager.DEFAULT_REGION)
+        _check(failures, region == "lake",
+            "expected %s at %s to be in the lake region, found '%s'"
+                % [node_name, node.position, region])
+
+    main.free()
+    return {"ok": failures.is_empty(), "failures": failures}
+
+
+func test_reeds_scene_has_no_collision_and_is_y_sorted() -> Dictionary:
+    var failures: Array[String] = []
+    var reeds: Node2D = load("res://scenes/props/Reeds.tscn").instantiate()
+
+    _check(failures, reeds.y_sort_enabled, "expected Reeds to have y_sort_enabled")
+    _check(failures, reeds.get_script() == null, "expected Reeds to have no script")
+
+    var has_collision := false
+    for child in reeds.get_children():
+        if child is CollisionObject2D or child is CollisionShape2D or child is CollisionPolygon2D:
+            has_collision = true
+    _check(failures, not has_collision, "expected Reeds to have no collision nodes")
+
+    reeds.free()
     return {"ok": failures.is_empty(), "failures": failures}
 
 
