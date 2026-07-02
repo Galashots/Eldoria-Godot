@@ -313,6 +313,35 @@ and no `project.godot` edits. A new isolated `tests/campfire_tests.gd` (3 tests:
 short message, Grade 5's message differs and is longer, unknown-profile fallback) is
 registered in `tests/test_runner.gd`.
 
+**Region ambience pass (expansion backlog): done.** Generalizes the M-audio-pass's single
+global ambient loop into region-aware playback matching the "Epic map pass" regions, per
+`docs/design/NORTH_STAR.md`'s cohesion-over-volume pillar and `RESEARCH_NOTES.md` §8.3/§8.4.
+`AudioManager.gd` now owns two ping-ponged `AudioStreamPlayer`s instead of one; a cheap ~0.5s
+`Timer` poll (`_on_region_poll_timeout()`) reads the player's `global_position` (via
+`get_tree().get_first_node_in_group("player")`, the same lookup precedent `MeadowSlime.gd`/
+`ElderSlime.gd` already use) and looks it up against `REGION_RECTS` — one rectangle per region
+in world-pixel space, hand-derived from `tools/paint_map.gd`'s tile regions (16px tiles) so
+both files describe the same geography: lake, forest edge, village green, flower meadow, and a
+map-spanning rocky-border fallback, checked in that order (first match wins) so lake/forest/
+village/meadow take priority over the outer border rect they sit inside. On a region change,
+`_crossfade_to_region()` starts the new region's track on the idle player at silence and ramps
+both players' `volume_db` over `CROSSFADE_DURATION_SEC` (1.75s) via a pure, unit-tested easing
+function - no hard cut, no silence gap. Four new self-synthesized ambient WAVs extend
+`assets/audio/gen_sfx.py` (same provenance precedent as the original sound pass): `village_
+hearth` (a very soft warm low-tone bed), `meadow_birds` (the meadow pad bed plus a few
+deterministic soft chirps), `forest_wind` (filtered-noise swells via a slowly-modulated
+low-pass cutoff), and `lake_water` (a soft periodic lapping envelope over dark noise) - all
+peak-normalized well under full scale and loop-seam-faded like the existing `ambient_meadow`
+track. The old `ambient_meadow.wav` track is kept and reused as the rocky-border region's
+ambient (rather than deleted), since it already reads as a neutral open-field bed. Two pure,
+unit-tested static functions back this: `AudioManager.region_for_position(pos, region_rects,
+default_region)` (rectangle lookup) and `AudioManager.crossfade_volume_db(t, target_db,
+is_incoming)` (linear-in-dB fade easing, clamped, with -80 dB standing in for silent) — both
+mirroring `coins_increased()`'s pure-static-function precedent. No gameplay change: pure
+atmosphere. Test suite grew to 61 (6 new `AudioTests` cases: in-rect lookups for all 4 named
+regions, first-match-wins on overlap, outside-all-rects fallback, inclusive/exclusive rect
+boundary edges, and the cross-fade easing's endpoints/midpoint/clamping).
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
@@ -403,7 +432,11 @@ registered in `tests/test_runner.gd`.
 - `tests/keepsake_tests.gd`: a sixth isolated test suite (4 tests) for boss keepsakes, registered in `tests/test_runner.gd`.
 - `scenes/props/Campfire.tscn` / `scripts/props/Campfire.gd`: the diegetic session-end rest beat. A placeholder-polygon campfire (log-brown base + orange/yellow flame triangles, gentle Tween-driven flicker) in the village green at `(1288, 588)`. Interacting mirrors an NPC's interact pattern (no quest state): calls `GameState.save_game()`, emits `dialogue_requested` with a profile-aware rest line (`Campfire.get_rest_message(profile)`, pure/unit-tested), and emits `rested`.
 - `scenes/ui/RestFadeOverlay.tscn` / `scripts/ui/RestFadeOverlay.gd`: a `CanvasLayer` + full-screen `ColorRect` (layer 95) whose `play_rest_fade()` tweens to a warm dim and back over ~2s, wired to `Campfire.rested` in `Main.tscn`. Purely a calm visual beat — never blocks input or gameplay.
-- `tests/campfire_tests.gd`: a seventh isolated test suite (3 tests: Grade 2's short message, Grade 5's differs/longer, unknown-profile fallback) for the campfire rest beat, registered in `tests/test_runner.gd`. Suite total is now 39 (36 + 3).
+- `tests/campfire_tests.gd`: a seventh isolated test suite (3 tests: Grade 2's short message, Grade 5's differs/longer, unknown-profile fallback) for the campfire rest beat, registered in `tests/test_runner.gd`.
+- `scripts/core/AudioManager.gd` (region ambience pass): generalized from one global ambient loop to region-aware playback — `REGION_RECTS` (world-pixel rectangles matching `tools/paint_map.gd`'s tile regions), `REGION_STREAMS` (one loop per region), a ~0.5s `Timer` poll of the player's position, and a two-player cross-fade (`_crossfade_to_region()`) driven by the pure `region_for_position()`/`crossfade_volume_db()` static functions.
+- `assets/audio/gen_sfx.py` (region ambience pass additions): `village_hearth()`, `meadow_birds()`, `forest_wind()`, `lake_water()` — four new self-synthesized, soft, loop-seam-faded ambient beds, one per region (see writeup above).
+- `assets/audio/{village_hearth,meadow_birds,forest_wind,lake_water}.wav`: the generated region ambient tracks.
+- `tests/audio_tests.gd` (region ambience pass additions): 6 new tests for `region_for_position()` (in-rect lookups, first-match-wins on overlap, outside-all-rects fallback, inclusive/exclusive boundary edges) and `crossfade_volume_db()` (endpoints, midpoint, clamping). Suite total is now 64 (55 + 3 campfire + 6 region ambience).
 
 ## How to run
 
@@ -415,12 +448,13 @@ Open `project.godot` with Godot 4.x standard and press F5.
 Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
 ```
 
-Runs all 9 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
+Runs all 10 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
 (18), `tests/hit_flash_tests.gd` (5), `tests/pet_tests.gd` (5), `tests/spawner_tests.gd` (7),
-`tests/audio_tests.gd` (3), `tests/codex_tests.gd` (4), `tests/elder_slime_tests.gd` (4),
-`tests/keepsake_tests.gd` (4), and `tests/map_tests.gd` (5) - against the real `GameState`/
-`AudioManager` autoloads, and prints `PASS`/`FAIL` per test plus a summary line (**55 tests
-total**); exits non-zero if anything failed. See `tests/test_runner.gd` for the
+`tests/audio_tests.gd` (9), `tests/codex_tests.gd` (4), `tests/elder_slime_tests.gd` (4),
+`tests/keepsake_tests.gd` (4), `tests/map_tests.gd` (5), and `tests/campfire_tests.gd` (3) -
+against the real `GameState`/`AudioManager` autoloads, and prints `PASS`/`FAIL` per test plus
+a summary line (**64 tests total**); exits non-zero if anything failed. See
+`tests/test_runner.gd` for the
 (small, custom, no third-party dependency) runner — it discovers every `test_*` method on
 each registered test class, resets `GameState` via `GameState.reset_state()` before each one
 for isolation, and reports results.
