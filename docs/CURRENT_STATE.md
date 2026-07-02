@@ -342,11 +342,25 @@ atmosphere. Test suite grew to 61 (6 new `AudioTests` cases: in-rect lookups for
 regions, first-match-wins on overlap, outside-all-rects fallback, inclusive/exclusive rect
 boundary edges, and the cross-fade easing's endpoints/midpoint/clamping).
 
+**Palette-lock pass (expansion backlog): done.** A pure refactor/documentation pass, per
+`RESEARCH_NOTES.md` §9.1's palette-discipline lever (the cheapest cohesion lever for "epic"
+art at this game's scale) and `STYLE_GUIDE.md`'s art-direction one-pager. `gen_tileset.py`'s
+previously-scattered flat-color constants are now sourced from a single named `PALETTE` dict
+(grass/earth/water/stone value ramps plus a small set of flower accent colors), with every
+existing color name (`GRASS`, `PATH`, `WATER`, `ROCK`, `GRASS_LIGHT`, etc.) now just a lookup
+into `PALETTE` instead of an inline literal — every RGBA value is byte-identical to what
+shipped before, so the regenerated `placeholder_tileset.png` is byte-for-byte unchanged (md5
+`764ca68aba375fa2a60a3f8b4443b5dc` before and after). `STYLE_GUIDE.md` gained a "Locked shared
+palette" section with a full name-to-hex-to-role table, documented as the source of truth
+future procedural tiles, polygon props, particles, and UI tints should sample from rather than
+inventing fresh RGBs. No scene, gameplay, or GDScript files touched; no new tests needed (pure
+Python + docs change) — the existing suite stays at 91 passed, 0 failed.
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
 - `AGENTS.md`: project and agent workflow guidance, including the current `ContentDefinitions.gd` rule for lightweight quest/item/profile display text.
-- `assets/sprites/tiles/placeholder_tileset.png`, `assets/sprites/tiles/gen_tileset.py`, and `assets/tilesets/placeholder_tileset.tres`: the placeholder tileset, now 12 16x16 tiles (grown from the original bootstrap 4: grass/path/water/rock, plus 2 grass-shade variants, 2 flower-meadow tiles, forest-floor grass, sand, deep water, and a stone/cliff border tile), generated as flat colors by `gen_tileset.py` (pure Pillow, not the AI source-art pipeline — see the "Epic map pass" writeup above). The original 4 tiles keep their exact atlas coordinates/colors. Water, deep-water, rock, and cliff all carry a full-tile physics collision polygon on `TileSet` physics layer 0; every grass/path/flower/sand variant is walkable.
+- `assets/sprites/tiles/placeholder_tileset.png`, `assets/sprites/tiles/gen_tileset.py`, and `assets/tilesets/placeholder_tileset.tres`: the placeholder tileset, now 12 16x16 tiles (grown from the original bootstrap 4: grass/path/water/rock, plus 2 grass-shade variants, 2 flower-meadow tiles, forest-floor grass, sand, deep water, and a stone/cliff border tile), generated as flat colors by `gen_tileset.py` (pure Pillow, not the AI source-art pipeline — see the "Epic map pass" writeup above). The original 4 tiles keep their exact atlas coordinates/colors. Water, deep-water, rock, and cliff all carry a full-tile physics collision polygon on `TileSet` physics layer 0; every grass/path/flower/sand variant is walkable. `gen_tileset.py`'s colors are now sourced from a single named `PALETTE` dict (Palette-lock pass, see writeup above) — the project's shared color source of truth, documented with a hex/role table in `docs/art/STYLE_GUIDE.md`'s "Locked shared palette" section.
 - `scenes/main/Main.tscn`: `World/Ground` `TileMapLayer` (220x140 tiles, 3520x2240px as of the "Epic map pass", `y_sort_enabled` on `World`) replacing the old flat floor/obstacle, player, Elder, Mira, Finn, Yarrow (all `y_sort_enabled`), collectibles (including Silverleaf), HUD, dialogue, character panel, profile selector, learning check, `Enemies` (3 `MeadowSlime` instances), and `CombatQuestion` instances.
 - `tools/paint_map.gd` / `tools/PaintMapRunner.tscn`: the one-shot, deterministic, documented-as-code map repaint tool behind the "Epic map pass" (see writeup above) — not part of any shipped scene, kept for future map iteration.
 - `scenes/props/Bush.tscn` and `scenes/props/Dock.tscn`: two more placeholder-polygon depth props (Epic map pass), matching `StandingStone.tscn`/`LoneTree.tscn`'s convention (no collision, no script, `y_sort_enabled`).
