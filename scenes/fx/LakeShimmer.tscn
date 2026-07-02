@@ -1,0 +1,33 @@
+[gd_scene load_steps=3 format=3 uid="uid://dw6vh4t2m8x1q"]
+
+[ext_resource type="Shader" path="res://shaders/water_shimmer.gdshader" id="1_shader"]
+
+; "Living lake" (expansion backlog): a gentle animated shimmer overlay sized to the lake's
+; world-space footprint. Instanced once in scenes/main/Main.tscn as a sibling of Ground under
+; World (drawn after Ground, still inside World's y-sorted layer, so it always sits under the
+; Player/NPC/prop y-sort layer above it - see docs/CURRENT_STATE.md's y-sort notes).
+;
+; Placeholder-fallback-safe by construction: a ColorRect always renders as flat color even if
+; its ShaderMaterial fails to compile, so the lake never goes blank/crashes - it just loses the
+; animated highlight and shows a barely-there flat tint instead.
+;
+; The lake's painted footprint (tools/paint_map.gd's _paint_lake, center tile (97,58), rx=11,
+; ry=8 plus shoreline jitter/sand ring) sits inside tile rect x:84..110, y:48..68 - this overlay
+; covers that full bounding box in world pixels (16px tiles): 416x320 at (1344, 768).
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_lake"]
+shader = ExtResource("1_shader")
+shader_parameter/scroll_speed = 0.06
+shader_parameter/ripple_scale = 14.0
+shader_parameter/highlight_alpha = 0.1
+shader_parameter/highlight_color = Color(1, 1, 0.95, 1)
+
+[node name="LakeShimmer" type="Node2D"]
+position = Vector2(1344, 768)
+
+[node name="Overlay" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_lake")
+offset_right = 416.0
+offset_bottom = 320.0
+mouse_filter = 2
+color = Color(1, 1, 1, 0.02)
