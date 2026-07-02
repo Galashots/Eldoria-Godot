@@ -1,0 +1,48 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/enemies/ElderSlime.gd" id="1_elder_slime"]
+[ext_resource type="Script" path="res://scripts/core/combat/HealthComponent.gd" id="2_health"]
+[ext_resource type="Script" path="res://scripts/core/combat/HurtboxComponent.gd" id="3_hurtbox"]
+[ext_resource type="Script" path="res://scripts/core/combat/HitboxComponent.gd" id="4_hitbox"]
+[ext_resource type="Texture2D" path="res://assets/sprites/enemies/meadow_slime_idle.png" id="5_body_texture"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_elder_slime_body"]
+radius = 20.0
+
+[node name="ElderSlime" type="CharacterBody2D"]
+y_sort_enabled = true
+script = ExtResource("1_elder_slime")
+move_speed = 30.0
+contact_damage = 1
+coin_drop_value = 3
+bonus_coin_chance = 0.35
+
+[node name="Body" type="Sprite2D" parent="."]
+modulate = Color(0.4, 0.55, 0.25, 1)
+scale = Vector2(1.5, 1.5)
+texture = ExtResource("5_body_texture")
+offset = Vector2(0, -16)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_elder_slime_body")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("2_health")
+max_hp = 6
+
+[node name="Hurtbox" type="Area2D" parent="."]
+monitoring = true
+monitorable = false
+script = ExtResource("3_hurtbox")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Hurtbox"]
+shape = SubResource("CircleShape2D_elder_slime_body")
+
+[node name="ContactHitbox" type="Area2D" parent="."]
+monitoring = false
+monitorable = true
+script = ExtResource("4_hitbox")
+damage = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ContactHitbox"]
+shape = SubResource("CircleShape2D_elder_slime_body")

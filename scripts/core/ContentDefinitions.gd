@@ -81,12 +81,16 @@ const ARMOR_TIER_LABELS := {
 }
 
 ## "Creatures met" codex factoids (display-only text, no stats) - a plain dictionary rather
-## than a .tres Resource, since a single entry doesn't meet the repo's "more content, or a
+## than a .tres Resource, since two entries still doesn't meet the repo's "more content, or a
 ## second consumer needing structured data" bar for Resource promotion (see AGENTS.md).
 const CREATURE_FACTS := {
     "meadow_slime": {
         "label": "Meadow Slime",
         "fact": "A bouncy meadow friend that loves sunny grass — drops a coin when bested!",
+    },
+    "elder_slime": {
+        "label": "Elder Slime",
+        "fact": "A big, wise old slime who winds up before a hop — watch for the glow, then dodge!",
     },
 }
 

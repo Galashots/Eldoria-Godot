@@ -143,7 +143,20 @@ out of scope until a future pass has a concrete reason to revisit them).
   subclass), `scenes/enemies/` (new scene, e.g. `ElderSlime.tscn`), `scenes/main/Main.tscn`
   (one placement), `docs/design/MONSTER_CONCEPTS.md` (append the variant), `tests/`.
 - **Curriculum tie-in:** none — pure systems.
-- **Status:** ready
+- **Status:** done — shipped on `slice-elder-slime`: `scripts/enemies/ElderSlime.gd` (a small
+  subclass of `MeadowSlime.gd`, reusing its FSM/`HealthComponent`/`HitboxComponent`/
+  `HurtboxComponent` architecture) adds one telegraphed move — a brief pause-and-flash windup
+  (`telegraph_windup_intensity()`, a pure/unit-tested easing mirroring
+  `HealthComponent.hit_reaction_intensity()`'s precedent) followed by a fast lunge at the
+  player — plus tuned stats (6 hp vs. 3, slower `move_speed` 30 vs. 40, `coin_drop_value` 3
+  vs. 1, `bonus_coin_chance` 0.35 vs. 0.12). `scenes/enemies/ElderSlime.tscn` reuses the
+  Meadow Slime placeholder texture, scaled 1.5x and tinted deep moss green for visual
+  distinction. Placed once at `(2350, 1450)`, a far corner of the M1 zone, under a new
+  `Bosses` sibling node in `Main.tscn` — deliberately NOT under the `Enemies` node
+  `Spawner.gd` watches, so the mini-boss stays a one-per-session encounter rather than
+  respawning endlessly. Records `elder_slime` in the "Creatures met" codex on death
+  (`ContentDefinitions.CREATURE_FACTS` gained an entry). 4 new tests in
+  `tests/elder_slime_tests.gd`.
 
 ## Blocked
 
