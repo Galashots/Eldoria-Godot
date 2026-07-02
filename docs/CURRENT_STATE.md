@@ -441,6 +441,24 @@ existing node moved. A new isolated `tests/prop_tests.gd` (3 tests, registered i
 passes established) to confirm each pine's position falls inside the `forest_edge`
 `REGION_RECTS` rectangle, and confirms the `PineTree` scene itself carries no collision and is
 `y_sort_enabled`. Test suite grew to 105.
+**Lake-shore signature: reed clusters (expansion backlog): done.** Gives the lake region its
+own recognizable silhouette, mirroring the pine-cluster slice's exact recipe for a different
+region. A new `scenes/props/Reeds.tscn` (bootstrap-polygon art, matching the `StandingStone`/
+`LoneTree`/`Bush`/`PineTree` convention: no collision, no script, `y_sort_enabled`) is a small
+cluster of thin, unevenly-leaning vertical reed blades over a low sandy tuft base, colored from
+the locked shared palette's forest ramp (`forest_floor` `#216633`/`grass_dark`-family greens)
+with a `sand` `#E7CD92` base to ground it in the shore. Five instances (`ReedCluster1`-`5`) are
+placed directly in `Main.tscn` (not via `tools/paint_map.gd`, since that tool is a one-shot
+historical repaint script, not a live editing entry point) on the lake's sand shore ring — two on
+the west shore, three on the south/southeast shore — reusing `tools/paint_map.gd`'s
+`_paint_lake()` ellipse math (tile center 97,58; sand band between the water and outer edge) to
+pick coordinates, clear of the `Dock` (1552,976), `LakeShoreSparkle` (1728,864), the
+`LakeShimmer` overlay, `LakeParticles`, and the path spur into the lake. Purely visual and
+additive — no existing node moved. `tests/prop_tests.gd` (extended, not a new file) gained 3
+tests: every `ReedCluster` node exists in `Main.tscn`, each one's position falls inside
+`AudioManager.REGION_RECTS`'s `lake` rectangle (the same region-lookup helper the pine test
+reused for `forest_edge`), and the `Reeds` scene itself carries no collision and is
+`y_sort_enabled`. Test suite grew to 127.
 **Gentle pickup pop: a squash-and-stretch tween on coins and collectibles (expansion
 backlog): done.** The single most kid-noticed game-feel upgrade this pass, per
 `docs/design/RESEARCH_NOTES.md` §10.3 (a small scale pop on pickup is the highest-signal,

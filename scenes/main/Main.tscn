@@ -50,6 +50,7 @@
 [ext_resource type="Script" path="res://scripts/ui/ComprehensionCheck.gd" id="44_comprehension_script"]
 [ext_resource type="PackedScene" path="res://scenes/fx/AmbientParticles.tscn" id="45_ambient_particles"]
 [ext_resource type="PackedScene" path="res://scenes/props/PineTree.tscn" id="46_pine"]
+[ext_resource type="PackedScene" path="res://scenes/props/Reeds.tscn" id="47_reeds"]
 
 [node name="Main" type="Node2D" unique_id=280939621]
 
@@ -294,6 +295,26 @@ region = "forest_edge"
 [node name="LakeParticles" type="Node2D" parent="." instance=ExtResource("45_ambient_particles")]
 position = Vector2(1552, 928)
 region = "lake"
+
+[node name="ReedCluster1" type="Node2D" parent="." instance=ExtResource("47_reeds")]
+y_sort_enabled = true
+position = Vector2(1384, 872)
+
+[node name="ReedCluster2" type="Node2D" parent="." instance=ExtResource("47_reeds")]
+y_sort_enabled = true
+position = Vector2(1400, 904)
+
+[node name="ReedCluster3" type="Node2D" parent="." instance=ExtResource("47_reeds")]
+y_sort_enabled = true
+position = Vector2(1400, 984)
+
+[node name="ReedCluster4" type="Node2D" parent="." instance=ExtResource("47_reeds")]
+y_sort_enabled = true
+position = Vector2(1512, 1064)
+
+[node name="ReedCluster5" type="Node2D" parent="." instance=ExtResource("47_reeds")]
+y_sort_enabled = true
+position = Vector2(1544, 1080)
 
 [connection signal="combat_question_requested" from="Player" to="CombatQuestion" method="show_question"]
 [connection signal="dialogue_requested" from="Player" to="DialogueBox" method="show_dialogue"]
