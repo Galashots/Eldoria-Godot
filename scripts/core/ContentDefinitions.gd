@@ -29,6 +29,7 @@ const GEAR_DEFINITIONS: Array[GearDefinition] = [
 ## Pet display/stat data mirrors the GearDefinition pattern above (see docs/design/PETS.md).
 const PET_DEFINITIONS: Array[PetDefinition] = [
     preload("res://data/pets/mossy.tres"),
+    preload("res://data/pets/dewdrop.tres"),
 ]
 
 const RARITY_COLORS := {

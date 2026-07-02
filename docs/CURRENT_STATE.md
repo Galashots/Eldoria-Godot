@@ -405,6 +405,38 @@ isolated `tests/pet_sprite_tests.gd` (2 tests: `Body` is a `Sprite2D`/`AnimatedS
 texture/`SpriteFrames` assigned, and `Body` is no longer the old `Polygon2D`) is registered in
 `tests/test_runner.gd`. Test suite grew to 102.
 
+**Second pet: Dewdrop, earned by defeating the Elder Slime (expansion backlog): done.** Gives
+the M4 pet roster its second member, earned through a *different* existing accomplishment from
+Mossy's all-four-quests gate, per `docs/design/PETS.md`'s "Adding future pets is additive"
+recipe and NORTH_STAR's "make existing systems pay off together" framing. **Dewdrop**
+(`data/pets/dewdrop.tres`, Uncommon, +3 Max HP — deliberately a different rarity/bonus from
+Mossy's Rare/+2 so the choice between them matters) is granted by
+`GameState._check_and_grant_boss_pet()`, called from `ElderSlime._on_died()` right alongside its
+existing `award_keepsake("elder_slime_dewdrop")` call — the same boss-death beat that already
+awards the keepsake, reused rather than duplicated. The grant is idempotent (owning `dewdrop`
+already short-circuits it) and, unlike Mossy's grant, does **not** auto-equip: with two pets now
+in the roster, silently swapping the player's equipped pet on grant would take away a choice
+rather than add one, so Dewdrop simply becomes available in the character panel's existing Pets
+list (which already looped over `owned_pets` generically, so it needed no changes to handle a
+second pet). `PetDefinition.gd` gained two optional string fields,
+`sprite_frame1_path`/`sprite_frame2_path`, so pet art is now data-driven instead of requiring a
+forked scene per species: `Pet.gd` takes an exported `pet_id: String` (set by `Player.gd`'s
+`_spawn_pet()` before adding the instance to the tree) and, in `_ready()`, builds a fresh 2-frame
+idle-bob `SpriteFrames` from the equipped pet's definition if both paths are set; an empty
+`pet_id` or empty paths leave `Pet.tscn`'s baked-in `SpriteFrames` (Mossy's original art)
+untouched, so Mossy needed no data migration. Dewdrop's art
+(`assets/sprites/pets/dewdrop_idle{1,2}.png`) is a new `assets/sprites/pets/gen_dewdrop.py`
+(pure Pillow, mirroring `gen_mossy.py`'s precedent exactly): a blue/water-family teardrop body
+(sampled near the locked palette's `water`/`water_deep` ramp) with a pale glint highlight and the
+same strong dark outline for grass contrast — hue-separated from both the grass ramp and Mossy's
+mint/teal so the two pets and the ground never fight for attention side by side. No pet combat
+(Dewdrop reuses `Pet.gd`'s follow-only AI unchanged), no schema bump (`owned_pets`' existing
+array coercion already round-trips any pet id), no `Main.tscn`/`project.godot` changes. A new
+isolated `tests/second_pet_tests.gd` (5 tests: boss-death grant fires once and does not
+auto-equip, grant leaves hp/max-hp unchanged, manual equip applies Dewdrop's own +3 bonus without
+auto-healing, both pets coexisting with swap-clamps-hp-correctly in both directions, save/load/
+reset) is registered in `tests/test_runner.gd`. Test suite grew to 107.
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
