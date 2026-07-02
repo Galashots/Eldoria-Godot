@@ -123,7 +123,11 @@ a parallel system).
   reuses that slice's region-detection helper. Also lands after the day-warmth pass (particles
   read best against the warm tint). If ambience's region logic isn't reusable yet, this slice
   makes it so.
-- **Status:** ready
+- **Status:** done — see `docs/CURRENT_STATE.md`'s "Ambient particle pass" writeup. Implemented
+  as `scripts/fx/AmbientParticles.gd` (`scenes/fx/AmbientParticles.tscn`), three fixed
+  `CPUParticles2D` emitters instanced in `Main.tscn` (flower meadow, forest edge, lake), reusing
+  `AudioManager.region_for_position()`/`REGION_RECTS` as-is. Covered by `tests/particle_tests.gd`
+  (9 tests, registered in `tests/test_runner.gd`).
 
 ### Living lake: animated water shimmer on the merged map's lake
 - **Goal:** Make the just-built lake *move* — a slow, gentle shimmer/ripple over the lake's
