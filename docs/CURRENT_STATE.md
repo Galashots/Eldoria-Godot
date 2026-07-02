@@ -488,6 +488,35 @@ table (`docs/design/CURRICULUM_MAP.md` updated with a note mirroring the Yarrow 
 A new isolated `tests/coin_counting_tests.gd` (8 tests: sum-matches-price true/false/empty
 cases, greedy minimum-coin-count including a non-positive-amount edge case, fewest-coins
 true/false-with-correct-total/false-with-wrong-total) is registered in `tests/test_runner.gd`.
+**Day-warmth atmosphere pass (expansion backlog): done.** A single-pass, zero-new-art mood
+unification of the epic-pass map, per `docs/design/NORTH_STAR.md` pillar 1 and the owner's
+"cool backgrounds / epic art" mandate (`docs/art/STYLE_GUIDE.md`'s new art-direction one-pager,
+lever 2). `World/DayWarmth` is a `CanvasModulate` (`Color(1.0, 0.965, 0.902, 1.0)` — a very
+slightly golden-white, deliberately subtle given the repo's history of tint-related visibility
+bugs, e.g. Mossy green-on-green and Elder Slime camouflage) added as a child of `World` in
+`scenes/main/Main.tscn`, so it tints the world only, never the UI: `CanvasLayer`s (HUD,
+DialogueBox, panels, etc.) are unaffected by `CanvasModulate` by Godot's own design, confirmed
+by a headless test. The vignette is a new `VignetteOverlay` `CanvasLayer`
+(`scenes/ui/VignetteOverlay.tscn`/`scripts/ui/VignetteOverlay.gd`, `layer = 0` — below every
+interactive UI `CanvasLayer` in `Main.tscn`, all of which sit at `layer >= 1`) with a full-screen
+`TextureRect` showing a radial `GradientTexture2D` (`assets/ui/vignette_gradient.tres`,
+transparent center fading to `Color(0, 0, 0, 0.35)` at the edge starting at 55% radius),
+`mouse_filter = MOUSE_FILTER_IGNORE` on the `TextureRect` so it never blocks input. No shader
+used — a plain resource-backed gradient texture satisfies the "placeholder-fallback-safe"
+acceptance criterion trivially, since there is nothing that can fail to compile. A new isolated
+`tests/atmosphere_tests.gd` (3 tests, registered in `tests/test_runner.gd`) asserts the
+`CanvasModulate` exists with bright/warm-leaning bounds (never dim, a red>=green>=blue warm
+lean), the vignette overlay exists and ignores mouse input, and its layer sits below every named
+interactive UI `CanvasLayer`. Suite total is now 79.
+- `scenes/main/Main.tscn` (day-warmth atmosphere pass addition): a `World/DayWarmth`
+  `CanvasModulate` child node and a `VignetteOverlay` `CanvasLayer` instance.
+- `scenes/ui/VignetteOverlay.tscn` / `scripts/ui/VignetteOverlay.gd`: the full-screen soft-edged
+  vignette (a `CanvasLayer` at `layer = 0` with a mouse-ignoring `TextureRect`), see writeup
+  above.
+- `assets/ui/vignette_gradient.tres`: the radial `GradientTexture2D` the vignette displays
+  (transparent center, `Color(0, 0, 0, 0.35)` at the edge).
+- `tests/atmosphere_tests.gd`: a twelfth isolated test suite (3 tests) for the day-warmth
+  atmosphere pass, registered in `tests/test_runner.gd`.
 
 ## How to run
 
@@ -499,13 +528,14 @@ Open `project.godot` with Godot 4.x standard and press F5.
 Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
 ```
 
-Runs all 12 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
+Runs all 13 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
 (18), `tests/hit_flash_tests.gd` (5), `tests/pet_tests.gd` (5), `tests/spawner_tests.gd` (7),
 `tests/audio_tests.gd` (9), `tests/codex_tests.gd` (4), `tests/elder_slime_tests.gd` (4),
 `tests/keepsake_tests.gd` (4), `tests/map_tests.gd` (5), `tests/campfire_tests.gd` (3),
-`tests/discovery_tests.gd` (4), and `tests/coin_counting_tests.gd` (8) -
+`tests/discovery_tests.gd` (4), `tests/coin_counting_tests.gd` (8), and
+`tests/atmosphere_tests.gd` (3) -
 against the real `GameState`/`AudioManager` autoloads, and prints `PASS`/`FAIL` per test plus
-a summary line (**76 tests total**); exits non-zero if anything failed. See
+a summary line (**79 tests total**); exits non-zero if anything failed. See
 `tests/test_runner.gd` for the
 (small, custom, no third-party dependency) runner — it discovers every `test_*` method on
 each registered test class, resets `GameState` via `GameState.reset_state()` before each one
