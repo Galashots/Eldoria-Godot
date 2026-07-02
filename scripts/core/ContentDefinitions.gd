@@ -64,7 +64,7 @@ const QUEST_SUMMARIES := {
         "not_started": "Talk to Yarrow the Healer",
         "started": "Find silverleaf",
         "ready_to_turn_in": "Return silverleaf to Yarrow",
-        "learning_check": "Answer Yarrow's question",
+        "learning_check": "Pay Yarrow for the remedy jar",
         "completed": "Yarrow's remedy is brewed",
     },
 }

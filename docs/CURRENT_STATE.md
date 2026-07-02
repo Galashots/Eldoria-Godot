@@ -273,6 +273,20 @@ Yarrow, Merchant, Collectible, GlowingHerb, ShimmeringOre, Silverleaf) and every
 sits at its exact hardcoded original position; the landmark props are still at their original
 spots; and the camera limits match the new bounds.
 
+**Stealthier numeracy: Yarrow's coin check as an in-fiction action (expansion backlog):
+done.** A format-only reframe of Yarrow's existing Grade 2 numeracy check, per
+`docs/design/RESEARCH_NOTES.md` §8.2's intrinsic-integration principle ("the work is the
+game" — express the skill as an in-fiction action, not an abstract quiz prompt).
+`scripts/npcs/Yarrow.gd`'s Grade 2 prompt changed from "Which coin is worth more?" to "The
+remedy jar costs a dime. Which coin do you hand me?" — the same two coin choices, the same
+correct answer (`a dime`), the same already-confirmed G2 money/number-sense competency, wired
+through the same `LearningCheck` scene and `GameState.award_quest_bonus()` bonus-only path.
+No new subject, no new mechanic, no new test surface (the mechanic itself is unchanged, so
+the existing `LearningCheck`/`GameState` quest tests already cover it). Grade 5's word-choice
+check is untouched. `ContentDefinitions.QUEST_SUMMARIES`'s Yarrow `learning_check` line
+updated to "Pay Yarrow for the remedy jar" to match. See `docs/design/CURRICULUM_MAP.md` for
+the updated check text and the note that this does not touch the CONFIRM-gated subject table.
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.

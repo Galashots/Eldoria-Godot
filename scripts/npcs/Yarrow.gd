@@ -60,7 +60,7 @@ func _get_offer_line() -> String:
 
 func _request_learning_check() -> void:
     if GameState.selected_profile == "grade_2_mage":
-        learning_check_requested.emit(display_name, "Which coin is worth more?", ["a dime", "a nickel"], "a dime", GameState.QUEST_YARROW_SILVERLEAF, "The remedy is brewed. The village breathes easier.")
+        learning_check_requested.emit(display_name, "The remedy jar costs a dime. Which coin do you hand me?", ["a dime", "a nickel"], "a dime", GameState.QUEST_YARROW_SILVERLEAF, "The remedy is brewed. The village breathes easier.")
     elif GameState.selected_profile == "grade_5_adventurer":
         learning_check_requested.emit(display_name, "Which word best describes someone who helps others?", ["kind", "loud"], "kind", GameState.QUEST_YARROW_SILVERLEAF, "The remedy is brewed. The village breathes easier.")
     else:

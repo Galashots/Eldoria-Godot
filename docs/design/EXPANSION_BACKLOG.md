@@ -184,7 +184,7 @@ out of scope until a future pass has a concrete reason to revisit them).
 - **Sequencing:** Independent of the map/mini-boss PRs (touches quest/UI code, not `Main.tscn`
   geometry) — can be built any time. Ordered below the map-dependent slices only because the
   keepsake and discovery slices complete freshly-merged systems; this one is a refinement.
-- **Status:** ready
+- **Status:** done
 
 ### Region ambience pass: per-region ambient sound as the player crosses the new map
 - **Goal:** Give each distinct region of the new map its own quiet ambient sound bed (meadow
