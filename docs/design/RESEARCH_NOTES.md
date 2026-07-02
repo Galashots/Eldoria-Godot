@@ -467,3 +467,101 @@ cited for provenance only). Treat all specifics (palette counts, particle amount
 question counts) as tunable in-engine starting points. The project's in-repo-art constraint,
 bonus-only rule, and CONFIRM gate override any source that would push toward imported asset
 packs, penalties/streaks, or new subjects.
+
+## 10. Live web research: world-art depth, question-pool variety, and kid-noticed game-feel (2026-07-01, fifth pass)
+
+Gathered by `game-architect` for the fifth backlog refill, after refill v4's 7 slices all
+shipped and merged (day-warmth, ambient particles, living lake, Merchant coin-counting, Elder
+comprehension questions, palette-lock, Mossy sprite; suite 102/102 across 17 suites). Owner
+mandate unchanged: "cool backgrounds, epic art, and learning out the wazoo." Same general
+caveat as §6-§9 — these are secondary-source web summaries; treat every specific as a tunable
+in-engine starting point. **The three hard constraints hold throughout:** in-repo/procedural
+art only (no imported packs), bonus-only/non-punitive learning, and the CONFIRM gate on any
+5th quest or new subject.
+
+### 10.1 Region distinctiveness through props (FRONT A — world-art depth)
+
+- ["Paths, edges, districts, nodes, and landmarks" — Design Wayfinding (summarizing Kevin
+  Lynch, *The Image of the City*)](https://madesignwayfinding.wordpress.com/2015/03/21/paths-edges-districts-nodes-and-landmarks/)
+  and ["Wayfinding" — The Level Design Book](https://book.leveldesignbook.com/process/blockout/wayfinding) —
+  a space becomes legible when it is subdivided into **districts** with a *consistent, distinct
+  visual character* held throughout each one; "region character can derive from visual
+  appearance… consistently maintained within the region." Districts are read by their **repeated
+  props/texture/silhouette**, not by a single object — a forest reads as forest because trees
+  recur along its edge, a wetland reads as wetland because reeds recur at the water. Distinct
+  **landmarks** additionally anchor point-reference and pull the player toward a goal ("weenie").
+- Biome-identity survey (["Hytale Biome Overview" — Nodecraft](https://nodecraft.com/support/games/hytale/game-information/hytale-biome-overview),
+  general biome-design summaries) — the canonical low-cost signature props are: **conifer/pine
+  silhouettes** massing a forest edge, **reeds/tall grasses** clustering at a water's edge, and
+  **boulders/rock scatter** marking rocky/mountain borders. These are silhouette-level cues that
+  read at a glance — exactly the readability a Grade 2 player needs.
+- **Use for this project:** Eldoria's Epic-map regions (village green / flower meadow / forest
+  edge / lake / rocky border) currently exist mostly as *tile color*; the props that would give
+  each region a repeated, recognizable **silhouette signature** are thin (a handful of LoneTree
+  clusters, a couple of StandingStones, one Dock, some Bushes). The cohesion-first move is a
+  **region-signature prop pass**: reuse the existing placeholder-polygon prop precedent
+  (`LoneTree`/`StandingStone`/`Bush`/`Dock`) to give each region its recurring silhouette — pine
+  clusters at the forest edge, reeds at the lake shore, boulder scatter at the rocky border,
+  path-side flowers along the walked routes — all drawn from the **locked shared palette**
+  (`STYLE_GUIDE.md`) so they harmonize automatically. This deepens the *existing* regions
+  (cohesion over volume — NOT a new biome) and directly serves the "postcard" ask. Because each
+  region's props sit in a different corner of `Main.tscn`, they must be authored as **separate
+  small slices** the conductor can stagger (each edits `Main.tscn`, so only one lands at a time).
+
+### 10.2 Question-pool variety and gentle difficulty ramp (FRONT B — learning breadth)
+
+- ["Designing for Motivation: Design-Considerations for Spaced-Repetition-Based Learning Games"
+  and "Spaced repetition learning games on mobile devices: Foundations and perspectives"
+  (ResearchGate)](https://www.researchgate.net/publication/268126812_Designing_for_Motivation_Design-Considerations_for_Spaced-Repetition-Based_Learning_Games_on_Mobile_Devices) —
+  the explicitly-named failure mode of a tiny item pool is **early repetition**: "there needs to
+  be enough content inside of the game in order to avoid repetitions of the same content in a
+  short amount of time." A wider pool "in different difficulties" is *both* more motivating *and*
+  better for understanding the underlying concept, not just for coverage.
+- ["How FLOWSPARKS uses spaced repetition" — FLOWSPARKS](https://www.flowsparks.com/resources/how-flowsparks-uses-spaced-repetition-in-e-learning) —
+  the low-cost mechanic that gets most of the benefit without an SRS engine: draw questions from
+  a **randomised pool** and, on a miss, **re-insert** the item so it comes back later in the same
+  session; well-known items get longer gaps. A full scheduler is overkill here, but "draw from a
+  larger pool + don't repeat the same item back-to-back" is the cheap 80%.
+- **Use for this project:** the shipped `CombatQuestion` pool is exactly the anti-pattern above —
+  **only 3 hardcoded items per profile**, so a short combat session repeats the same three
+  questions almost immediately. The cohesion-first fix stays inside the **already-confirmed
+  numeracy** subject (so it does NOT trip the CONFIRM gate): **expand the pool** to a dozen-plus
+  items per profile arranged in a **gentle difficulty ramp** (G2: +1/+2 sums → teen sums →
+  simple compare; G5: single-digit × → two-digit ×, halves → quarters/thirds), and add a tiny
+  **no-immediate-repeat draw** (avoid re-serving the last item) — pure list + a small pure
+  function, deterministically testable, mirroring `MeadowSlime.rolls_bonus_coin()`'s precedent.
+  This is format/breadth-deepening within a confirmed subject, not a new subject.
+- **CONFIRM GATE (unchanged, hard):** expanding the *numeracy* pool reuses the already-confirmed
+  G2/G5 numeracy competency, so it is permitted format-deepening (same reasoning as §8.2/§9.2).
+  Adding a **literacy** question type to the *combat* pool would introduce literacy into a system
+  that is currently numeracy-only by explicit design (`CombatQuestion.gd`'s header) — that is a
+  scope decision, so any literacy-in-combat idea is filed `blocked: needs-user-input`, and a
+  **5th quest or any genuinely new subject** stays blocked per the standing CONFIRM gate.
+
+### 10.3 Game-feel cues kids actually notice — gentle only (FRONT D)
+
+- ["Making a Game Feel 'Juicy' with Simple Effects" — Medium](https://gamedev4u.medium.com/when-you-play-a-great-game-it-feels-good-d23761b6eccf),
+  ["Squeezing more juice out of your game design" — GameAnalytics](https://www.gameanalytics.com/blog/squeezing-more-juice-out-of-your-game-design),
+  and ["How does Juicy Game Feedback Motivate? Testing Curiosity, Competence, and Effectance" —
+  CHI 2024 (PDF)](https://people.csail.mit.edu/dkao/pdf/3613904.3642656.pdf) — the highest-signal,
+  lowest-cost cues players *feel* are **squash-and-stretch / a scale pop** on a reactive object,
+  **a small burst of particles/sparkle** on a pickup or reward, and **satisfying pickup sound**.
+  The CHI 2024 study finds juicy feedback works primarily by feeding **curiosity and competence**
+  (a clear "I did that!" signal) — the healthy, non-compulsive motivation Eldoria already targets.
+  The over-juice caution from §7.1 still binds: screen-shake is banned here; keep it gentle.
+- **Use for this project:** the game already has hit-flash (§7.1) and a campfire flame flicker,
+  but the moment a *reward* lands — collecting a coin, picking up a collectible/sparkle-spot — is
+  currently flat. The smallest, most kid-noticed game-feel slice is a **gentle coin/pickup pop**:
+  a brief scale-up-and-settle tween (squash-and-stretch, no shake) plus optionally a tiny sparkle
+  burst when a `CoinPickup`/`Collectible` is grabbed, reusing the same tween approach `Campfire`
+  and `HealthComponent` already use. This deepens the *existing* pickup loop (cohesion), is
+  gameplay-neutral, and is producible fully in-repo (a `Tween` + native particles, no imported
+  art). Keep the pop small and the particles sparse per the kid-audience rule.
+
+### General caveat (applies to §10 as §6-§9)
+
+Secondary-source web summaries plus one academic PDF (CHI 2024, rendered) and two wayfinding
+references synthesizing Kevin Lynch. Treat all specifics (prop counts, pool sizes, tween
+durations, particle amounts) as tunable in-engine starting points. The project's in-repo-art
+constraint, bonus-only rule, numeracy-only-combat design, and CONFIRM gate override any source
+that would push toward imported asset packs, penalties/streaks, or new subjects.
