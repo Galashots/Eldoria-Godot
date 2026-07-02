@@ -80,17 +80,51 @@ const ARMOR_TIER_LABELS := {
     1: "Leather Armor",
 }
 
+## The single bonus badge earned by any correct answer in Elder's "what did you notice?"
+## reading-comprehension check - one badge regardless of which codex/keepsake entry the
+## question came from, mirroring BADGE_LABELS' shape but keyed by a constant, not quest_id.
+const COMPREHENSION_BADGE_LABEL := "Keen Reader Badge"
+
 ## "Creatures met" codex factoids (display-only text, no stats) - a plain dictionary rather
 ## than a .tres Resource, since two entries still doesn't meet the repo's "more content, or a
 ## second consumer needing structured data" bar for Resource promotion (see AGENTS.md).
+## Each entry also carries an optional "comprehension" sub-dictionary (per profile: question +
+## choices + correct answer) that Elder's bonus-only "what did you notice?" reading-comprehension
+## check reads from - authored per entry so a future creature can add its own bonus question
+## without any new mechanics. Grade 2 asks for a plainly-stated fact; Grade 5 asks a light
+## inference/word-meaning question, per docs/design/CURRICULUM_MAP.md's two-profile scaffolding.
 const CREATURE_FACTS := {
     "meadow_slime": {
         "label": "Meadow Slime",
         "fact": "A bouncy meadow friend that loves sunny grass — drops a coin when bested!",
+        "comprehension": {
+            "grade_2_mage": {
+                "question": "What does a Meadow Slime drop when bested?",
+                "choices": ["A coin", "A sword"],
+                "correct": "A coin",
+            },
+            "grade_5_adventurer": {
+                "question": "The fact calls the Meadow Slime a meadow \"friend.\" What does that word choice suggest about it?",
+                "choices": ["It's gentle, not truly dangerous", "It hates the sunny grass"],
+                "correct": "It's gentle, not truly dangerous",
+            },
+        },
     },
     "elder_slime": {
         "label": "Elder Slime",
         "fact": "A big, wise old slime who winds up before a hop — watch for the glow, then dodge!",
+        "comprehension": {
+            "grade_2_mage": {
+                "question": "What should you watch for before the Elder Slime hops?",
+                "choices": ["A glow", "A splash"],
+                "correct": "A glow",
+            },
+            "grade_5_adventurer": {
+                "question": "The fact says the Elder Slime \"winds up\" before hopping. What does that tell you?",
+                "choices": ["It gives a warning before it attacks", "It attacks without any warning"],
+                "correct": "It gives a warning before it attacks",
+            },
+        },
     },
 }
 
@@ -140,11 +174,24 @@ static func get_rarity_color(rarity: String) -> Color:
 
 ## Boss keepsake display text (label + one-line flavor), mirroring CREATURE_FACTS' plain-
 ## dictionary shape exactly - one entry so far, well under the repo's "more content, or a
-## second consumer needing structured data" bar for Resource promotion (see AGENTS.md).
+## second consumer needing structured data" bar for Resource promotion (see AGENTS.md). Also
+## carries an optional "comprehension" sub-dictionary, same shape/purpose as CREATURE_FACTS'.
 const KEEPSAKE_FACTS := {
     "elder_slime_dewdrop": {
         "label": "Elder Slime's Dewdrop",
         "fact": "A cool, glimmering drop left behind by the Elder Slime — proof you outlasted its lunge.",
+        "comprehension": {
+            "grade_2_mage": {
+                "question": "Who left the dewdrop behind?",
+                "choices": ["The Elder Slime", "Elder Rowan"],
+                "correct": "The Elder Slime",
+            },
+            "grade_5_adventurer": {
+                "question": "The fact calls the dewdrop \"proof.\" Proof of what?",
+                "choices": ["That you outlasted the Elder Slime's lunge", "That the dewdrop is magical"],
+                "correct": "That you outlasted the Elder Slime's lunge",
+            },
+        },
     },
 }
 
@@ -194,3 +241,12 @@ static func get_place_label(place_id: String) -> String:
 static func get_place_fact(place_id: String) -> String:
     var place: Dictionary = PLACE_FACTS.get(place_id, {})
     return place.get("fact", "")
+
+## Elder's "what did you notice?" bonus-only reading-comprehension check reads its questions
+## from here: a profile-scoped "comprehension" sub-dictionary on a CREATURE_FACTS/KEEPSAKE_FACTS
+## entry (see either const above). Returns {} if the entry or profile has no question authored,
+## so callers can treat "no question" as a normal, silent case (never an error).
+static func get_comprehension_question(entry_id: String, profile_id: String) -> Dictionary:
+    var entry: Dictionary = CREATURE_FACTS.get(entry_id, KEEPSAKE_FACTS.get(entry_id, {}))
+    var by_profile: Dictionary = entry.get("comprehension", {})
+    return by_profile.get(profile_id, {})

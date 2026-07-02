@@ -242,7 +242,7 @@ a parallel system).
   dependency on the three in-flight slices. Touches NPC/UI/content code, not `Main.tscn` geometry,
   so no map-merge risk. Build after the Merchant coin-counting slice (that one deepens the more
   frequently-used loop first).
-- **Status:** ready
+- **Status:** done
 
 ### Palette-lock pass: codify gen_tileset.py colors as one documented shared palette
 - **Goal:** Turn the tileset's colors into a single documented, shared palette (per pixel-art
