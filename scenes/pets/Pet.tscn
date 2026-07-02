@@ -1,0 +1,30 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/pets/Pet.gd" id="1_pet"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_pet"]
+radius = 6.0
+
+[node name="Pet" type="CharacterBody2D"]
+y_sort_enabled = true
+script = ExtResource("1_pet")
+
+[node name="Body" type="Polygon2D" parent="."]
+color = Color(0.4, 0.85, 0.68, 1)
+polygon = PackedVector2Array(-7, 2, -5, -4, 0, -7, 5, -4, 7, 2, 4, 6, -4, 6)
+
+[node name="Leaf" type="Polygon2D" parent="."]
+color = Color(0.16, 0.45, 0.3, 1)
+polygon = PackedVector2Array(-1, -7, 3, -12, 4, -6)
+
+[node name="EyeLeft" type="Polygon2D" parent="."]
+color = Color(0.1, 0.15, 0.1, 1)
+polygon = PackedVector2Array(-4, -2, -2, -2, -2, 0, -4, 0)
+
+[node name="EyeRight" type="Polygon2D" parent="."]
+color = Color(0.1, 0.15, 0.1, 1)
+polygon = PackedVector2Array(2, -2, 4, -2, 4, 0, 2, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 2)
+shape = SubResource("CircleShape2D_pet")
