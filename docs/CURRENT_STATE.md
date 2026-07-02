@@ -378,6 +378,34 @@ the updated check text and the note that this does not touch the CONFIRM-gated s
 - `scripts/enemies/ElderSlime.gd` (boss keepsake addition): `_on_died()` now also calls `GameState.award_keepsake("elder_slime_dewdrop")`.
 - `scripts/ui/CharacterPanel.gd`/`.tscn` (boss keepsake addition): a "Keepsakes" section (`KeepsakesList` `VBoxContainer`) listing each earned keepsake as "Label — fact", refreshed on `GameState.keepsake_awarded`.
 - `tests/keepsake_tests.gd`: a sixth isolated test suite (4 tests) for boss keepsakes, registered in `tests/test_runner.gd`.
+- **Discovery sparkle-spots: hidden finds across the new region map (expansion backlog):
+  done.** Four small hidden bonus pickups scattered across four *distinct* regions of the
+  epic-pass map — the flower meadow, the forest edge, the lake shore, and the rocky border —
+  turning the map's new regions into a curiosity/exploration reward loop, per
+  `docs/design/NORTH_STAR.md` pillars 1 (deepen the existing map, not a new biome) and 5
+  (permanent world-knowledge per session). `scripts/items/SparkleSpot.gd` /
+  `scenes/items/SparkleSpot.tscn` is a new small reusable pickup mirroring
+  `Collectible.gd`/`CoinPickup.gd`'s exact `Area2D`/`body_entered` shape (placeholder art: a
+  pale-gold star/diamond `Polygon2D` shimmer) with exported `place_id`/`coin_reward`; on touch
+  it awards the coin bonus via the existing `GameState.add_coins()`, calls the new
+  `GameState.discover_place(place_id)`, and plays the existing `AudioManager.play_sfx
+  ("coin_chime")`. `GameState.places_discovered: Dictionary` mirrors `creatures_met`/
+  `keepsakes` exactly: idempotent `discover_place(id)` (fires `place_discovered(place_id)`
+  once per new id), `has_discovered_place(id)`, persisted via `save_game()`/`load_game()`
+  (`.get()` default, no save-schema bump) and cleared in `reset_state()`.
+  `ContentDefinitions.PLACE_FACTS` (plain dictionary, id -> `{label, fact}`, four entries) +
+  `get_place_label(id)`/`get_place_fact(id)` mirror `CREATURE_FACTS`/`KEEPSAKE_FACTS`. The
+  character panel gained a "Places discovered" section (`PlacesList` `VBoxContainer`,
+  refreshed via `_refresh_places_list()` on `GameState.place_discovered`) listing each
+  discovered place as "Label — fact", with a "none yet" empty state matching the panel's other
+  sections. Placed once each in `scenes/main/Main.tscn`: `FlowerMeadowSparkle` (1680, 1360,
+  flower meadow), `ForestEdgeSparkle` (288, 1600, forest edge), `LakeShoreSparkle` (1728, 864,
+  lake sand shore), `RockyBorderSparkle` (3360, 320, far-corner grass near the rocky border) —
+  all chosen clear of every existing NPC/item/path/prop position. Bonus-only by construction:
+  a missed spot never blocks or nags, and coin rewards are 1-2 per spot. A new isolated
+  `tests/discovery_tests.gd` (4 tests: first-discovery records + signal fires once, repeat
+  discovery stays idempotent, save/load round trip, reset clears) is registered in
+  `tests/test_runner.gd`.
 
 ## How to run
 
