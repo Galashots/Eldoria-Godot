@@ -287,6 +287,30 @@ check is untouched. `ContentDefinitions.QUEST_SUMMARIES`'s Yarrow `learning_chec
 updated to "Pay Yarrow for the remedy jar" to match. See `docs/design/CURRICULUM_MAP.md` for
 the updated check text and the note that this does not touch the CONFIRM-gated subject table.
 
+**Diegetic session-end "rest" beat: a cozy campfire (expansion backlog): done.** Per
+`docs/design/NORTH_STAR.md` pillar 5 and the project's anti-dark-pattern posture
+(`RESEARCH_NOTES.md` §8.1): a single interactable `Campfire` (`scenes/props/Campfire.tscn` /
+`scripts/props/Campfire.gd`) sits in the village green at `(1288, 588)` — north of the
+Merchant, inside the warm-grass village cluster (Elder/Merchant/Finn row, player spawn just
+south), clear of every existing NPC/prop/path. It mirrors an NPC's interact pattern exactly
+(`InteractionArea` + "Press E" prompt, same shape as `Yarrow.gd`) but carries no quest state:
+interacting always calls `GameState.save_game()`, emits `dialogue_requested` with a
+profile-aware rest line (`Campfire.get_rest_message(profile)`, a pure static function — Grade
+2 gets a short plain line, Grade 5 a slightly richer one), and emits a new `rested` signal.
+Placeholder polygon art (log-brown base + orange/yellow flame triangles) has a cheap looping
+Tween-driven flame flicker (scale pulses on `Flame`/`FlameInner`), the same low-cost "juice"
+approach as `HealthComponent`'s hit-flash. `rested` is wired straight to a new
+`RestFadeOverlay` (`scenes/ui/RestFadeOverlay.tscn` / `scripts/ui/RestFadeOverlay.gd`, a
+`CanvasLayer` + full-screen `ColorRect`, layer 95) whose `play_rest_fade()` tweens the overlay
+to a warm dim (0.55 alpha) and back over ~2s — a calm visual beat, not a game-over/quit; input
+and gameplay are never blocked, and the child can keep playing immediately after. Strictly
+bonus-only per the acceptance criteria: no streak, no timer, no "come back tomorrow" messaging,
+and nothing is ever lost by not resting — it's purely a positive closure beat layered on top
+of the save system that already existed. No save-schema change (`save_game()` is called as-is)
+and no `project.godot` edits. A new isolated `tests/campfire_tests.gd` (3 tests: Grade 2's
+short message, Grade 5's message differs and is longer, unknown-profile fallback) is
+registered in `tests/test_runner.gd`.
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
@@ -378,6 +402,9 @@ the updated check text and the note that this does not touch the CONFIRM-gated s
 - `scripts/enemies/ElderSlime.gd` (boss keepsake addition): `_on_died()` now also calls `GameState.award_keepsake("elder_slime_dewdrop")`.
 - `scripts/ui/CharacterPanel.gd`/`.tscn` (boss keepsake addition): a "Keepsakes" section (`KeepsakesList` `VBoxContainer`) listing each earned keepsake as "Label — fact", refreshed on `GameState.keepsake_awarded`.
 - `tests/keepsake_tests.gd`: a sixth isolated test suite (4 tests) for boss keepsakes, registered in `tests/test_runner.gd`.
+- `scenes/props/Campfire.tscn` / `scripts/props/Campfire.gd`: the diegetic session-end rest beat. A placeholder-polygon campfire (log-brown base + orange/yellow flame triangles, gentle Tween-driven flicker) in the village green at `(1288, 588)`. Interacting mirrors an NPC's interact pattern (no quest state): calls `GameState.save_game()`, emits `dialogue_requested` with a profile-aware rest line (`Campfire.get_rest_message(profile)`, pure/unit-tested), and emits `rested`.
+- `scenes/ui/RestFadeOverlay.tscn` / `scripts/ui/RestFadeOverlay.gd`: a `CanvasLayer` + full-screen `ColorRect` (layer 95) whose `play_rest_fade()` tweens to a warm dim and back over ~2s, wired to `Campfire.rested` in `Main.tscn`. Purely a calm visual beat — never blocks input or gameplay.
+- `tests/campfire_tests.gd`: a seventh isolated test suite (3 tests: Grade 2's short message, Grade 5's differs/longer, unknown-profile fallback) for the campfire rest beat, registered in `tests/test_runner.gd`. Suite total is now 39 (36 + 3).
 
 ## How to run
 
