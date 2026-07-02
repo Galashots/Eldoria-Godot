@@ -100,6 +100,38 @@ packs — they add license risk and break the placeholder-art-first posture.
 **Keep it gentle (kid audience).** Per `NORTH_STAR.md` and `RESEARCH_NOTES.md` §7.1: atmosphere
 and juice stay soft — subtle tints, few particles, no heavy screen shake or harsh flashes.
 
+## Locked shared palette (2026-07-01)
+
+The Palette-lock pass consolidated `assets/sprites/tiles/gen_tileset.py`'s tile colors (grass,
+water, earth, stone ramps, plus a few flower accents) into one named `PALETTE` dict in that
+file — the single documented source of truth every future tile, polygon prop, particle color,
+or UI tint should sample from, per the art direction one-pager's palette-discipline lever
+above. This was a pure reorganization: every RGBA value is unchanged from what already shipped,
+so the generated tileset PNG is byte-identical before and after.
+
+| Ramp | Name | Hex | Role |
+| --- | --- | --- | --- |
+| Grass | `grass_dark` | `#288A36` | Grass-variant B / dark speckle texture |
+| Grass | `grass_mid` | `#339E40` | Base grass tile (original) |
+| Grass | `grass_light` | `#4AB054` | Grass-variant A highlight |
+| Grass | `forest_floor` | `#216633` | Darker, cooler forest-floor grass |
+| Earth | `path` | `#B08D57` | Dirt path (original) |
+| Earth | `sand` | `#E7CD92` | Sand / lake shore |
+| Water | `water` | `#3A6EC4` | Base water tile (original) |
+| Water | `water_deep` | `#224894` | Deep-water variant |
+| Stone | `rock` | `#737378` | Rock (original, impassible) |
+| Stone | `cliff` | `#5E5A5C` | Stone/cliff border tile (impassible) |
+| Accent | `flower_gold` | `#FFDF5A` | Flower-meadow A dot |
+| Accent | `flower_white` | `#FFFFFF` | Flower-meadow A/B dot |
+| Accent | `flower_pink` | `#FF8CAA` | Flower-meadow A dot |
+| Accent | `flower_violet` | `#BE82E6` | Flower-meadow B dot |
+| Accent | `flower_amber` | `#FFB43C` | Flower-meadow B dot |
+
+Each ramp already follows the value-ramp discipline from the one-pager above (a consistent hue
+family per ramp, rising brightness, saturation eased at the bright end for the stone ramp in
+particular). When authoring a new procedural tile, polygon prop, particle, or UI tint, pick a
+color from this table (or a close in-ramp neighbor) rather than inventing a fresh arbitrary RGB.
+
 ## Asset acceptance checklist
 
 Before using an asset in a scene:

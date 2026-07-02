@@ -26,6 +26,18 @@ Layout: single row of 16x16 tiles, one PNG, indices left to right:
 
 Run: `python assets/sprites/tiles/gen_tileset.py` from the repo root.
 Requires Pillow (already a dependency of tools/asset_pipeline/).
+
+--- Palette (locked, see docs/art/STYLE_GUIDE.md "Locked shared palette") ---
+
+This is Eldoria's single shared color source of truth (RESEARCH_NOTES.md §9.1
+palette discipline): a small number of named ramps, each already following
+the "brightness up / saturation eased at the bright end / gentle per-ramp hue
+shift" rule the research calls the cheapest cohesion lever. Every tile below
+draws its colors from PALETTE instead of an inline literal. This pass is a
+pure reorganization -- every RGBA value is byte-identical to what shipped
+before, so the generated PNG does not change. Future procedural art (new
+tiles, polygon props, particles) should sample from PALETTE rather than
+inventing a fresh RGB.
 """
 
 from PIL import Image, ImageDraw
@@ -34,22 +46,51 @@ TILE = 16
 NUM_TILES = 12
 OUT_PATH = "assets/sprites/tiles/placeholder_tileset.png"
 
-# Original 4 tiles' flat colors, unchanged.
-GRASS = (51, 158, 64, 255)
-PATH = (176, 141, 87, 255)
-WATER = (58, 110, 196, 255)
-ROCK = (115, 115, 120, 255)
+# Named value ramps. Each ramp is dark -> light within its hue family, with
+# saturation easing off at the bright end (see the module docstring).
+PALETTE = {
+    # Grass ramp (hue ~126-136, green): dark forest floor -> mid grass ->
+    # light grass highlight.
+    "grass_dark": (40, 138, 54, 255),
+    "grass_mid": (51, 158, 64, 255),
+    "grass_light": (74, 176, 84, 255),
+    "forest_floor": (33, 102, 51, 255),
+    # Earth ramp (hue ~36-42, warm tan/brown): dirt path, sand shore.
+    "path": (176, 141, 87, 255),
+    "sand": (231, 205, 146, 255),
+    # Water ramp (hue ~217-220, blue): mid water -> deep water.
+    "water": (58, 110, 196, 255),
+    "water_deep": (34, 72, 148, 255),
+    # Stone ramp (near-desaturated, cool gray): rock, cliff border.
+    "rock": (115, 115, 120, 255),
+    "cliff": (94, 90, 92, 255),
+    # Accent dots for flower meadows -- kept few and saturated on purpose
+    # (small high-chroma accents against a desaturated/mid-value ground read
+    # as "epic" without overwhelming a young-eyes audience; see the style
+    # guide's saturation-at-bright-end rule).
+    "flower_gold": (255, 223, 90, 255),
+    "flower_white": (255, 255, 255, 255),
+    "flower_pink": (255, 140, 170, 255),
+    "flower_violet": (190, 130, 230, 255),
+    "flower_amber": (255, 180, 60, 255),
+}
 
-# New tile base colors.
-GRASS_LIGHT = (74, 176, 84, 255)
-GRASS_DARK = (40, 138, 54, 255)
-FOREST_FLOOR = (33, 102, 51, 255)
-SAND = (231, 205, 146, 255)
-DEEP_WATER = (34, 72, 148, 255)
-CLIFF = (94, 90, 92, 255)
+# Original 4 tiles' flat colors, unchanged -- sourced from PALETTE.
+GRASS = PALETTE["grass_mid"]
+PATH = PALETTE["path"]
+WATER = PALETTE["water"]
+ROCK = PALETTE["rock"]
 
-FLOWER_COLORS_A = [(255, 223, 90, 255), (255, 255, 255, 255), (255, 140, 170, 255)]
-FLOWER_COLORS_B = [(190, 130, 230, 255), (255, 180, 60, 255), (255, 255, 255, 255)]
+# New tile base colors -- sourced from PALETTE.
+GRASS_LIGHT = PALETTE["grass_light"]
+GRASS_DARK = PALETTE["grass_dark"]
+FOREST_FLOOR = PALETTE["forest_floor"]
+SAND = PALETTE["sand"]
+DEEP_WATER = PALETTE["water_deep"]
+CLIFF = PALETTE["cliff"]
+
+FLOWER_COLORS_A = [PALETTE["flower_gold"], PALETTE["flower_white"], PALETTE["flower_pink"]]
+FLOWER_COLORS_B = [PALETTE["flower_violet"], PALETTE["flower_amber"], PALETTE["flower_white"]]
 
 
 def tile_canvas(color):

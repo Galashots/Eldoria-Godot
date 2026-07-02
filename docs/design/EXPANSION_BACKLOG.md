@@ -259,19 +259,21 @@ a parallel system).
   the bright end, hue-shifted) is the single strongest cohesion lever, and the constraint *is* the
   cohesion; `docs/art/STYLE_GUIDE.md`'s new one-pager (lever 1).
 - **Acceptance criteria:**
-  - [ ] The `gen_tileset.py` colors are consolidated into a single named palette constant (a few
+  - [x] The `gen_tileset.py` colors are consolidated into a single named palette constant (a few
         value ramps following §9.1: brightness up, saturation eased at the bright end, gentle hue
         shift) that the tile-generation functions draw from, with no visual regression to the
         already-painted map (regenerating the tileset produces the same or a deliberately gentler,
         more-harmonized result — verify the map still reads identically in a screenshot).
-  - [ ] The palette is documented (in `STYLE_GUIDE.md` or a short comment block in
+  - [x] The palette is documented (in `STYLE_GUIDE.md` or a short comment block in
         `gen_tileset.py`) as the source of truth new procedural art / polygon props should sample
         from, so future colors are picked from the palette, not invented.
-  - [ ] Purely a refactor of color definitions + docs: no new tiles required, no gameplay change,
+  - [x] Purely a refactor of color definitions + docs: no new tiles required, no gameplay change,
         no `Main.tscn` edit (the tileset PNG regenerates to the same atlas layout/coordinates so
         every painted cell keeps its meaning — the same hard rule `gen_tileset.py` already honors).
-  - [ ] If any tile color shifts at all, it is a *gentle* harmonization only, screenshot-verified
+  - [x] If any tile color shifts at all, it is a *gentle* harmonization only, screenshot-verified
         against the current map to confirm it still reads bright and cohesive for the kid audience.
+        (No shift occurred: the regenerated PNG is byte-identical, md5
+        `764ca68aba375fa2a60a3f8b4443b5dc`, before and after.)
 - **Likely files touched:** `assets/sprites/tiles/gen_tileset.py` (palette constant + refactor),
   `assets/sprites/tiles/placeholder_tileset.png` (regenerated), `docs/art/STYLE_GUIDE.md` (record
   the palette). No scene/gameplay files.
@@ -280,7 +282,7 @@ a parallel system).
   `Main.tscn`). Lowest priority of the art slices because it's foundational/invisible rather than
   an immediate visible "wow," but it makes every future art slice more cohesive — a good pickup
   when a visible slice is blocked on a merge.
-- **Status:** ready
+- **Status:** done
 
 ### Character-sprite polish pass: replace one key placeholder-polygon actor with a generated sprite
 - **Goal:** Replace ONE key placeholder-polygon actor (Mossy the pet is the best first
