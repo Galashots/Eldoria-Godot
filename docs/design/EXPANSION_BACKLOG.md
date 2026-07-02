@@ -144,7 +144,12 @@ out of scope until a future pass has a concrete reason to revisit them).
 - **Sequencing:** **build after the region-map PR merges** (it places a node in `Main.tscn`).
   Otherwise self-contained; no dependency on the mini-boss or keepsake slices. Independently
   shippable and low-risk once the map settles.
-- **Status:** ready
+- **Status:** done — `scenes/props/Campfire.tscn`/`scripts/props/Campfire.gd` (interactable,
+  mirrors an NPC's interact pattern, no quest state) placed at `(1288, 588)` in the village
+  green; interacting calls `GameState.save_game()`, shows a profile-aware rest line via
+  `DialogueBox`, and triggers `scenes/ui/RestFadeOverlay.tscn`'s ~2s warm fade-and-back. No
+  streak/timer/FOMO messaging; save schema and `project.godot` untouched. 3 new tests in
+  `tests/campfire_tests.gd`.
 
 ### Stealthier numeracy: make one existing coin-comparison check an in-fiction action
 - **Goal:** Convert ONE existing numeracy learning check (Yarrow's Grade 2 "which coin is

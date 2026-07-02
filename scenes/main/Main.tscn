@@ -40,6 +40,9 @@
 [ext_resource type="PackedScene" path="res://scenes/enemies/ElderSlime.tscn" id="36_elder_slime"]
 [ext_resource type="PackedScene" path="res://scenes/props/Bush.tscn" id="38_qcd1j"]
 [ext_resource type="PackedScene" path="res://scenes/props/Dock.tscn" id="39_12hjt"]
+[ext_resource type="PackedScene" path="res://scenes/props/Campfire.tscn" id="40_campfire"]
+[ext_resource type="Script" path="res://scripts/props/Campfire.gd" id="41_campfire_script"]
+[ext_resource type="PackedScene" path="res://scenes/ui/RestFadeOverlay.tscn" id="42_rest_fade"]
 
 [node name="Main" type="Node2D" unique_id=280939621]
 
@@ -114,6 +117,9 @@ script = ExtResource("18_ew7m7")
 layer = 10
 visible = false
 script = ExtResource("20_fg4ko")
+
+[node name="RestFadeOverlay" type="CanvasLayer" parent="." instance=ExtResource("42_rest_fade")]
+layer = 95
 
 [node name="CharacterPanel" type="CanvasLayer" parent="." unique_id=1267061415 instance=ExtResource("10_character_panel")]
 layer = 80
@@ -207,6 +213,11 @@ position = Vector2(2400, 1550)
 y_sort_enabled = true
 position = Vector2(1552, 976)
 
+[node name="Campfire" type="StaticBody2D" parent="." instance=ExtResource("40_campfire")]
+y_sort_enabled = true
+position = Vector2(1288, 588)
+script = ExtResource("41_campfire_script")
+
 [connection signal="combat_question_requested" from="Player" to="CombatQuestion" method="show_question"]
 [connection signal="dialogue_requested" from="Player" to="DialogueBox" method="show_dialogue"]
 [connection signal="dialogue_requested" from="Elder" to="DialogueBox" method="show_dialogue"]
@@ -219,3 +230,5 @@ position = Vector2(1552, 976)
 [connection signal="learning_check_requested" from="Yarrow" to="LearningCheck" method="show_check"]
 [connection signal="shop_requested" from="Merchant" to="ShopUI" method="open_shop"]
 [connection signal="dialogue_requested" from="LearningCheck" to="DialogueBox" method="show_dialogue"]
+[connection signal="dialogue_requested" from="Campfire" to="DialogueBox" method="show_dialogue"]
+[connection signal="rested" from="Campfire" to="RestFadeOverlay" method="play_rest_fade"]
