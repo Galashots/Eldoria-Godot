@@ -24,8 +24,10 @@ the only way to obtain one.
 | `mossy` | Mossy | Rare | +2 |
 
 Backed by `PetDefinition.gd` (mirroring `ItemDefinition`/`GearDefinition`) at
-`data/pets/mossy.tres`. Art is a placeholder polygon (a mint/teal blob with a leaf and eyes)
-in `scenes/pets/Pet.tscn` — not production art.
+`data/pets/mossy.tres`. Art is a small generated pixel-art sprite (2-frame idle bob, mint/teal
+body with a leaf sprout and a strong dark outline for grass contrast) in `scenes/pets/Pet.tscn`,
+produced by `assets/sprites/pets/gen_mossy.py` (see the "Character-sprite polish pass" in
+`docs/CURRENT_STATE.md`).
 
 ## Equip / unequip semantics
 
@@ -61,7 +63,6 @@ Flagged here explicitly so future work doesn't assume any of this exists:
 - Multiple species or a real roster — Mossy is the only pet.
 - Buying pets, or any acquisition path other than the all-four-quests grant.
 - Evolution, leveling, or any pet progression beyond its fixed `hp_bonus`.
-- Real (non-placeholder) art.
 - Multiple simultaneous pets / a pet party.
 
 ## Adding future pets

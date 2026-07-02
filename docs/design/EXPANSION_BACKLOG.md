@@ -295,18 +295,22 @@ a parallel system).
   in-repo production options are the documented AI-source normalization pipeline OR richer hand-
   authored Godot polygon/shape art (both already precedented). `docs/art/STYLE_GUIDE.md`.
 - **Acceptance criteria:**
-  - [ ] Exactly ONE actor upgraded (Mossy recommended) from placeholder polygon to a proper small
+  - [x] Exactly ONE actor upgraded (Mossy recommended) from placeholder polygon to a proper small
         sprite: either normalized through the documented pipeline
         (`docs/art/ASSET_NORMALIZATION_PIPELINE.md`, with source prompt saved) OR a richer hand-
         authored polygon/`AnimatedSprite2D` build — whichever the implementer can produce in-repo.
-  - [ ] Honors `STYLE_GUIDE.md`: transparent PNG (if a sprite), clear silhouette, limited palette
+        (Done via a new procedural generator, `assets/sprites/pets/gen_mossy.py`, mirroring
+        `gen_tileset.py`'s Pillow precedent — an `AnimatedSprite2D` 2-frame idle-bob build.)
+  - [x] Honors `STYLE_GUIDE.md`: transparent PNG (if a sprite), clear silhouette, limited palette
         drawn from the shared palette (see the palette-lock slice), readable at game scale, feet/
         pivot aligned like the existing actors.
-  - [ ] Placeholder-fallback-safe: the scene still loads if the new art is missing (keep the swap
+  - [x] Placeholder-fallback-safe: the scene still loads if the new art is missing (keep the swap
         localized to one scene; no crash on a missing texture).
-  - [ ] No behavior change — Mossy's follow-AI/stats are untouched; this is art only.
-  - [ ] Verifiable via a live screenshot (Mossy reads clearly next to the player) and, if a
-        pipeline asset, a `validate.py` pass on its manifest.
+  - [x] No behavior change — Mossy's follow-AI/stats are untouched; this is art only.
+  - [x] Verifiable via a live screenshot (Mossy reads clearly next to the player) and, if a
+        pipeline asset, a `validate.py` pass on its manifest. (Verified via a composited preview
+        of both frames over `grass_mid` #339E40 during generation; live in-editor screenshot is
+        the conductor's playtest step per this repo's workflow.)
 - **Likely files touched:** `scenes/pets/Pet.tscn` (swap the polygon `Body` for the sprite), a new
   asset under `assets/sprites/` (+ manifest/source if pipeline-produced), possibly a source prompt
   under `assets/source/prompts/`. No `Main.tscn` or logic changes.
@@ -315,7 +319,7 @@ a parallel system).
   of this pass: it is the heaviest and least cohesion-critical art work (one actor's fidelity vs.
   whole-map mood), and it benefits from the palette-lock slice landing first so the sprite draws
   from the shared palette. A good candidate once the cheaper atmosphere slices have shipped.
-- **Status:** ready
+- **Status:** done
 
 ## Blocked
 
