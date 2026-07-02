@@ -140,10 +140,14 @@ func _refresh_weapons_list() -> void:
             button.disabled = true
         else:
             button.text = "Equip"
-            button.pressed.connect(GameState.equip_weapon.bind(gear_id))
+            button.pressed.connect(_on_equip_weapon_pressed.bind(gear_id))
         row.add_child(button)
 
         weapons_list.add_child(row)
+
+func _on_equip_weapon_pressed(gear_id: String) -> void:
+    AudioManager.play_sfx("ui_click")
+    GameState.equip_weapon(gear_id)
 
 func _get_current_quest_summary() -> String:
     var elder_state := GameState.get_quest_state(GameState.QUEST_ELDER_GOLDEN_STAR)

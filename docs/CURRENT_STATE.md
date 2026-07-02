@@ -169,13 +169,33 @@ Test suite grew to 17 (1 new: the bonus-roll boundary/hit/miss cases).
 - `assets/manifests/mage_body_idle_{s,se,e,ne,n}.manifest.json`, `assets/source/generated/mage_body_idle_sheet/source.png` (a single shared 5-panel source sheet, generated in one ChatGPT response and addressed per direction via `sourceCell` on a 5-col grid), and `assets/sprites/characters/mage_body_idle_*.png`: production art for Grade 2 Mage, matching the brown-haired, navy/gold-tunic design from the V2 style reference. Only `_s` (south) is currently wired into `Player.gd`.
 - `assets/manifests/{mage,adventurer}_body_walk{1,2}_{s,se,e,ne,n}.manifest.json` (20 manifests), `assets/source/generated/{mage,adventurer}_body_walk_sheet/source.png` (one shared 5-direction x 2-pose grid sheet per character, generated in one ChatGPT response each, addressed via `sourceCell` on a 5-col x 2-row grid), and `assets/sprites/characters/{mage,adventurer}_body_walk{1,2}_*.png`: the two new mid-stride poses per direction per character that drive the walk-cycle animation (see `Player.gd` above). `walk1`/`walk2` combine with the existing `idle` pose at runtime — no third pose was generated for "neutral", since idle already serves that role.
 - `assets/manifests/{mage,adventurer}_body_idle_tier1_{s,se,e,ne,n}.manifest.json` (10 manifests), `assets/source/generated/{mage,adventurer}_body_idle_tier1_sheet/source.png` (one shared 5-direction grid sheet per character, a ChatGPT in-place edit of the base idle sheet adding leather armor), and `assets/sprites/characters/{mage,adventurer}_body_idle_tier1_*.png`: Tier 1 (Leather) armor art, see `docs/design/ARMOR_TIERS.md`. Normalized as full replacement body sprite sets (not a transparent overlay — see that doc for why the original diff-based overlay plan was dropped). Now wired into `Player.gd`/`GameState.gd`: completing all three quests auto-equips it (see above); no manual equip/unequip UI exists.
-- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). `tests/hit_flash_tests.gd` adds a second, isolated 5-test suite registered in `test_runner.gd`. See "How to run the GDScript test suite" below.
+- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). `tests/hit_flash_tests.gd` adds a second, isolated 5-test suite, and `tests/audio_tests.gd` adds a third, isolated 3-test suite (`AudioManager.coins_increased()`, unknown-name no-op) — both registered in `test_runner.gd`. Suite total is now 26. See "How to run the GDScript test suite" below.
 - `scripts/core/GearDefinition.gd` and `data/gear/{worn_dagger,iron_sword,oakheart_blade,dawnbringer_blade}.tres`: the gear-stats Resource, mirroring `ItemDefinition.gd` — id/label/rarity/damage_bonus/price per weapon (`dawnbringer_blade` is the Legendary top tier added by the expansion loop).
 - `scripts/items/CoinPickup.gd` / `scenes/items/CoinPickup.tscn`: coin pickup, mirroring `Collectible.gd`; spawned (deferred) by `MeadowSlime._on_died()`.
 - `scripts/npcs/Merchant.gd` / `scenes/npcs/Merchant.tscn`: the gear vendor NPC. Interacting opens `ShopUI` directly (no dialogue box needed).
 - `scripts/ui/ShopUI.gd` / `scenes/ui/ShopUI.tscn`: the shop panel, built from `ContentDefinitions.GEAR_DEFINITIONS` at runtime (no per-item scene nodes to maintain). Buy buttons disable once owned or unaffordable.
 - `docs/design/GEAR_AND_ECONOMY.md`: locks the M3 rarity list and weapon roster (id/rarity/damage/price) for future gear additions.
 - `scenes/props/StandingStone.tscn` and `scenes/props/LoneTree.tscn`: two placeholder-polygon wayfinding landmark props (no collision, no script), instanced once each in `Main.tscn` beside the north village fork and the west garden fork so the two main paths are distinguishable from a distance. Added by the expansion loop (map-readability slice).
+- **Audio (sound pass v1, expansion backlog): done.** The game previously had zero audio. A
+  new `AudioManager` autoload (`scripts/core/AudioManager.gd`, registered in `project.godot`
+  after `GameState`) owns every `AudioStreamPlayer` in the game, created in code in its own
+  `_ready()` — no scene-file edits to `Main.tscn` needed. One looping ambient meadow track
+  plays quietly in the background (-18 dB, replayed on `finished` rather than relying on
+  import-time loop flags), plus a small pool of one-shot SFX players (-10 dB) for `swing`,
+  `slime_boing`, `coin_chime`, `quest_fanfare`, and `ui_click`, looked up by name via
+  `play_sfx(name)` (an unknown name is a silent no-op with `push_warning`, never a crash).
+  `AudioManager` connects directly to `GameState.coins_changed` (plays `coin_chime` only when
+  coins actually increased, via the pure/unit-tested `AudioManager.coins_increased()` helper)
+  and `GameState.quest_changed` (plays `quest_fanfare` on `QUEST_COMPLETED`). One-line hooks
+  call `AudioManager.play_sfx(...)` from `Player._swing_attack()` (swing),
+  `MeadowSlime._on_died()` (slime_boing), `ShopUI._on_buy_pressed()` (ui_click), and a new
+  `CharacterPanel._on_equip_weapon_pressed()` wrapper around the existing
+  `GameState.equip_weapon` call (ui_click). All 6 WAVs are self-synthesized (no third-party
+  license concerns) under `assets/audio/` — `assets/audio/gen_sfx.py` is the generator script,
+  kept for provenance/reproducibility. Volumes are deliberately soft per
+  `docs/design/NORTH_STAR.md`'s kid-audience (Grade 2/5) gentle-feedback rule. A new isolated
+  `tests/audio_tests.gd` (registered in `tests/test_runner.gd`) adds 3 tests for the pure
+  `coins_increased()` helper and the unknown-name no-op.
 
 ## How to run
 
@@ -187,10 +207,11 @@ Open `project.godot` with Godot 4.x standard and press F5.
 Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
 ```
 
-Runs `tests/game_state_tests.gd` against the real `GameState` autoload and prints
-`PASS`/`FAIL` per test plus a summary line; exits non-zero if anything failed. See
+Runs `tests/game_state_tests.gd`, `tests/hit_flash_tests.gd`, and `tests/audio_tests.gd`
+against the real `GameState`/`AudioManager` autoloads and prints `PASS`/`FAIL` per test plus
+a summary line (26 tests total); exits non-zero if anything failed. See
 `tests/test_runner.gd` for the (small, custom, no third-party dependency) runner — it
-discovers every `test_*` method on `GameStateTests`, resets `GameState` via
+discovers every `test_*` method on each registered test class, resets `GameState` via
 `GameState.reset_state()` before each one for isolation, and reports results.
 
 **This writes to the real `user://savegame.json`** (deleted by the final test, but present
