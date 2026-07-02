@@ -8,6 +8,7 @@ extends CanvasLayer
 @onready var coins_label: Label = $PanelContainer/VBoxContainer/CoinsLabel
 @onready var weapons_list: VBoxContainer = $PanelContainer/VBoxContainer/WeaponsList
 @onready var pets_list: VBoxContainer = $PanelContainer/VBoxContainer/PetsList
+@onready var creatures_list: VBoxContainer = $PanelContainer/VBoxContainer/CreaturesList
 @onready var reset_button: Button = $PanelContainer/VBoxContainer/ResetButton
 @onready var confirm_reset_container: VBoxContainer = $PanelContainer/VBoxContainer/ConfirmResetContainer
 @onready var cancel_reset_button: Button = $PanelContainer/VBoxContainer/ConfirmResetContainer/CancelResetButton
@@ -23,6 +24,7 @@ func _ready() -> void:
     GameState.coins_changed.connect(_on_coins_changed)
     GameState.gear_changed.connect(_on_gear_changed)
     GameState.pet_changed.connect(_on_pet_changed)
+    GameState.creature_met.connect(_on_creature_met)
     reset_button.pressed.connect(_on_reset_pressed)
     cancel_reset_button.pressed.connect(_on_reset_cancelled)
     confirm_reset_button.pressed.connect(_on_reset_confirmed)
@@ -76,6 +78,9 @@ func _on_gear_changed() -> void:
 func _on_pet_changed() -> void:
     _refresh()
 
+func _on_creature_met(_creature_id: String) -> void:
+    _refresh()
+
 func _refresh() -> void:
     profile_label.text = "Profile: " + ContentDefinitions.get_profile_label(GameState.selected_profile)
     quest_label.text = "Current quest: " + _get_current_quest_summary()
@@ -85,6 +90,7 @@ func _refresh() -> void:
     coins_label.text = "Coins: %d" % GameState.coins
     _refresh_weapons_list()
     _refresh_pets_list()
+    _refresh_creatures_list()
 
 func _get_items_summary() -> String:
     var items: Array[String] = []
@@ -180,6 +186,25 @@ func _refresh_pets_list() -> void:
         row.add_child(button)
 
         pets_list.add_child(row)
+
+func _refresh_creatures_list() -> void:
+    for child in creatures_list.get_children():
+        child.queue_free()
+
+    if GameState.creatures_met.is_empty():
+        var empty_label := Label.new()
+        empty_label.text = "none yet"
+        creatures_list.add_child(empty_label)
+        return
+
+    for creature_id in GameState.creatures_met.keys():
+        var label := Label.new()
+        label.text = "%s — %s" % [
+            ContentDefinitions.get_creature_label(creature_id),
+            ContentDefinitions.get_creature_fact(creature_id),
+        ]
+        label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+        creatures_list.add_child(label)
 
 func _get_current_quest_summary() -> String:
     var elder_state := GameState.get_quest_state(GameState.QUEST_ELDER_GOLDEN_STAR)
