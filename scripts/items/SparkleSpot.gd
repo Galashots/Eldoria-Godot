@@ -9,6 +9,8 @@ extends Area2D
 @export var place_id: String = ""
 @export var coin_reward: int = 1
 
+var _collected: bool = false
+
 func _ready() -> void:
     body_entered.connect(_on_body_entered)
 
@@ -16,8 +18,12 @@ func _ready() -> void:
         queue_free()
 
 func _on_body_entered(body: Node2D) -> void:
+    if _collected:
+        return
     if body is CharacterBody2D:
+        _collected = true
         GameState.add_coins(coin_reward)
         GameState.discover_place(place_id)
         AudioManager.play_sfx("coin_chime")
-        queue_free()
+        set_deferred("monitoring", false)
+        PickupPop.play(get_node_or_null("Body"), queue_free)

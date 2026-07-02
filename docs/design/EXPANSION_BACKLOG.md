@@ -177,42 +177,6 @@ flagged. A genuine 5th quest / new subject remains `blocked: needs-user-input` b
   it fixes a live, owner-visible weakness (the same 3 questions repeat) with a tiny pure change.
 - **Status:** done
 
-### 3. Gentle pickup pop: a squash-and-stretch tween on coins and collectibles
-- **Goal:** When the player grabs a coin or a collectible/sparkle-spot, give it a brief
-  scale-up-and-settle "pop" (and optionally a tiny sparkle) so the reward reads as satisfying and
-  intentional instead of the item just vanishing — the single most kid-noticed game-feel upgrade,
-  kept gentle.
-- **Design rationale:** NORTH_STAR pillar 3 (a *visible consequence* the child feels) and pillar 5
-  (make the existing permanent-progress pickups pay off) | research: `RESEARCH_NOTES.md` §10.3 —
-  squash-and-stretch / a scale pop plus a small sparkle on a pickup is the highest-signal,
-  lowest-cost "juice" children feel; the CHI 2024 study ties it to healthy curiosity/competence
-  motivation. The §7.1 over-juice caution binds: no screen-shake, keep it small.
-- **Acceptance criteria:**
-  - [ ] On pickup, the collected sprite plays a brief **scale pop** (a quick grow-then-settle, ~0.2s,
-        small amplitude) via a `Tween` before it frees itself — reusing the same tween approach
-        `Campfire`'s flame flicker and `HealthComponent`'s hit-flash already use (no new dependency).
-  - [ ] Optionally a **sparse, brief sparkle burst** (native `CPUParticles2D`, one-shot, a handful
-        of particles, colors from the locked palette's flower accents) at the pickup point — sparse
-        and gentle per the kid-audience rule; skip it if it complicates the free timing.
-  - [ ] **No screen-shake** (banned) and no gameplay change: the pickup still awards exactly what it
-        did before (coin count / collected item / codex entry), just with feedback; the pop must not
-        delay or drop the award (award first, or ensure the tween can't be interrupted before the
-        award fires).
-  - [ ] Applies to `CoinPickup` at minimum; ideally the shared `Collectible` too (and thus the
-        merged `SparkleSpot`) so all pickups feel consistent — but scope to `CoinPickup` +
-        `Collectible` only, not a generic effects framework.
-  - [ ] Any easing/timing math extracted is a pure, tested function (mirroring
-        `HealthComponent.hit_reaction_intensity()`); a headless test asserts the pop doesn't change
-        the awarded amount. Live screenshot/playtest confirms the feel.
-- **Likely files touched:** `scripts/items/CoinPickup.gd`, `scripts/items/Collectible.gd` (add the
-  pop tween on collect), possibly a tiny shared `scripts/fx/` helper if the tween is duplicated,
-  possibly a one-shot particle scene under `scenes/fx/`, a new `tests/pickup_pop_tests.gd` +
-  `tests/test_runner.gd`. **Does not touch Main.tscn geometry.**
-- **Curriculum tie-in:** none — pure game-feel.
-- **Sequencing:** Independent of every Main.tscn slice (touches pickup scripts) — can run in
-  parallel with a FRONT A prop slice. A strong, cheap, immediately-felt win.
-- **Status:** ready
-
 ### 4. Lake-shore signature: reed clusters along the lake edge
 - **Goal:** Give the lake shore its own recognizable silhouette with a small cluster of tall reed
   props at the water's edge near the Dock, so the lake region reads as a living wetland edge
@@ -378,6 +342,16 @@ flagged. A genuine 5th quest / new subject remains `blocked: needs-user-input` b
 <!-- Refill v5 (2026-07-01): refill v4's 7 slices all shipped/merged (main at PR #68); moved to
      one-line entries below. Full writeups live in docs/CURRENT_STATE.md. -->
 
+- **Gentle pickup pop: a squash-and-stretch tween on coins and collectibles** → shipped: a
+  shared static helper `scripts/fx/PickupPop.gd` (`class_name PickupPop`) covers all three
+  pickup paths (`CoinPickup.gd`, `Collectible.gd`, `SparkleSpot.gd`), mirroring
+  `HealthComponent`'s hit-flash precedent — a pure, unit-tested easing function
+  (`pop_scale_multiplier`, eased grow to 1.3x peak then settle back to 1.0x over 0.22s) drives
+  a `Tween` on the pickup's sibling `Body` node. Each pickup awards its reward first, then
+  defers `monitoring = false` and delays its own `queue_free()` until the tween's `finished`
+  signal instead of freeing instantly. No sparkle-burst particle (left as the documented
+  optional/deferred piece). No screen-shake. `tests/pickup_pop_tests.gd`, 8 tests.
+  `RESEARCH_NOTES.md` §10.3.
 - **Ambient particle pass: drifting pollen + gentle fireflies per region** → shipped
   (`scripts/fx/AmbientParticles.gd` / `scenes/fx/AmbientParticles.tscn`, three fixed
   `CPUParticles2D` emitters in `Main.tscn` reusing `AudioManager.region_for_position()`;
