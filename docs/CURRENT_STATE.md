@@ -465,6 +465,49 @@ boundary edges, and the cross-fade easing's endpoints/midpoint/clamping).
   `tests/discovery_tests.gd` (4 tests: first-discovery records + signal fires once, repeat
   discovery stays idempotent, save/load round trip, reset clears) is registered in
   `tests/test_runner.gd`.
+- **Elder's "what did you notice?": bonus-only reading comprehension on codex/keepsake flavor
+  (expansion backlog): done.** Makes the flavor text the codex/keepsake systems already show
+  pay off as an unobtrusive comprehension check, per `docs/design/NORTH_STAR.md` pillars 3 and
+  5 and `docs/design/RESEARCH_NOTES.md` §9.2's intrinsic-integration principle — reuses the
+  already-confirmed literacy competency, so it does not trip the CURRICULUM_MAP subject-scope
+  CONFIRM gate. `ContentDefinitions.CREATURE_FACTS`/`KEEPSAKE_FACTS` entries gained an optional
+  `"comprehension"` sub-dictionary (profile id -> `{question, choices, correct}`), authored for
+  every existing entry (Meadow Slime, Elder Slime, the Elder Slime Dewdrop keepsake); Grade 2
+  asks for a plainly-stated fact, Grade 5 asks a light inference/word-meaning question about the
+  fact's phrasing. A new `ContentDefinitions.get_comprehension_question(entry_id, profile_id)`
+  reads it (empty dict if none authored — a normal, silent case, never an error). A new light
+  sibling UI, `scenes/ui/ComprehensionCheck.tscn`/`scripts/ui/ComprehensionCheck.gd`, is
+  deliberately **not** a reuse of `LearningCheck.gd` (which is tightly coupled to a `quest_id`
+  via `start_learning_check`/`complete_quest`/`award_quest_bonus`) — it follows
+  `CombatQuestion.gd`'s "separate on purpose, zero quest coupling" precedent instead, sharing
+  the same two-choice panel shape. Two pure static functions back it, deterministically unit-
+  tested without a scene tree: `ComprehensionCheck.find_eligible_entry(unlocked_ids,
+  answered_ids, profile_id)` (first unlocked, unanswered, question-authored entry, or `""`) and
+  `ComprehensionCheck.is_answer_correct(chosen, correct)`. `Elder.gd` offers the question
+  instead of its usual "Thank you again" line whenever `_find_eligible_comprehension_entry()`
+  finds one, via a new `comprehension_check_requested` signal wired to the new
+  `ComprehensionCheck` node in `Main.tscn` (layer 92, between `CombatQuestion`'s 91 and
+  `ShopUI`'s 85). Strictly bonus-only per the North Star core rule: any answer (or walking away
+  without answering) is fine — a correct answer calls the new
+  `GameState.award_comprehension_bonus(entry_id)` (fires `comprehension_bonus_awarded`, a
+  completion line naming the new single `ContentDefinitions.COMPREHENSION_BADGE_LABEL`, "Keen
+  Reader Badge"); a wrong answer gets a warm, encouraging line and nothing is ever lost. Either
+  way `GameState.mark_comprehension_answered(entry_id)` records the entry so the same question
+  is never re-asked (a new `comprehension_answered: Dictionary`, mirroring `creatures_met`/
+  `keepsakes`' idempotent record/has shape exactly, autosaved via a new
+  `comprehension_answered_changed` signal following the same one-handler-per-signal autosave
+  pattern as every other codex addition; persisted in `save_game()`/`load_game()` via `.get()`
+  with an in-code default — no save-schema bump — and cleared in `reset_state()`). No new quest,
+  no new subject, no `project.godot` change. A new isolated `tests/comprehension_tests.gd` (7
+  tests: eligible-entry pure-logic selection/skipping, answer-correctness pure logic, both
+  profiles' questions exist and differ for a seeded entry, mark-answered idempotence + save/load
+  round trip, bonus-award signal fires and never blocks, reset clears) is registered in
+  `tests/test_runner.gd`.
+- `scripts/core/ContentDefinitions.gd` (comprehension addition): `CREATURE_FACTS`/`KEEPSAKE_FACTS` entries gained an optional `"comprehension"` sub-dictionary (profile id -> `{question, choices, correct}`), `get_comprehension_question(entry_id, profile_id)`, and `COMPREHENSION_BADGE_LABEL`.
+- `scripts/ui/ComprehensionCheck.gd` / `scenes/ui/ComprehensionCheck.tscn`: Elder's "what did you notice?" bonus-only reading-comprehension check — a light sibling of `LearningCheck.gd` (no quest coupling, following `CombatQuestion.gd`'s precedent), with pure static `find_eligible_entry()`/`is_answer_correct()`. Wired into `Main.tscn` at layer 92.
+- `scripts/npcs/Elder.gd` (comprehension addition): offers the check instead of "Thank you again" once `_find_eligible_comprehension_entry()` finds an unlocked, unanswered, question-authored codex/keepsake entry.
+- `scripts/core/GameState.gd` (comprehension addition): `comprehension_answered: Dictionary`, `mark_comprehension_answered(id)`/`has_answered_comprehension(id)`, `award_comprehension_bonus(id)` (fires `comprehension_bonus_awarded`), persisted via `save_game()`/`load_game()`/cleared in `reset_state()`.
+- `tests/comprehension_tests.gd`: a twelfth isolated test suite (7 tests) for the reading-comprehension bonus lane, registered in `tests/test_runner.gd`.
 
 ## How to run
 
@@ -476,12 +519,13 @@ Open `project.godot` with Godot 4.x standard and press F5.
 Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
 ```
 
-Runs all 11 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
+Runs all 12 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
 (18), `tests/hit_flash_tests.gd` (5), `tests/pet_tests.gd` (5), `tests/spawner_tests.gd` (7),
 `tests/audio_tests.gd` (9), `tests/codex_tests.gd` (4), `tests/elder_slime_tests.gd` (4),
-`tests/keepsake_tests.gd` (4), `tests/map_tests.gd` (5), `tests/campfire_tests.gd` (3), and `tests/discovery_tests.gd` (4) -
+`tests/keepsake_tests.gd` (4), `tests/map_tests.gd` (5), `tests/campfire_tests.gd` (3),
+`tests/discovery_tests.gd` (4), and `tests/comprehension_tests.gd` (7) -
 against the real `GameState`/`AudioManager` autoloads, and prints `PASS`/`FAIL` per test plus
-a summary line (**68 tests total**); exits non-zero if anything failed. See
+a summary line (**75 tests total**); exits non-zero if anything failed. See
 `tests/test_runner.gd` for the
 (small, custom, no third-party dependency) runner — it discovers every `test_*` method on
 each registered test class, resets `GameState` via `GameState.reset_state()` before each one

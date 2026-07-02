@@ -15,6 +15,8 @@ signal pet_changed
 signal creature_met(creature_id: String)
 signal keepsake_awarded(keepsake_id: String)
 signal place_discovered(place_id: String)
+signal comprehension_bonus_awarded(entry_id: String)
+signal comprehension_answered_changed(entry_id: String)
 
 const SAVE_PATH := "user://savegame.json"
 const SAVE_VERSION := 3
@@ -70,6 +72,12 @@ var keepsakes: Dictionary = {}
 # "Places discovered" codex: permanent world-knowledge earned from finding hidden sparkle
 # spots across the map. Maps place_id -> true, mirroring creatures_met/keepsakes exactly.
 var places_discovered: Dictionary = {}
+# Elder's "what did you notice?" reading-comprehension bonus: tracks which codex/keepsake
+# entry_ids have already had their bonus question offered, so the Elder never re-asks the
+# same question. Maps entry_id -> true, mirroring creatures_met/keepsakes' shape. This is
+# NOT a gate on anything - it only prevents the question from repeating; the underlying
+# codex/keepsake entry is never affected either way.
+var comprehension_answered: Dictionary = {}
 
 var elder_quest_started: bool = false
 var elder_quest_completed: bool = false
@@ -91,6 +99,7 @@ func _ready() -> void:
     creature_met.connect(_on_creature_met_autosave)
     keepsake_awarded.connect(_on_keepsake_awarded_autosave)
     place_discovered.connect(_on_place_discovered_autosave)
+    comprehension_answered_changed.connect(_on_comprehension_answered_autosave)
     load_game()
 
 func _process(delta: float) -> void:
@@ -338,6 +347,22 @@ func discover_place(place_id: String) -> void:
 func has_discovered_place(place_id: String) -> bool:
     return places_discovered.has(place_id)
 
+func mark_comprehension_answered(entry_id: String) -> void:
+    # Idempotent, mirrors record_creature_met()/award_keepsake()'s gain-only shape - marking
+    # an already-marked entry is a harmless no-op (no signal re-fire needed, nothing to save
+    # twice).
+    if comprehension_answered.has(entry_id):
+        return
+
+    comprehension_answered[entry_id] = true
+    comprehension_answered_changed.emit(entry_id)
+
+func has_answered_comprehension(entry_id: String) -> bool:
+    return comprehension_answered.has(entry_id)
+
+func award_comprehension_bonus(entry_id: String) -> void:
+    comprehension_bonus_awarded.emit(entry_id)
+
 func get_combat_multiplier() -> float:
     return 1.0 + combat_streak * COMBAT_MULTIPLIER_PER_STACK
 
@@ -387,6 +412,7 @@ func save_game() -> void:
         "creatures_met": creatures_met,
         "keepsakes": keepsakes,
         "places_discovered": places_discovered,
+        "comprehension_answered": comprehension_answered,
     }
     var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if not file:
@@ -456,6 +482,12 @@ func load_game() -> void:
     for place_id in loaded_places.keys():
         places_discovered[place_id] = true
 
+    # Same Dictionary coercion pattern as creatures_met/keepsakes/places_discovered above.
+    var loaded_comprehension: Dictionary = data.get("comprehension_answered", {})
+    comprehension_answered = {}
+    for entry_id in loaded_comprehension.keys():
+        comprehension_answered[entry_id] = true
+
     _refresh_elder_quest_flags()
 
 func _migrate(data: Dictionary) -> Dictionary:
@@ -491,6 +523,7 @@ func reset_state() -> void:
     creatures_met = {}
     keepsakes = {}
     places_discovered = {}
+    comprehension_answered = {}
     combat_streak = 0
     _time_since_last_correct_answer = 0.0
     _player_hit_cooldown_remaining = 0.0
@@ -525,4 +558,7 @@ func _on_keepsake_awarded_autosave(_keepsake_id: String) -> void:
     save_game()
 
 func _on_place_discovered_autosave(_place_id: String) -> void:
+    save_game()
+
+func _on_comprehension_answered_autosave(_entry_id: String) -> void:
     save_game()
