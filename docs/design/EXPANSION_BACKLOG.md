@@ -45,151 +45,298 @@ CONFIRM/ADJUST" table is **unconfirmed**, so any slice that would introduce a 5t
 new subject must be filed `blocked: needs-user-input` with a precise question — not built. The
 orchestrator HALTS the loop when the top item is `blocked: needs-user-input`.
 
-## Planning baseline for this pass (2026-07-01)
+## Planning baseline for this pass (2026-07-01, fourth pass — owner "epic art + learning" mandate)
 
-This pass is planned strictly **after** two in-flight PRs, treated as ground truth even
-though not yet merged to `main`:
+`main` is at commit `ad0ed3b` with **12 PRs merged this cycle** (pets, sound pass, creatures
+codex, Elder Slime mini-boss + keepsake, epic region map 220x140 with village green / flower
+meadow / forest edge / lake+dock / rocky border, slime respawn faucet, numeracy reframe) — all
+reflected in `docs/CURRENT_STATE.md`. Earlier baselines (M3 gear/shop, M4 pets) are long since
+merged; nothing here re-proposes their deferred scope (sell-back, multi-slot loadouts,
+consumables, a second pet species, pet combat, gear stat axes beyond `damage_bonus`).
 
-- **PR #35 (M3: gear, rarity, coins & shop)** — `GearDefinition.gd` + 3 weapons
-  (`data/gear/`: Worn Dagger/Iron Sword/Oakheart Blade, Common/Uncommon/Rare), Meadow Slimes
-  drop 1 coin on death, a single `Merchant`/`ShopUI`, manual equip via the character panel,
-  save schema v2. See `docs/design/GEAR_AND_ECONOMY.md` (present on that branch).
-- **PR #36 (M4: pets, stacked on #35)** — `PetDefinition.gd` + Mossy the Sprite (Rare, +2 Max
-  HP), same all-4-quests auto-equip gate as Tier 1 armor, follow-only (no combat), save
-  schema v3. See `docs/design/PETS.md` (present on that branch).
+**Owner mandate this pass, verbatim:** "Cool backgrounds, epic art, and learning out the
+wazoo." This refill mixes **art/atmosphere** slices (FRONT A) and **learning-deepening** slices
+(FRONT B), all sourced to `docs/design/RESEARCH_NOTES.md` §9.
 
-Every slice below assumes both have landed. None of them re-propose anything those PRs
-already deliver or explicitly defer (sell-back, multi-slot loadouts, consumables, a second
-pet species, pet combat, real icon/pet art, gear stat axes beyond `damage_bonus` — all still
-out of scope until a future pass has a concrete reason to revisit them).
+**Three in-flight slices are treated as merged ground truth and must NOT be re-proposed:**
+
+- **Discovery sparkle-spots** — hidden finds across the region map (a `SparkleSpot` reusing
+  `Collectible`, a "Places discovered" codex section, save-safe), being built now.
+- **Campfire rest beat** — a diegetic session-end "rest" spot in the village that banks the
+  session (reuses `DialogueBox` + `save_game()`), being built now.
+- **Region ambience** — per-region ambient audio that cross-fades as the player crosses the map
+  (generalizes `AudioManager`, adds simple region-zone detection), being built now.
+
+Two of this pass's slices deliberately **build on the region ambience slice's region-zone
+detection** (art particles per region) — sequencing notes below say so explicitly so the
+orchestrator lands ambience first and the two share one region-detection helper (cohesion, not
+a parallel system).
 
 ---
 
 ## Ready
 
-<!-- Third expansion pass (game-architect refill, 2026-07-01). Planned assuming BOTH the epic
-     region-distinct map pass (village green / flower meadow / forest edge / lake / rocky
-     border) AND the Elder Slime mini-boss have merged — the two in-flight PRs are treated as
-     ground truth here. Research provenance: docs/design/RESEARCH_NOTES.md §8 (kid-stickiness
-     without dark patterns + stealth-learning). Ordered best-next-first, each with a Sequencing
-     note on conflict-risk against the still-settling map/mini-boss code. The prior pass's
-     "Creatures met" codex and Elder Slime slices have shipped/merged and moved to Done. -->
+<!-- Fourth expansion pass (game-architect refill, 2026-07-01) — owner mandate "Cool
+     backgrounds, epic art, and learning out the wazoo." Mix of FRONT A (art/atmosphere) and
+     FRONT B (learning-deepening within confirmed subjects). Research provenance:
+     docs/design/RESEARCH_NOTES.md §9 (in-repo "epic" art + intrinsic integration), building on
+     §7-§8. The three prior in-flight slices (discovery sparkle-spots, campfire rest, region
+     ambience) are treated as MERGED ground truth and moved to Done — NOT re-proposed here.
+     Ordered best-next-first. Every art slice is producible in-repo (Godot polygons/particles/
+     shaders/tweens or procedural Python) and placeholder-fallback-safe; every learning slice
+     stays inside the ALREADY-CONFIRMED numeracy/literacy subjects (format-deepening only, so
+     none trip the CONFIRM gate) and is strictly bonus-only. Slices are independent unless a
+     Sequencing note says otherwise. -->
 
-### Diegetic session-end "rest" beat: a cozy campfire that banks the session
-- **Goal:** Add a single cozy in-fiction "rest" spot (a campfire or bedroll in the village)
-  the child can walk up to and choose to rest at; resting shows a warm "You rest by the fire —
-  your progress is safe. See you next time!" beat and a gentle fade, giving the session a
-  *satisfying stopping point* instead of an open "one more thing" loop.
-- **Design rationale:** NORTH_STAR pillar 5 (every session yields permanent progress — make
-  that *visible* at the natural stopping point) AND the project's anti-dark-pattern safety
-  posture | research: `RESEARCH_NOTES.md` §8.1 — the CHI 2026 disengagement-friendly study
-  found an in-fiction bedtime/rest beat helps children *anticipate and accept* the end of a
-  session and gives a parent a shared story to end play, the ethical inverse of a retention
-  hook; §8.1 also warns any engagement reward must be additive-only with no penalty/FOMO.
+### Day-warmth atmosphere pass: a warm CanvasModulate wash + subtle vignette
+- **Goal:** Give the whole map a warm, golden-hour storybook mood in one pass — a single
+  `CanvasModulate` tint plus a gentle full-screen vignette — so the flat-lit region map reads as
+  a cohesive, inviting world instead of evenly-lit tiles, with zero new art.
+- **Design rationale:** NORTH_STAR pillar 1 ("cohesion over volume" — unify the *existing* map's
+  mood, don't add content) and the owner's "cool backgrounds / epic art" mandate | research:
+  `RESEARCH_NOTES.md` §9.1 — a single `CanvasModulate` tints the whole 2D canvas at once and is
+  the cheapest, highest-ratio "epic feel"; §9.1's kid-audience caveat that the tint stay *subtle*
+  (bright and cheerful, never dark/heavy). `docs/art/STYLE_GUIDE.md`'s new one-pager (lever 2).
 - **Acceptance criteria:**
-  - [ ] One interactable "rest" spot (campfire/bedroll) in the village hub; interacting opens
-        a warm, short, profile-aware dialogue confirming progress is saved and inviting the
-        child to stop for now.
-  - [ ] Resting triggers an explicit `GameState.save_game()` and a gentle visual beat (a brief
-        fade or a calm "resting" overlay) — NOT a game-over/quit; the child can keep playing if
-        they choose. The point is a *clean, inviting stopping point*, never a forced exit.
-  - [ ] No streak, no timer, no "come back tomorrow" FOMO, no reward that is *lost* by not
-        resting — purely a positive, penalty-free closure beat (honors §8.1's dark-pattern
-        warning and the bonus-only rule).
-  - [ ] Reuses the existing `DialogueBox` + NPC-interaction pattern; no new persistent state
-        schema needed beyond calling the existing save (so save schema stays put).
-  - [ ] Grade 2 gets a shorter, plainer rest message; Grade 5 a slightly richer one — same
-        two-profile scaffolding as every other piece of text.
-- **Likely files touched:** `scenes/npcs/` or `scenes/props/` (a `Campfire`/`RestSpot` scene +
-  script, mirroring an NPC's interact pattern), `scenes/main/Main.tscn` (one placement),
-  `scripts/ui/DialogueBox.gd` (reuse), possibly a tiny fade overlay in a UI scene, `tests/`
-  only if any pure logic is added (the save call itself is already tested).
-- **Curriculum tie-in:** none — pure systems / player-wellbeing feature.
-- **Sequencing:** **build after the region-map PR merges** (it places a node in `Main.tscn`).
-  Otherwise self-contained; no dependency on the mini-boss or keepsake slices. Independently
-  shippable and low-risk once the map settles.
-- **Status:** done — `scenes/props/Campfire.tscn`/`scripts/props/Campfire.gd` (interactable,
-  mirrors an NPC's interact pattern, no quest state) placed at `(1288, 588)` in the village
-  green; interacting calls `GameState.save_game()`, shows a profile-aware rest line via
-  `DialogueBox`, and triggers `scenes/ui/RestFadeOverlay.tscn`'s ~2s warm fade-and-back. No
-  streak/timer/FOMO messaging; save schema and `project.godot` untouched. 3 new tests in
-  `tests/campfire_tests.gd`.
+  - [ ] One `CanvasModulate` node added to `Main.tscn` (or the world layer) with a faint warm
+        amber tint — subtle enough that the world still reads bright; tune the exact color
+        in-engine, not a hardcoded guess.
+  - [ ] A subtle full-screen vignette (a `ColorRect` with a radial `GradientTexture2D`, or a tiny
+        `canvas_item` shader) layered under the HUD/UI so it never darkens text or buttons.
+  - [ ] Verifiable headlessly (the nodes exist with expected properties, e.g. an isolated test
+        instances `Main.tscn` and asserts the `CanvasModulate` is present) AND via a live
+        screenshot showing the warm mood without washing out sprite readability.
+  - [ ] Placeholder-fallback-safe: if the vignette is a shader and the shader fails to compile,
+        the scene still runs (vignette simply absent), never a crash.
+  - [ ] Gentle per the kid audience: no pulsing, no strong color cast, readability of player /
+        NPCs / items preserved.
+- **Likely files touched:** `scenes/main/Main.tscn` (add `CanvasModulate` + a vignette `ColorRect`/
+  `CanvasLayer`), possibly a small `shaders/vignette.gdshader` or a `GradientTexture2D` resource,
+  a new `tests/atmosphere_tests.gd` (node-presence assertions) + `test_runner.gd`.
+- **Curriculum tie-in:** none — pure atmosphere/art.
+- **Sequencing:** Independent of the three in-flight slices (they touch `Main.tscn` too, so land
+  this after they merge to avoid a `Main.tscn` merge conflict, but there is no logic dependency).
+  Highest priority of this pass: biggest visible "epic" payoff for the least effort and risk.
+- **Status:** ready
 
-### Stealthier numeracy: make one existing coin-comparison check an in-fiction action
-- **Goal:** Convert ONE existing numeracy learning check (Yarrow's Grade 2 "which coin is
-  worth more?" / the analogous Grade 5 numeracy prompt) from an abstract multiple-choice quiz
-  into a small *in-fiction action* — e.g. "hand Yarrow the right number of coins" or "choose
-  the heavier pouch" — so the same already-confirmed skill is exercised through the fiction
-  instead of a bolted-on quiz, while staying strictly bonus-only.
-- **Design rationale:** NORTH_STAR pillar 3 ("quests are playable arcs, not quizzes in
-  disguise") AND pillar 1 (deepen an *existing* quest, don't add a new one) | research:
-  `RESEARCH_NOTES.md` §8.2 — the intrinsic-integration principle: "the work is the game";
-  the named failure mode is the reward-for-work split (a quiz bolted onto play), and the fix
-  is to express the skill as an in-fiction action with natural feedback. This is the honest,
-  in-scope step toward the stealth-assessment bridge `CURRICULUM_MAP.md` already names.
+### Ambient particle pass: drifting pollen and gentle fireflies per region
+- **Goal:** Add soft, slow ambient particles that make the map feel alive — drifting pollen
+  motes over the flower meadow, a few gentle fireflies near the forest edge and lake at the warm
+  tint — reusing the region detection the ambience slice introduces so audio and particles share
+  one region sense (cohesion, not a parallel system).
+- **Design rationale:** NORTH_STAR pillar 1 (deepen the *existing* map across senses) and the
+  owner's "epic art" mandate | research: `RESEARCH_NOTES.md` §9.1 — ambient particles (fireflies,
+  pollen) are a native-Godot, no-imported-art way to make a scene feel alive; §7.1's gentle-
+  feedback rule (few, soft particles — never a busy screen for a young player). Reusing the
+  region-zone helper honors "make existing systems pay off before adding parallel ones."
 - **Acceptance criteria:**
-  - [ ] Exactly ONE existing check is reworked (not a new quest, not a new subject) — reuses
-        the **already-confirmed** numeracy competency for that quest, so it does **not** trip
-        the subject-scope CONFIRM gate (see §8.2's note: changing *format* is fine; changing
-        *which subject* is not).
-  - [ ] The check is expressed as an in-fiction choice/action (hand over coins / pick the
-        heavier pouch / count out the right amount) rather than an abstract "which is bigger?"
-        prompt, with the fiction reading naturally for the NPC involved.
-  - [ ] Strictly bonus-only and non-punitive: the quest **always completes** regardless of the
-        answer (unchanged from today); a correct in-fiction action still awards the same bonus
-        badge; a wrong one still completes the quest with no penalty and no scolding — only a
-        gentle, friendly in-fiction acknowledgement.
-  - [ ] Grade 2 and Grade 5 framings both preserved (two-profile scaffolding), each mapping to
-        that quest's existing confirmed competency.
-  - [ ] Existing `LearningCheck` tests still pass; if new branching logic is added, it's
-        covered at the same pure-logic level the current checks are.
-- **Likely files touched:** `scripts/ui/LearningCheck.gd` (or a small sibling UI if the action
-  format diverges enough), the affected NPC script (`scripts/npcs/Yarrow.gd` or similar),
-  `scripts/core/ContentDefinitions.gd` (prompt/flavor text), `tests/game_state_tests.gd` or a
-  focused new test file, `docs/design/CURRICULUM_MAP.md` (note the reworked check's format).
-- **Curriculum tie-in:** **Directly deepens** an existing confirmed-subject check
-  (`CURRICULUM_MAP.md`'s Yarrow row, G2 money/number-sense) — same subject, stealthier format.
-  Does NOT introduce a new subject, so it is NOT CONFIRM-gated.
-- **Sequencing:** Independent of the map/mini-boss PRs (touches quest/UI code, not `Main.tscn`
-  geometry) — can be built any time. Ordered below the map-dependent slices only because the
-  keepsake and discovery slices complete freshly-merged systems; this one is a refinement.
-- **Status:** done
+  - [ ] At least two ambient particle effects placed by region: soft drifting pollen over the
+        flower-meadow region, a small number of gentle fireflies near the forest-edge/lake region
+        — built with native `CPUParticles2D`/`GPUParticles2D` (no imported textures; a soft dot /
+        `Gradient`-driven point is fine).
+  - [ ] Particle emission is keyed to the map regions via the **same region-detection helper the
+        in-flight region-ambience slice introduces** (shared function, not a second copy) — if
+        that helper isn't yet a reusable static/shared function when this is built, refactor it to
+        be one as part of this slice rather than duplicating region logic.
+  - [ ] Deliberately sparse and slow (kid-audience §7.1): a handful of particles, low alpha, no
+        flashing — atmosphere, not confetti.
+  - [ ] Verifiable headlessly (particle nodes exist under the expected region/parent) AND via a
+        live screenshot in the meadow and near the forest/lake.
+  - [ ] Placeholder-fallback-safe and gameplay-neutral: no collision, no effect on combat/quests;
+        purely visual.
+- **Likely files touched:** `scenes/main/Main.tscn` (particle nodes per region, or a small
+  `scenes/fx/AmbientParticles.tscn` instanced per region), the region-detection helper introduced
+  by the ambience slice (`scripts/core/AudioManager.gd` or wherever it lands — extract/reuse),
+  possibly `scripts/fx/` for a tiny emission-toggle script, `tests/` for any extracted region-
+  detection logic.
+- **Curriculum tie-in:** none — pure atmosphere/art.
+- **Sequencing:** **Build after the region-ambience in-flight slice merges** — it deliberately
+  reuses that slice's region-detection helper. Also lands after the day-warmth pass (particles
+  read best against the warm tint). If ambience's region logic isn't reusable yet, this slice
+  makes it so.
+- **Status:** ready
 
-### Region ambience pass: per-region ambient sound as the player crosses the new map
-- **Goal:** Give each distinct region of the new map its own quiet ambient sound bed (meadow
-  birds in the flower meadow, gentle wind/rustle at the forest edge, soft water lap by the
-  lake) that cross-fades as the player moves between regions — so the region-distinct *visual*
-  map pass is matched by a region-distinct *audio* feel, deepening immersion.
-- **Design rationale:** NORTH_STAR pillar 1 ("cohesion over volume" — make the just-shipped
-  map pass *pay off* across senses rather than adding new content) | research:
-  `RESEARCH_NOTES.md` §8.3/§8.4 — the calm, autonomy-and-immersion Zelda-like feel (the
-  healthy inverse of compulsion) comes from a world that rewards *being there*; §7.1's
-  gentle-feedback rule for a Grade 2/5 audience (soft, never overwhelming) also governs this.
+### Living lake: animated water shimmer on the merged map's lake
+- **Goal:** Make the just-built lake *move* — a slow, gentle shimmer/ripple over the lake's
+  water tiles — so the map's centerpiece water feature feels alive instead of a flat blue patch,
+  the single most "alive" upgrade to the merged region map.
+- **Design rationale:** NORTH_STAR pillar 1 (deepen the *existing* lake, don't add water
+  elsewhere) and the owner's "epic art" mandate | research: `RESEARCH_NOTES.md` §9.1 — animated
+  water is a canonical low-fi "alive" cue and is native in Godot (a small `canvas_item` shader
+  over the water region, or a tweened translucent `Polygon2D` overlay) with no imported art;
+  §7.1's gentle rule (a soft shimmer, not a churning sea).
 - **Acceptance criteria:**
-  - [ ] Each new region has its own quiet ambient loop; the current single global meadow
-        ambient (`AudioManager`) is generalized so the *active* region's ambient plays and
-        cross-fades gently when the player crosses a region boundary — no hard cut, no silence
-        gap.
-  - [ ] Region detection is simple and cheap (e.g. rectangular region zones the player's
-        position is tested against, or an `Area2D` per region) — no navmesh, no new heavy
-        system; reuse the existing `AudioManager` autoload rather than adding a parallel one.
-  - [ ] All ambient tracks are self-synthesized or CC0-clean (matching the existing
-        `assets/audio/gen_sfx.py` provenance precedent — no third-party-license risk) and
-        deliberately **soft** (in the existing -18 dB ambient range) for the young audience.
-  - [ ] Any pure logic (which region a position falls in, cross-fade easing) is extracted into
-        testable static functions and covered, mirroring `AudioManager.coins_increased()`'s
-        precedent (`tests/audio_tests.gd`).
-  - [ ] No gameplay change: this is atmosphere only; nothing about combat, quests, or rewards
-        is affected.
-- **Likely files touched:** `scripts/core/AudioManager.gd`, region-zone data (either
-  rectangles in code or `Area2D` nodes in `scenes/main/Main.tscn`), `assets/audio/`
-  (new ambient loops + `gen_sfx.py`), `tests/audio_tests.gd` + possibly `test_runner.gd`.
-- **Curriculum tie-in:** none — pure atmosphere/systems.
-- **Sequencing:** **build after the region-map PR merges** — region boundaries are defined by
-  that map's layout; building before it lands means guessing region geometry that will move.
-  Lower priority than the keepsake/discovery/rest slices (atmosphere, not a progress loop), but
-  a strong cohesion payoff once the map is stable.
-- **Status:** done — see `docs/CURRENT_STATE.md`'s "Region ambience pass" entry.
+  - [ ] A gentle animated shimmer over the lake's water footprint (the existing water/deep-water
+        tiles around tile ~(97,58)) — implemented as a small `canvas_item` shader sampling a
+        scrolling gradient/sine, or a tweened low-alpha `Polygon2D`/`Sprite2D` overlay sized to
+        the lake; no per-frame tile edits.
+  - [ ] The overlay sits under the player/NPC/prop y-sort layer so actors still draw over the
+        water correctly; the existing water-collision (impassible) is unchanged.
+  - [ ] Slow and subtle (kid-audience): a calm shimmer, no strong motion or bright specular flash.
+  - [ ] Placeholder-fallback-safe: if a shader fails to compile the lake still renders as the flat
+        water tiles (no crash); if a tweened overlay is used, it degrades to a static overlay.
+  - [ ] Verifiable via a live screenshot at the lake (shimmer visible, actors draw correctly over
+        it) plus a headless node-presence assertion.
+- **Likely files touched:** `scenes/main/Main.tscn` (one shimmer overlay node positioned over the
+  lake), possibly `shaders/water_shimmer.gdshader`, a tiny `scripts/fx/` tween script if not a
+  shader, `tests/atmosphere_tests.gd` (node presence).
+- **Curriculum tie-in:** none — pure atmosphere/art.
+- **Sequencing:** Independent of the learning slices; land after the three in-flight slices merge
+  to avoid a `Main.tscn` conflict. Best after the day-warmth pass (shimmer reads with the tint).
+  Lower priority than day-warmth (localized to the lake vs. whole-map mood) but a strong visual
+  payoff.
+- **Status:** ready
+
+### Count-out-the-coins at the Merchant: bonus-only numeracy on purchase
+- **Goal:** Extend the shipped Yarrow "pay the right coin" pattern to the Merchant's shop: when
+  the child buys a weapon, offer an *optional*, bonus-only "count out the coins to match the
+  price" beat — Grade 2 picks coins that add to the price, Grade 5 makes it with the fewest coins
+  — so the shop the child already uses to spend coins becomes stealth numeracy practice, and the
+  purchase always still completes.
+- **Design rationale:** NORTH_STAR pillar 3 ("quests are playable arcs, not quizzes in disguise")
+  AND pillar 1 (deepen the *existing* shop/economy loop, don't add a system) | research:
+  `RESEARCH_NOTES.md` §9.2 — the canonical money-numeracy mechanic is "here is a price, hand over
+  coins to make exactly that amount," with progression via constraints ("fewest coins"); this is
+  intrinsic integration (the shop action *is* the practice), extending the §8.2 Yarrow reframe
+  precedent already shipped.
+- **Acceptance criteria:**
+  - [ ] Reuses the **already-confirmed** G2/G5 numeracy competency (money/number sense) — a
+        format change to the *existing* shop, NOT a new subject or a new quest, so it does **not**
+        trip the subject-scope CONFIRM gate.
+  - [ ] On a purchase in `ShopUI`, an optional coin-counting beat appears (Grade 2: choose coins
+        that sum to the price; Grade 5: make the price with the fewest coins). The purchase
+        **always completes** regardless — correct counting awards a bonus (a bonus flag/badge,
+        matching the existing `award_quest_bonus` pattern, or a small extra coin, additive-only);
+        wrong/skipped never blocks the buy, never penalizes, never scolds.
+  - [ ] Strictly bonus-only and skippable: a child who just wants the weapon can dismiss the beat
+        and still get it — the numeracy is a *bonus lane*, honoring the North Star core rule.
+  - [ ] Grade 2 and Grade 5 framings both present (two-profile scaffolding) against the same
+        confirmed competency; text is short/plain for G2 per `STYLE_GUIDE.md`.
+  - [ ] Pure logic (does a chosen coin set sum to the price / is it the fewest-coins solution) is
+        extracted into testable static functions and covered, mirroring
+        `MeadowSlime.rolls_bonus_coin()`'s deterministic-test precedent.
+- **Likely files touched:** `scripts/ui/ShopUI.gd` (+`.tscn`) for the coin-counting beat (or a
+  small sibling UI reusing `LearningCheck`'s shape), `scripts/npcs/Merchant.gd` (flavor),
+  `scripts/core/ContentDefinitions.gd` (prompt/flavor text), `scripts/core/GameState.gd` only if a
+  new bonus flag is needed, a new `tests/coin_count_tests.gd` + `test_runner.gd`,
+  `docs/design/CURRICULUM_MAP.md` (note the new stealthy numeracy beat, same not-CONFIRM-gated
+  reasoning as the Yarrow reframe row).
+- **Curriculum tie-in:** **Directly deepens** the confirmed G2/G5 numeracy subject (money/number
+  sense) at the Merchant — same subject, stealthier in-fiction format. NOT CONFIRM-gated.
+- **Sequencing:** Independent of the three in-flight slices (touches shop/UI code, not `Main.tscn`
+  geometry) — can be built any time. Highest-value learning slice: it turns an existing daily
+  action (buying gear) into practice, exactly the owner's "learning out the wazoo" ask.
+- **Status:** ready
+
+### Elder's "what did you notice?": bonus-only reading comprehension on codex/keepsake flavor
+- **Goal:** After the child earns a new "Creatures met" entry or a keepsake, let the Elder offer
+  ONE optional, friendly reading-comprehension question drawn from the flavor text the child just
+  read (Grade 2: recall one plain fact; Grade 5: infer meaning / a word's sense) — so the reading
+  the game already asks the child to do becomes the assessment, bonus-only, no new quiz screen
+  bolted on.
+- **Design rationale:** NORTH_STAR pillar 5 (permanent world-knowledge already exists as the
+  codex/keepsakes — make *reading it* pay off) AND pillar 3 (fiction carries the skill) |
+  research: `RESEARCH_NOTES.md` §9.2 — reading comprehension can be assessed unobtrusively *while
+  the child reads in-fiction text* (intrinsic integration), which maps directly onto the flavor
+  text the codex/keepsake systems already show; uses the already-confirmed literacy competency.
+- **Acceptance criteria:**
+  - [ ] Reuses the **already-confirmed** literacy competency (word choice / comprehension) — a new
+        stealthy *format* over existing flavor text, NOT a new subject or a 5th quest, so it does
+        **not** trip the subject-scope CONFIRM gate.
+  - [ ] Triggered optionally by talking to the Elder after a new codex/keepsake entry is earned;
+        the Elder asks one short, friendly question about the flavor text just unlocked. Grade 2:
+        recall a plain stated fact; Grade 5: light inference or a word's meaning.
+  - [ ] Strictly bonus-only: a correct answer awards a bonus (matching the existing
+        `award_quest_bonus`/badge pattern); wrong or skipped never blocks anything, never
+        penalizes — the Elder responds warmly either way. The child can decline the question
+        entirely and lose nothing.
+  - [ ] Questions are authored per confirmed codex/keepsake entry (data-driven, e.g. an optional
+        `question`/`answer` field alongside `CREATURE_FACTS`/`KEEPSAKE_FACTS`), so adding a future
+        creature/keepsake can add its own bonus question without new mechanics.
+  - [ ] Grade 2 and Grade 5 framings both present; G2 text short/plain per `STYLE_GUIDE.md`.
+  - [ ] Any answer-checking logic is a pure, tested function; reuses `LearningCheck` or its shape
+        rather than a new bespoke UI.
+- **Likely files touched:** `scripts/npcs/Elder.gd` (offer the optional question when a new codex/
+  keepsake entry exists), `scripts/core/ContentDefinitions.gd` (`CREATURE_FACTS`/`KEEPSAKE_FACTS`
+  gain an optional bonus-question/answer field), `scripts/ui/LearningCheck.gd` (reuse), possibly
+  `scripts/core/GameState.gd` (track which entries' bonus question was answered, so it isn't re-
+  asked — save-safe via `.get()`), a new `tests/comprehension_tests.gd` + `test_runner.gd`,
+  `docs/design/CURRICULUM_MAP.md` (note the reading-comprehension bonus lane, not-CONFIRM-gated).
+- **Curriculum tie-in:** **Directly deepens** the confirmed literacy subject (comprehension/word
+  choice) via the existing codex/keepsake text — same subject, intrinsic-integration format. NOT
+  CONFIRM-gated.
+- **Sequencing:** Depends on the "Creatures met" codex and keepsake systems (both merged) — no
+  dependency on the three in-flight slices. Touches NPC/UI/content code, not `Main.tscn` geometry,
+  so no map-merge risk. Build after the Merchant coin-counting slice (that one deepens the more
+  frequently-used loop first).
+- **Status:** ready
+
+### Palette-lock pass: codify gen_tileset.py colors as one documented shared palette
+- **Goal:** Turn the tileset's colors into a single documented, shared palette (per pixel-art
+  ramp discipline) so future tiles, polygon props, and particles all draw from one harmonized set
+  — the cohesion foundation that makes every later art slice look like one world instead of
+  drifting ad-hoc RGBs.
+- **Design rationale:** NORTH_STAR pillar 1 ("cohesion over volume" — a shared palette is
+  literally the cohesion lever) and the owner's "epic art" mandate | research:
+  `RESEARCH_NOTES.md` §9.1 — palette discipline (few ramps, brightness up / saturation down at
+  the bright end, hue-shifted) is the single strongest cohesion lever, and the constraint *is* the
+  cohesion; `docs/art/STYLE_GUIDE.md`'s new one-pager (lever 1).
+- **Acceptance criteria:**
+  - [ ] The `gen_tileset.py` colors are consolidated into a single named palette constant (a few
+        value ramps following §9.1: brightness up, saturation eased at the bright end, gentle hue
+        shift) that the tile-generation functions draw from, with no visual regression to the
+        already-painted map (regenerating the tileset produces the same or a deliberately gentler,
+        more-harmonized result — verify the map still reads identically in a screenshot).
+  - [ ] The palette is documented (in `STYLE_GUIDE.md` or a short comment block in
+        `gen_tileset.py`) as the source of truth new procedural art / polygon props should sample
+        from, so future colors are picked from the palette, not invented.
+  - [ ] Purely a refactor of color definitions + docs: no new tiles required, no gameplay change,
+        no `Main.tscn` edit (the tileset PNG regenerates to the same atlas layout/coordinates so
+        every painted cell keeps its meaning — the same hard rule `gen_tileset.py` already honors).
+  - [ ] If any tile color shifts at all, it is a *gentle* harmonization only, screenshot-verified
+        against the current map to confirm it still reads bright and cohesive for the kid audience.
+- **Likely files touched:** `assets/sprites/tiles/gen_tileset.py` (palette constant + refactor),
+  `assets/sprites/tiles/placeholder_tileset.png` (regenerated), `docs/art/STYLE_GUIDE.md` (record
+  the palette). No scene/gameplay files.
+- **Curriculum tie-in:** none — pure art-foundation/systems.
+- **Sequencing:** Independent of everything (touches only the tileset generator + docs, not
+  `Main.tscn`). Lowest priority of the art slices because it's foundational/invisible rather than
+  an immediate visible "wow," but it makes every future art slice more cohesive — a good pickup
+  when a visible slice is blocked on a merge.
+- **Status:** ready
+
+### Character-sprite polish pass: replace one key placeholder-polygon actor with a generated sprite
+- **Goal:** Replace ONE key placeholder-polygon actor (Mossy the pet is the best first
+  candidate — a flat polygon blob) with a proper small generated sprite honoring the style guide,
+  proving the sprite-upgrade path for the remaining polygon actors (NPCs, slimes) without a big-
+  bang art dump.
+- **Design rationale:** NORTH_STAR pillar 1 (one excellent thing before a second — upgrade one
+  actor, prove the path) and the owner's "epic art" mandate | research: `RESEARCH_NOTES.md` §9.1
+  — strong silhouette + limited palette + 1px outline carry readability at small sizes; the
+  in-repo production options are the documented AI-source normalization pipeline OR richer hand-
+  authored Godot polygon/shape art (both already precedented). `docs/art/STYLE_GUIDE.md`.
+- **Acceptance criteria:**
+  - [ ] Exactly ONE actor upgraded (Mossy recommended) from placeholder polygon to a proper small
+        sprite: either normalized through the documented pipeline
+        (`docs/art/ASSET_NORMALIZATION_PIPELINE.md`, with source prompt saved) OR a richer hand-
+        authored polygon/`AnimatedSprite2D` build — whichever the implementer can produce in-repo.
+  - [ ] Honors `STYLE_GUIDE.md`: transparent PNG (if a sprite), clear silhouette, limited palette
+        drawn from the shared palette (see the palette-lock slice), readable at game scale, feet/
+        pivot aligned like the existing actors.
+  - [ ] Placeholder-fallback-safe: the scene still loads if the new art is missing (keep the swap
+        localized to one scene; no crash on a missing texture).
+  - [ ] No behavior change — Mossy's follow-AI/stats are untouched; this is art only.
+  - [ ] Verifiable via a live screenshot (Mossy reads clearly next to the player) and, if a
+        pipeline asset, a `validate.py` pass on its manifest.
+- **Likely files touched:** `scenes/pets/Pet.tscn` (swap the polygon `Body` for the sprite), a new
+  asset under `assets/sprites/` (+ manifest/source if pipeline-produced), possibly a source prompt
+  under `assets/source/prompts/`. No `Main.tscn` or logic changes.
+- **Curriculum tie-in:** none — pure art.
+- **Sequencing:** Independent of every other slice (localized to `Pet.tscn` + assets). Filed LAST
+  of this pass: it is the heaviest and least cohesion-critical art work (one actor's fidelity vs.
+  whole-map mood), and it benefits from the palette-lock slice landing first so the sprite draws
+  from the shared palette. A good candidate once the cheaper atmosphere slices have shipped.
+- **Status:** ready
 
 ## Blocked
 
@@ -214,22 +361,33 @@ out of scope until a future pass has a concrete reason to revisit them).
 
 ## Done
 
-### Discovery sparkle-spots: hidden finds across the new region map
-- **Goal:** Scatter a few hidden "sparkle spots" across the new region-distinct map (a
-  shimmer in the flower meadow, a hollow at the forest edge, a glint by the lake) that, when
-  found and touched, give a small bonus (a coin or two) and record a permanent "Places
-  discovered" entry — turning the new map's regions into a curiosity/exploration reward loop.
-- **Status:** done: `GameState.places_discovered` (Dictionary, save-schema-compatible via
-  `.get()` default) + idempotent `discover_place(id)` (`place_discovered` signal fires once) +
-  `has_discovered_place(id)`, mirroring `creatures_met`/`record_creature_met` exactly. A new
-  `scripts/items/SparkleSpot.gd` / `scenes/items/SparkleSpot.tscn` pickup (pale-gold star
-  polygon shimmer) mirrors `Collectible.gd`/`CoinPickup.gd`'s pickup shape, awarding a small
-  coin bonus (1-2) and recording the discovery on touch. Four spots placed in `Main.tscn`,
-  each in a distinct region: `FlowerMeadowSparkle` (flower meadow), `ForestEdgeSparkle`
-  (forest edge), `LakeShoreSparkle` (lake sand shore), `RockyBorderSparkle` (rocky border
-  corner) — all clear of existing NPC/item/path/prop positions.
-  `ContentDefinitions.PLACE_FACTS` (plain dictionary, 4 entries) backs a new "Places
-  discovered" section in `CharacterPanel`. 4 new tests in `tests/discovery_tests.gd`.
+<!-- Moved from Ready in the fourth pass (2026-07-01): the prior pass's three slices are now
+     merged/in-flight ground truth (see this pass's Planning baseline), and the Yarrow numeracy
+     reframe shipped. -->
+
+- **Stealthier numeracy: Yarrow's coin check as an in-fiction action** → shipped. Yarrow's
+  Grade 2 prompt reframed from an abstract "Which coin is worth more?" to the in-fiction "The
+  remedy jar costs a dime. Which coin do you hand me?" — same two coins, same correct answer,
+  same already-confirmed G2 money/number-sense competency, same `LearningCheck`/bonus-only path
+  (`RESEARCH_NOTES.md` §8.2). No new subject/mechanic/test surface. `CURRICULUM_MAP.md` updated;
+  not CONFIRM-gated. See `docs/CURRENT_STATE.md`.
+
+- **Discovery sparkle-spots: hidden finds across the region map** → shipped/in-flight (treated as
+  merged): 3–5 `SparkleSpot` pickups reusing `Collectible`, a permanent "Places discovered"
+  `GameState` codex (mirroring `creatures_met`, save/load-safe) surfaced in a new character-panel
+  section, bonus-only, placeholder polygon art, isolated tests. `RESEARCH_NOTES.md` §8.3/§8.4.
+
+- **Diegetic session-end "rest" beat: a cozy campfire** → shipped:
+  one interactable village rest spot that opens a warm profile-aware dialogue, calls
+  `GameState.save_game()`, and shows a gentle fade — a clean, penalty-free stopping point (no
+  streak/timer/FOMO), reusing `DialogueBox`. `RESEARCH_NOTES.md` §8.1 (CHI 2026 disengagement-
+  friendly design).
+
+- **Region ambience pass: per-region ambient audio** → shipped:
+  `AudioManager` generalized so each region's soft ambient loop cross-fades as the player crosses
+  region boundaries (simple region-zone detection, self-synthesized/CC0 loops, -18 dB, pure-
+  tested region/cross-fade logic). This pass's ambient-particle slice deliberately reuses this
+  slice's region-detection helper. `RESEARCH_NOTES.md` §8.3/§8.4/§7.1.
 
 ### Boss keepsake: Elder Slime drops a permanent trophy, not just a stat
 - **Goal:** Defeating the Elder Slime mini-boss grants a one-time **keepsake** — a named

@@ -356,3 +356,114 @@ Same as prior sections: secondary-source web summaries (plus two peer-reviewed p
 §8.2), not primary design authority. Treat specifics as tunable starting points; the
 bonus-only, non-punitive, CONFIRM-gated rules of this project override any source that would
 push toward streaks, penalties, new subjects, or compulsion loops.
+
+## 9. Live web research: "epic" in-repo art + deepening learning within confirmed subjects (2026-07-01)
+
+Gathered by `game-architect` for the owner's mandate — "Cool backgrounds, epic art, and
+learning out the wazoo" — planned against `main` at commit `ad0ed3b` (12 PRs merged this
+cycle: pets, sound pass, creatures codex, Elder Slime mini-boss + keepsake, epic region map
+220x140, slime respawn faucet, numeracy reframe) and treating the three final in-flight Ready
+slices (discovery sparkle-spots, campfire rest, region ambience) as merged ground truth. Same
+general caveat as §6-§8: secondary-source summaries + two docs pages; tune in-engine. **Hard
+constraint honored throughout:** every art idea below must be producible **in-repo** — via
+procedural Python (`gen_tileset.py`/`gen_sfx.py` precedent), hand-authored Godot
+polygons/particles/shaders/tweens (the `Pet.tscn`/`StandingStone.tscn` polygon precedent), or
+the documented AI-source normalization pipeline (`docs/art/ASSET_NORMALIZATION_PIPELINE.md`).
+No third-party asset packs (the search surfaced many CraftPix/itch packs — deliberately **not**
+adopted, since they add license risk and violate the placeholder-art-first / in-repo posture).
+
+### 9.1 What makes low-fi 2D art read as "epic" and cohesive (FRONT A)
+
+- ["Pixelblog 1 — Color Palettes" — SLYNYRD](https://www.slynyrd.com/blog/2018/1/10/pixelblog-1-color-palettes) —
+  the single strongest lever for cohesion is **palette discipline**: build a small set of
+  value ramps (start 3-4 ramps of ~9 swatches; target 40-60 colors max), increase brightness
+  steadily along each ramp, **decrease saturation at the bright end** (or you get "eye-burning"
+  colors — critical for a kid audience), and **hue-shift** each ramp (~+20°/swatch, warming as
+  it brightens) so every color harmonizes automatically. A shared palette across tiles, props,
+  particles, and UI is what unifies a scene into one world.
+- ["Unlock Pixel Art Power: Why Limited Color Palettes are Key" — Wayline](https://www.wayline.io/blog/pixel-art-limited-color-palettes),
+  ["The limited palette for painters and gamers" — 2D Will Never Die](https://2dwillneverdie.com/blog/the-limited-palette-for-painters-and-gamers/),
+  ["Pixel Art In A 4K World" — Medium/Ted Tahquechi](https://medium.com/@nedskee/pixel-art-in-a-4k-world-78d4ab20762d) —
+  the constraint *is* the cohesion; with fewer colors, **silhouette + 1px outline + bold color
+  contrast** carry all the readability, which matters most for tiny top-down sprites a young
+  player must parse at a glance. "Epic" at low-fi comes from **strong silhouettes and mood-set
+  color**, not detail.
+- ["CanvasModulate" — Godot docs](https://docs.godotengine.org/en/stable/classes/class_canvasmodulate.html),
+  ["2D lights and shadows" — Godot docs](https://docs.godotengine.org/en/stable/tutorials/2d/2d_lights_and_shadows.html),
+  ["2D Day Night Cycle" — Godot Asset Library](https://godotengine.org/asset-library/asset/1026) —
+  a single `CanvasModulate` node **tints the whole 2D canvas** at once; a warm, faintly amber
+  modulate is the cheapest possible "golden-hour storybook" wash, and it is 100% in-repo (one
+  node, no art). A vignette is a corner-darkened full-screen gradient (`ColorRect` +
+  `GradientTexture2D`, or a tiny canvas shader) layered under the UI. Both are non-destructive
+  atmosphere, no per-sprite work.
+- ["Godot VFX & Effects" — Bukkbeek/itch](https://bukkbeek.itch.io/effectblocks) and the
+  CraftPix parallax packs (survey only — **not adopted**) confirm the *techniques* worth
+  reproducing in-repo: **layered parallax** (drifting clouds / soft light), **animated foliage
+  and water shimmer**, and **ambient particles** (fireflies at dusk, drifting pollen in the
+  meadow). In Godot these are all native: `Parallax2D`/`ParallaxBackground` for drifting
+  layers, `CPUParticles2D`/`GPUParticles2D` for pollen/fireflies (a handful of soft dots), and
+  a small `canvas_item` shader (or an animated `Polygon2D`/tween) for water shimmer — no
+  imported art needed for any of them.
+- **Use for this project:** four cohesion-first art slices, ordered cheapest-payoff-first. (1)
+  **Day-warmth + vignette pass** — one `CanvasModulate` warm tint + a subtle full-screen
+  vignette; the highest ratio of "epic feel" to effort, one node/one `ColorRect`, zero art,
+  instantly unifies the whole map's mood. (2) **Ambient particle pass** — soft drifting pollen
+  in the meadow / gentle fireflies near the forest edge/lake at the map's warm tint, reusing
+  the region-zone detection the in-flight ambience slice introduces (so particles and audio
+  share region logic — cohesion, not a parallel system). (3) **Animated lake water shimmer** —
+  a small canvas shader or tweened polygon overlay on the existing lake tiles so the just-built
+  lake *moves*, the single most "alive" upgrade to the merged map. (4) A **palette-lock pass**
+  for `gen_tileset.py` — codify the tileset's colors as a documented shared palette (per §9.1's
+  ramp discipline) so future tiles/props/particles all draw from one harmonized set. A
+  character-sprite upgrade (player/Mossy/slimes via the pipeline or richer polygons) is real but
+  **heaviest and least cohesion-critical** — filed last, and the polygon-only variant kept
+  in-repo-safe.
+
+### 9.2 Deepening learning inside the confirmed subjects — intrinsic integration (FRONT B)
+
+- ["Learning Newtonian mechanics with an intrinsically integrated educational game" — arXiv
+  2206.11627](https://arxiv.org/pdf/2206.11627) (peer-reviewed; PDF did not render cleanly for
+  extraction, cited for provenance) and ["Toward stealth assessment of reading comprehension" —
+  JRTE 2025](https://www.tandfonline.com/doi/full/10.1080/15391523.2025.2568522) — **intrinsic
+  integration** = the game goal and the learning goal coincide, so *reaching the game goal is
+  reaching the learning goal*; the structure of the world and the core mechanic carry the
+  content, rather than a quiz bolted onto play. Reading comprehension can be assessed
+  *unobtrusively while the child reads in-fiction text* rather than by a separate test — which
+  maps directly onto codex/keepsake flavor text this game already shows.
+- ["Money Games" — Paths to Literacy](https://www.pathstoliteracy.org/money-games/), ["Coin
+  Classroom" — U.S. Mint](https://kids.usmint.gov/games), ["Shopping Game" — Math
+  Mammoth](https://www.mathmammoth.com/practice/shopping-game), ["Money games for kids" —
+  Topmarks](https://www.topmarks.co.uk/maths-games/7-11-years/money) — the canonical
+  money-numeracy mechanic is **"here is a price, click/hand over coins to make exactly that
+  amount"**; progression comes from constraints ("make it with the fewest coins", "use the most
+  10s") that build number sense and mental strategy. This is the exact stealthy form the shipped
+  Yarrow reframe (§8.2) began — and it is naturally at home at **the Merchant's shop**, where
+  the player already spends coins.
+- **Use for this project (all strictly within the already-confirmed numeracy/literacy subjects,
+  so none trip the CONFIRM gate):** (a) **Extend the Yarrow "pay the right coin" pattern to the
+  Merchant shop** — on a purchase, an *optional*, bonus-only "count out the coins" beat (Grade 2:
+  pick coins that make the price; Grade 5: make it with the fewest coins) that always still
+  completes the purchase; this deepens the *existing* shop/economy loop (cohesion) and is pure
+  numeracy already confirmed for both grades. (b) **A gentle reading-comprehension bonus woven
+  into the Elder's codex/keepsake flavor** — after earning a keepsake or a creatures-met entry,
+  the Elder can offer *one* optional, friendly "what did you notice?" question drawn from the
+  flavor text the player just read (Grade 2: recall one plain fact; Grade 5: infer/word-meaning),
+  bonus-only, using the already-confirmed literacy competency — this makes the *reading the game
+  already asks the child to do* the assessment (intrinsic integration), not a new quiz. (c) A
+  **number-line / estimation micro-beat at the dock** (the merged map's new Dock prop): "how far
+  to the far shore?" style estimate-then-see feedback, bonus-only — numeracy (estimation) is
+  already listed as confirmed G2 number-sense, so this is format-deepening, not a new subject.
+- **CONFIRM GATE (unchanged, hard):** all three above reuse the *already-confirmed*
+  numeracy/literacy competencies in the existing quests/systems, so they are format-deepening,
+  which §8.2 and `CURRICULUM_MAP.md` explicitly permit. **Any NEW subject** (science/social) or
+  a **5th quest** remains `blocked: needs-user-input` per `EXPANSION_BACKLOG.md`'s CONFIRM gate.
+  If a reviewer reads any slice below as introducing a new subject, treat that as a bug in the
+  slice, not permission to proceed.
+
+### General caveat (applies to §9 as §6-§8)
+
+Secondary-source web summaries plus Godot docs and two academic pages (one PDF unrenderable,
+cited for provenance only). Treat all specifics (palette counts, particle amounts, tint values,
+question counts) as tunable in-engine starting points. The project's in-repo-art constraint,
+bonus-only rule, and CONFIRM gate override any source that would push toward imported asset
+packs, penalties/streaks, or new subjects.
