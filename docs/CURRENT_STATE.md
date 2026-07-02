@@ -405,6 +405,24 @@ isolated `tests/pet_sprite_tests.gd` (2 tests: `Body` is a `Sprite2D`/`AnimatedS
 texture/`SpriteFrames` assigned, and `Body` is no longer the old `Polygon2D`) is registered in
 `tests/test_runner.gd`. Test suite grew to 102.
 
+**Expand combat numeracy pool + gentle ramp (expansion backlog): done.** Fixes the named
+"early repetition" failure mode from `docs/design/RESEARCH_NOTES.md` §10.2: `CombatQuestion.
+QUESTION_POOL` grew from 3 to 12 items per profile, strictly within the already-confirmed
+numeracy subject (no literacy/new subject added). Grade 2 ramps single-digit +/- -> small teen
+sums -> coin values/comparison; Grade 5 ramps single-digit x -> two-digit x/simple division ->
+halves -> quarters/thirds -> a money-total word problem — all still two-choice, one plausible
+distractor, matching the existing item shape and kid-warm short wording. `show_question()` now
+draws via a new pure/static `CombatQuestion.pick_next_index(pool_size, last_index, roll)`
+(mirroring `MeadowSlime.rolls_bonus_coin()`'s deterministic-test precedent): it never repeats
+the just-shown index for pool size > 1, and safely returns 0 for a size-0/1 pool instead of
+dividing by zero. Bonus-only combat-streak behavior is otherwise unchanged — a correct answer
+still bumps the streak, a wrong answer never penalizes. A new isolated
+`tests/combat_question_tests.gd` (6 tests: per-profile pool-size floor of 12 for both
+profiles, every item has exactly 2 choices with the correct answer among them, the
+no-immediate-repeat property swept across a spread of last-index/roll combinations, the
+single-item and empty-pool edge cases, and the no-prior-pick case) is registered in
+`tests/test_runner.gd`. Test suite grew to 108.
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
@@ -417,7 +435,7 @@ texture/`SpriteFrames` assigned, and `Body` is no longer the old `Polygon2D`) is
 - `scripts/core/combat/HealthComponent.gd`, `HitboxComponent.gd`, `HurtboxComponent.gd`: the M2 component architecture. `HealthComponent` tracks hp with a brief post-hit immunity window (`hit_cooldown_sec`) and a `died` signal; `HitboxComponent` is a toggleable damage zone with a `landed` signal so an attacker can react to connecting; `HurtboxComponent` detects overlapping hitboxes by group membership ("hitbox"/"hurtbox" - not a dedicated physics layer, since everything in this project already defaults to layer/mask 1) and auto-discovers a sibling node named "HealthComponent" in `_ready()` rather than relying on a typed node export (a raw `NodePath(...)` literal written into `.tscn` text does not reliably resolve to a `HealthComponent` reference — a real bug caught live, see below). A `HurtboxComponent` never damages its own owner (same-parent check), since an enemy's own contact-damage hitbox and hurtbox occupy the same space. `HealthComponent` also drives a brief **hit-flash** on damage (RESEARCH_NOTES §7.1): it auto-discovers a sibling `Body` sprite and briefly pops its scale (+ tints toward white) so a landed hit reads instantly — a gentle, no-screen-shake "juice" pass added by the expansion loop. The timing easing (`HealthComponent.hit_reaction_intensity()`) is pure and unit-tested in `tests/hit_flash_tests.gd` (a second suite registered in `tests/test_runner.gd`); `Player.gd` reuses the same easing for a soft-red player-hurt flash.
 - `scripts/enemies/MeadowSlime.gd` / `scenes/enemies/MeadowSlime.tscn`: the first monster. Simple idle/wander/chase FSM (aggro radius, home-anchored wander), a `HealthComponent` (3 hp), a `Hurtbox` (receives player hits), and an always-on `ContactHitbox` (deals contact damage to the player). Real art (`assets/sprites/enemies/meadow_slime_idle.png`, via `assets/manifests/meadow_slime_idle.manifest.json`); see `docs/design/MONSTER_CONCEPTS.md`. On death it always spawns its guaranteed 1-coin `CoinPickup`, plus rolls an exported `bonus_coin_chance` (default 12%) for one additional bonus coin via the pure, deterministically-testable `MeadowSlime.rolls_bonus_coin(chance, roll)` — see `docs/design/GEAR_AND_ECONOMY.md`'s "Bonus drop rule".
 - `scripts/enemies/Spawner.gd`: attached to the `Enemies` node in `Main.tscn` (gentle repeatable coin faucet). Records each Meadow Slime's original spawn position on `_ready()`, and when one dies (`tree_exited`), schedules a fresh instance at the same position after a slow, tunable `respawn_delay_sec` (default 25s) — always capped at the original count of 3 so the zone never crowds. The cap/cadence decisions are pure static functions (`should_schedule_respawn`, `count_due`), deterministically unit-tested in `tests/spawner_tests.gd` without a scene tree, mirroring `MeadowSlime.rolls_bonus_coin()`'s precedent. See `docs/design/GEAR_AND_ECONOMY.md`'s faucet note, now addressed.
-- `scenes/ui/CombatQuestion.tscn` / `scripts/ui/CombatQuestion.gd`: the combat damage-multiplier question. Deliberately separate from `LearningCheck` (no quest coupling, dismisses itself immediately on answer). A small numeracy-only question pool per profile, matching the already-confirmed subject scope in `docs/design/CURRICULUM_MAP.md`.
+- `scenes/ui/CombatQuestion.tscn` / `scripts/ui/CombatQuestion.gd`: the combat damage-multiplier question. Deliberately separate from `LearningCheck` (no quest coupling, dismisses itself immediately on answer). A 12-item-per-profile numeracy-only question pool with a gentle difficulty ramp, matching the already-confirmed subject scope in `docs/design/CURRICULUM_MAP.md`, drawn via the pure static `pick_next_index()` no-immediate-repeat function (see "Expand combat numeracy pool + gentle ramp" writeup above); covered by `tests/combat_question_tests.gd`.
 - `scenes/player/Player.tscn`: player `Body` (`AnimatedSprite2D`, `sprite_frames` built in code per profile — see `Player.gd`), a hidden empty `Armor` (`AnimatedSprite2D`) scaffold for a future equipment layer, collision shape, camera (`Camera2D` now has `limit_left/top/right/bottom` set to the map bounds and `position_smoothing_enabled` on), an `AttackHitbox` (toggled on for a brief window each swing, repositioned per facing direction), and a `PlayerHurtbox` (always-on, receives enemy hits).
 - `scripts/player/Player.gd` (combat additions): a new `attack` input action (Space or left click, added via the Godot Input Map) swings `AttackHitbox` in the player's current facing direction (`FACING_VECTORS`), gated by an active window + cooldown so it can't be spammed. Landing a hit (the `HitboxComponent.landed` signal) requests a combat question if one isn't on cooldown; taking a hit (`PlayerHurtbox.hit_received`) calls `GameState.take_player_damage()`. On `GameState.player_died`, the player teleports back to wherever it started the scene (captured once in `_ready()` as `_spawn_position`), heals to full, and shows a brief non-punitive dialogue line — no game over screen.
 - `scripts/core/GameState.gd`: minimal profile, health, collected-item, reusable quest state (now four quests: Elder, Mira, Finn, Yarrow), and Elder compatibility flags. Also owns the equip system: `equipped_armor_tier` (0 = none) and an `armor_equipped(tier)` signal, granted automatically by `_check_and_grant_tier1_armor()` once all four quests reach `QUEST_COMPLETED` (called from `complete_quest()`). And local save/load: `save_game()`/`load_game()`/`reset_progress()` persist the fields above to `user://savegame.json`; `load_game()` runs in `_ready()`. Autosave is wired via four small `_on_<signal>_autosave()` handlers, one per signal (`profile_changed`, `quest_changed`, `item_added`, `armor_equipped`), each just calling `save_game()` — **not** one shared zero-arg handler connected to all four (see the note below on why that doesn't work). Now also owns real player combat: `take_player_damage()`/`heal_player_to_full()` (with their own hit-cooldown, same pattern as `HealthComponent`) and the combat streak/multiplier (`combat_streak`, `get_combat_multiplier()`, `answer_combat_question()`, decaying over time in `_process()`) — deliberately **not** persisted, since it's a moment-to-moment combat feel mechanic, not saved progress.
@@ -666,15 +684,16 @@ Open `project.godot` with Godot 4.x standard and press F5.
 Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
 ```
 
-Runs all 15 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
+Runs all 18 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
 (18), `tests/hit_flash_tests.gd` (5), `tests/pet_tests.gd` (5), `tests/spawner_tests.gd` (7),
 `tests/audio_tests.gd` (9), `tests/codex_tests.gd` (4), `tests/elder_slime_tests.gd` (4),
 `tests/keepsake_tests.gd` (4), `tests/map_tests.gd` (5), `tests/campfire_tests.gd` (3),
 `tests/discovery_tests.gd` (4), `tests/coin_counting_tests.gd` (8),
-`tests/atmosphere_tests.gd` (3), `tests/lake_tests.gd` (5), and
-`tests/comprehension_tests.gd` (7) -
+`tests/atmosphere_tests.gd` (3), `tests/lake_tests.gd` (5),
+`tests/comprehension_tests.gd` (7), `tests/particle_tests.gd` (9),
+`tests/pet_sprite_tests.gd` (2), and `tests/combat_question_tests.gd` (6) -
 against the real `GameState`/`AudioManager` autoloads, and prints `PASS`/`FAIL` per test plus
-a summary line (**91 tests total**); exits non-zero if anything failed. See
+a summary line (**108 tests total**); exits non-zero if anything failed. See
 `tests/test_runner.gd` for the
 (small, custom, no third-party dependency) runner — it discovers every `test_*` method on
 each registered test class, resets `GameState` via `GameState.reset_state()` before each one
