@@ -30,8 +30,8 @@ shape = SubResource("RectangleShape2D_player")
 enabled = true
 limit_left = 0
 limit_top = 0
-limit_right = 2560
-limit_bottom = 1600
+limit_right = 3520
+limit_bottom = 2240
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0
 
