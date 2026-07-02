@@ -241,3 +241,118 @@ weapon, landmark props). Same caveat as §6 applies.
 
 Same as §6: these are secondary-source web summaries; treat timings/percentages as tunable
 starting ranges, confirm feel in-engine.
+
+## 8. Live web research: kid-stickiness without dark patterns + stealth-learning (2026-07-01)
+
+Gathered by `game-architect` for the post-map/post-Elder-Slime backlog pass. Focus: what
+makes a 2D RPG sticky and *joyful* for 7–11-year-olds **without** dark patterns, and what
+makes stealth-learning actually work (woven into mechanics vs. bolted-on quizzes). Same
+general caveat as §6/§7 — secondary-source summaries, tune in-engine. Planned assuming the
+epic map pass (region-distinct world: village green / flower meadow / forest edge / lake /
+rocky border) and the Elder Slime mini-boss have **both** merged.
+
+### 8.1 Session-end that respects bedtime (disengagement-friendly design)
+
+- ["Exploring the Potential of Disengagement-Friendly Game Design to Support Children's Exit
+  from Play Sessions" — Proceedings of the 2026 CHI Conference](https://dl.acm.org/doi/10.1145/3772318.3790564) —
+  a research prototype ends a child's session with an in-fiction **bedtime screen**: the
+  player puts their character to sleep after the adventure, the game fades to black and shows
+  "Good Night," and offers **no further interaction**. Findings: implicit, diegetic
+  progress-feedback (a bedtime routine) is *easier for children to understand* than an
+  abstract progress bar, helps them **anticipate** the end of a session, and gives a parent a
+  shared story ("your hero is tired now") to explain why play is over. This is the ethical
+  inverse of a "one more thing" retention hook — it engineers a *satisfying stopping point*,
+  not an open loop.
+- ["Daily Quests or Daily Pests? The Benefits and Pitfalls of Engagement Rewards in Games"
+  (ResearchGate)](https://www.researchgate.net/publication/365003534_Daily_Quests_or_Daily_Pests_The_Benefits_and_Pitfalls_of_Engagement_Rewards_in_Games)
+  and ["Dark patterns" — Better Internet for Kids, European Union](https://better-internet-for-kids.europa.eu/en/dark-patterns) —
+  daily/streak rewards become **dark patterns** the moment missing a day *removes* a benefit
+  or creates FOMO/urgency; temporal dark patterns exploit fear-of-missing-out to extend
+  sessions past what the player wanted. The ethical form is an **optional bonus with no
+  penalty for missing it** — never a mandatory streak, never loss-framed, never social
+  pressure.
+- **Use for this project:** two distinct, small, ethical slices. (a) A **diegetic
+  session-end "rest" beat** — a cozy in-fiction moment (a campfire/inn/bedroll) the child can
+  choose that visibly banks the session's progress and reads as "a good place to stop," the
+  opposite of a cliffhanger hook; strongly aligned with NORTH_STAR pillar 5 (every session
+  yields permanent progress). (b) If any session-start bonus is ever built, it must be
+  **additive-only and penalty-free** (a small gift *for showing up today*, never a streak you
+  can break) — this is the same bonus-only/non-punitive rule the curriculum already follows,
+  applied to engagement. Both must avoid the temporal-dark-pattern failure mode above.
+
+### 8.2 Intrinsic integration — learning woven into mechanics, not bolted-on quizzes
+
+- ["The Stealth Learning Guide: Games That Teach…" — Screenwise](https://screenwiseapp.com/guides/educational-games-that-don-t-feel-like-school) —
+  the core principle is **mechanics-first learning: "the work is the game. To win, you have
+  to master the system."** The named failure mode is the reward-for-work split ("solve five
+  math problems to jump over the pit") — the game becomes a bribe wrapped around a quiz.
+  Better patterns: (1) the skill is *inherent to progression* (to build the thing you want,
+  you must understand the underlying idea); (2) **natural failure feedback** — the world
+  visibly shows *where* you went wrong (Poly Bridge highlights the over-stressed beam) rather
+  than marking an answer "wrong"; (3) **graduated complexity** — start simple, scale up as
+  competence grows; (4) works best with a **co-pilot** (a parent asking "how did you do
+  that?"), so design should invite reflection, not just score it.
+- ["Maximizing learning without sacrificing the fun: Stealth assessment" — Shute et al.,
+  JCAL 2020 (PDF)](https://myweb.fsu.edu/vshute/pdf/JCAL2020.pdf) and ["'Stealth' Learning
+  Games" — EduGamery](https://edugamery.com/educational-games-portfolio/stealth-learning-games/) —
+  stealth assessment is woven *invisibly into the fabric* of the game: infer understanding
+  from in-fiction actions (did the player pay correct change? pick the safe route?) instead
+  of asking outright — exactly the "evidence-centered" direction `CURRICULUM_MAP.md` already
+  names as its future bridge.
+- **Use for this project:** the current two-choice `LearningCheck`/`CombatQuestion` quizzes
+  are the *bolted-on* pattern this research warns against (kept deliberately, by user
+  decision). The nearest **honest** improvement that stays inside the confirmed subjects and
+  the bonus-only rule is to make one existing check **stealthier** — e.g. a numeracy check
+  expressed as an *in-fiction action* (pay the right number of coins, pick the pouch that
+  weighs more) rather than an abstract "which is bigger?" prompt. This deepens an existing
+  quest (cohesion) instead of adding a new subject (which is CONFIRM-gated). **Do not** add
+  new subjects/quizzes; make the fiction carry the skill. NOTE: converting a check's *format*
+  reuses the already-confirmed numeracy/literacy competencies, so it does **not** trip the
+  subject-scope CONFIRM gate — but changing *which subject* a check exercises would.
+
+### 8.3 Discovery / secret-finding as an intrinsic joy loop
+
+- ["Unlocking Discovery in Game Design" — Number Analytics](https://www.numberanalytics.com/blog/ultimate-guide-to-discovery-in-game-design)
+  and ["8 Metroidvanias That Hide Their Greatest Content Behind Optional Exploration" —
+  DualShockers](https://www.dualshockers.com/metroidvanias-hide-greatest-content-behind-optional-exploration/) —
+  discovery is a fundamental motivator: uncovering a hidden thing produces a self-contained
+  sense of accomplishment, and **rewarding curiosity** (a secret grove, a sparkle spot, an
+  optional-boss gift) is one of the strongest, cheapest engagement drivers. Crucially,
+  optional exploration **rewards the curious without punishing those who miss it** — a
+  perfect fit for the bonus-only rule.
+- ["6 Most Satisfying Gameplay Loops" — Featured.com](https://featured.com/questions/satisfying-gameplay-loop-addictive-games)
+  and the Zelda: BotW well-being study ([PMC](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12357126/)) —
+  the Zelda-like loop (clear goals like shrines/Korok seeds + freedom to explore) fosters
+  *autonomy, calm, mastery, and a sense of purpose* — the healthy inverse of compulsion; the
+  satisfaction comes from **discovery and meaningful progression**, not from streaks or
+  timers.
+- **Use for this project:** the newly-merged region-distinct map is the natural home for a
+  tiny **discovery slice** — a handful of hidden "sparkle spots" (a shimmering tuft in the
+  flower meadow, a hollow at the forest edge) that, when found and touched, grant a small
+  bonus (a coin, a codex-style "place discovered" entry, or a keepsake) **and never punish
+  missing them**. This deepens the *existing* new map (cohesion over volume — not a new
+  biome) and feeds pillar 5 (permanent world-knowledge). Reuse the existing `Collectible`/
+  codex machinery; keep it text/placeholder-art only.
+
+### 8.4 Collection / completion psychology (keepsakes, not stats)
+
+- ["6 Most Satisfying Gameplay Loops" — Featured.com](https://featured.com/questions/satisfying-gameplay-loop-addictive-games) —
+  meaningful *progression* (new items, a filling collection, uncovering something hidden) is
+  what makes a loop satisfying; the payoff can be "just the satisfaction of uncovering
+  something," not a stat boost. Combined with §7.3's bestiary/compendium finding, this argues
+  the game's collection loops (the shipped "Creatures met" codex; a future "places
+  discovered" list) are strong *because* they are permanent and non-punitive, independent of
+  power.
+- **Use for this project:** a **boss keepsake** — when the Elder Slime mini-boss is defeated,
+  grant a **cosmetic/keepsake trophy** (a codex/keepsake entry, e.g. "Elder Slime's Dewdrop")
+  rather than only a stat. NORTH_STAR pillar 5 explicitly lists "a keepsake/cosmetic" as a
+  valid session payoff, and pillar 3 wants a *visible consequence*. A keepsake makes the
+  mini-boss memorable without a power-creep arms race — deepening the just-shipped codex and
+  mini-boss systems together (cohesion) instead of adding a parallel reward track.
+
+### General caveat (applies to §8 as §6/§7)
+
+Same as prior sections: secondary-source web summaries (plus two peer-reviewed papers, §8.1/
+§8.2), not primary design authority. Treat specifics as tunable starting points; the
+bonus-only, non-punitive, CONFIRM-gated rules of this project override any source that would
+push toward streaks, penalties, new subjects, or compulsion loops.
