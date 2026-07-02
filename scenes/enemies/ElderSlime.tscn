@@ -18,10 +18,15 @@ coin_drop_value = 3
 bonus_coin_chance = 0.35
 
 [node name="Body" type="Sprite2D" parent="."]
-modulate = Color(0.4, 0.55, 0.25, 1)
-scale = Vector2(1.5, 1.5)
+modulate = Color(1, 0.82, 0.4, 1)
+scale = Vector2(1.9, 1.9)
 texture = ExtResource("5_body_texture")
 offset = Vector2(0, -16)
+
+[node name="Crown" type="Polygon2D" parent="."]
+position = Vector2(0, -58)
+color = Color(1, 0.78, 0.1, 1)
+polygon = PackedVector2Array(-12, 6, -12, -4, -6, 2, 0, -8, 6, 2, 12, -4, 12, 6)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_elder_slime_body")
