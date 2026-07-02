@@ -405,6 +405,35 @@ isolated `tests/pet_sprite_tests.gd` (2 tests: `Body` is a `Sprite2D`/`AnimatedS
 texture/`SpriteFrames` assigned, and `Body` is no longer the old `Polygon2D`) is registered in
 `tests/test_runner.gd`. Test suite grew to 102.
 
+**Gentle pickup pop: a squash-and-stretch tween on coins and collectibles (expansion
+backlog): done.** The single most kid-noticed game-feel upgrade this pass, per
+`docs/design/RESEARCH_NOTES.md` §10.3 (a small scale pop on pickup is the highest-signal,
+lowest-cost "juice" for this audience; the §7.1 over-juice caution binds — no screen shake).
+A new shared helper, `scripts/fx/PickupPop.gd` (`class_name PickupPop`, a static-only
+`RefCounted` utility so any pickup can call it without a new node dependency), covers all
+three existing pickup paths — `CoinPickup.gd`, `Collectible.gd`, and `SparkleSpot.gd` (which
+already reused `Collectible.gd`'s shape) — mirroring `HealthComponent`'s hit-flash precedent
+exactly: a pure, unit-tested easing function (`PickupPop.pop_scale_multiplier(t, duration,
+peak)`, a quick eased grow to `POP_PEAK_SCALE` (1.3x) over the first 35% of the pop followed
+by an eased settle back to 1.0x by `POP_DURATION_SEC` (0.22s)) drives a `Tween` that scales
+the pickup's sibling `Body` node. Sequencing: each pickup's `_on_body_entered()` now awards
+its reward **first** (coins/item/discovery + existing SFX, unchanged), then sets a new
+`_collected` guard flag and defers `monitoring = false` (so a second overlapping body can't
+double-collect during the pop), then calls `PickupPop.play(body, queue_free)` — the pickup's
+own `queue_free()` no longer fires immediately but as the tween's `finished` callback, so the
+pop plays out fully before the node vanishes instead of being cut short. `PickupPop.play()`
+is a safe no-op (calls `on_finished` immediately) if `body` is null or not yet inside the
+scene tree, so a pickup instantiated headlessly outside a live tree (as the new tests do)
+still resolves cleanly without needing `Tween`, which requires a live tree. No sparkle-burst
+particle was added (the acceptance criteria marked it optional and explicitly allowed
+skipping it "if it complicates the free timing" — deferred, not forced by the code). No
+screen-shake, no change to what's awarded or when — verified by two tests that assert the
+coin/item award lands before the pop tween is even created. A new isolated
+`tests/pickup_pop_tests.gd` (8 tests: rest-scale boundaries at t=0/t=duration, growth above
+rest mid-pop, the peak is never exceeded and stays within the gentle 1.3x cap, clamping past
+duration, the zero-duration divide-by-zero guard, and the two award-timing tests) is
+registered in `tests/test_runner.gd`. Test suite grew to 110.
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
@@ -666,15 +695,16 @@ Open `project.godot` with Godot 4.x standard and press F5.
 Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
 ```
 
-Runs all 15 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
+Runs all isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
 (18), `tests/hit_flash_tests.gd` (5), `tests/pet_tests.gd` (5), `tests/spawner_tests.gd` (7),
 `tests/audio_tests.gd` (9), `tests/codex_tests.gd` (4), `tests/elder_slime_tests.gd` (4),
 `tests/keepsake_tests.gd` (4), `tests/map_tests.gd` (5), `tests/campfire_tests.gd` (3),
 `tests/discovery_tests.gd` (4), `tests/coin_counting_tests.gd` (8),
-`tests/atmosphere_tests.gd` (3), `tests/lake_tests.gd` (5), and
-`tests/comprehension_tests.gd` (7) -
+`tests/atmosphere_tests.gd` (3), `tests/lake_tests.gd` (5),
+`tests/comprehension_tests.gd` (7), `tests/particle_tests.gd` (9), `tests/pet_sprite_tests.gd`
+(2), and `tests/pickup_pop_tests.gd` (8) -
 against the real `GameState`/`AudioManager` autoloads, and prints `PASS`/`FAIL` per test plus
-a summary line (**91 tests total**); exits non-zero if anything failed. See
+a summary line (**110 tests total**); exits non-zero if anything failed. See
 `tests/test_runner.gd` for the
 (small, custom, no third-party dependency) runner — it discovers every `test_*` method on
 each registered test class, resets `GameState` via `GameState.reset_state()` before each one
