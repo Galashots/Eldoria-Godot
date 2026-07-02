@@ -94,6 +94,7 @@ func _on_died() -> void:
 	hurtbox.set_deferred("monitoring", false)
 	contact_hitbox.set_deferred("monitorable", false)
 	_spawn_coin_drop.call_deferred()
+	AudioManager.play_sfx("slime_boing")
 
 	var tween := create_tween()
 	tween.tween_property(self, "scale", Vector2.ZERO, 0.25)

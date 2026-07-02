@@ -106,35 +106,6 @@ out of scope until a future pass has a concrete reason to revisit them).
   (plain dictionary, one entry) backs a new "Creatures met" section in `CharacterPanel`;
   4 new tests in `tests/codex_tests.gd`.
 
-### Gentle repeatable coin faucet: a slow Meadow Slime respawn
-- **Goal:** Make the coin faucet repeatable within a session so the shop roster (incl. the new
-  30-coin Dawnbringer) stays reachable without grind — slain Meadow Slimes slowly respawn (up
-  to the original count) at a gentle cadence.
-- **Design rationale:** NORTH_STAR pillar "Every short session yields permanent progress" |
-  research: `RESEARCH_NOTES.md` §7.2 (time-based respawn keeps a zone alive and lets a player
-  choose to earn more) and the faucet-depth finding already recorded in
-  `GEAR_AND_ECONOMY.md` — the flagged bottleneck is exactly this: 3 non-respawning slimes =
-  ~3 coins/session. Keep the cadence slow and the cap at the original 3 so the zone never feels
-  crowded or dangerous for a young audience.
-- **Acceptance criteria:**
-  - [ ] Defeated Meadow Slimes respawn after a slow, tunable delay, capped so the live count
-        never exceeds the original 3 (no crowding).
-  - [ ] Implemented as a small standalone `Spawner` node (disjoint from `MeadowSlime.gd`) that
-        watches its spawn points and re-instances — not a rewrite of the slime.
-  - [ ] Non-punitive: respawn is slow enough that clearing the area still gives a calm window;
-        no new damage/difficulty.
-  - [ ] `GEAR_AND_ECONOMY.md`'s faucet note is updated from "flagged" to "addressed".
-  - [ ] Covered by an isolated new test file (spawn-count cap / cadence pure logic), registered
-        in `test_runner.gd`.
-- **Likely files touched:** new `scripts/enemies/Spawner.gd` (+ maybe a scene),
-  `scenes/main/Main.tscn` (one Spawner node over the existing slime positions),
-  `docs/design/GEAR_AND_ECONOMY.md`, new `tests/spawner_tests.gd` + `tests/test_runner.gd`.
-- **Curriculum tie-in:** none — pure systems.
-- **Sequencing:** **wait for PR #41 to merge** — adds a node to `Main.tscn`, which #41 also
-  edits; build after #41 lands. Also coordinate with the Elder Slime slice (both touch the
-  `Enemies` area of `Main.tscn`).
-- **Status:** ready
-
 ### First mini-boss: Elder Slime (tougher Meadow Slime variant)
 - **Goal:** Give the player one clearly-telegraphed, higher-stakes (but still non-punitive)
   fight — a larger, tougher Meadow Slime variant with more HP and a single new telegraphed
@@ -235,6 +206,15 @@ out of scope until a future pass has a concrete reason to revisit them).
   path). Purely visual (no collision/script), additive (no existing node moved). Branch
   `slice-map-landmarks`. Live-verified from spawn: both readable from a screen away, the two
   forks distinguishable at a glance.
+
+- **Gentle repeatable coin faucet: a slow Meadow Slime respawn** → shipped a standalone
+  `scripts/enemies/Spawner.gd` attached to the `Enemies` node in `Main.tscn`, which records
+  each Meadow Slime's spawn position and re-instances one at the same position a slow, tunable
+  `respawn_delay_sec` (default 25s) after it dies, capped at the original 3 so the zone never
+  crowds. Cap/cadence decisions are pure static functions (`should_schedule_respawn`,
+  `count_due`), covered by a new isolated `tests/spawner_tests.gd`.
+  `docs/design/GEAR_AND_ECONOMY.md`'s faucet note is updated from "flagged" to "addressed".
+  Branch `slice-coin-faucet`.
 
 - **Combat hit-flash: brief pop on hit/hurt** → shipped as a reusable `HealthComponent`
   behavior (scale pop + white tint, pure tested easing in `tests/hit_flash_tests.gd`) plus a

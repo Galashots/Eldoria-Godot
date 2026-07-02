@@ -3,6 +3,8 @@ extends Node
 const GameStateTests := preload("res://tests/game_state_tests.gd")
 const HitFlashTests := preload("res://tests/hit_flash_tests.gd")
 const PetTests := preload("res://tests/pet_tests.gd")
+const SpawnerTests := preload("res://tests/spawner_tests.gd")
+const AudioTests := preload("res://tests/audio_tests.gd")
 const CodexTests := preload("res://tests/codex_tests.gd")
 
 var _pass_count := 0
@@ -13,6 +15,8 @@ func _ready() -> void:
     _run_suite("GameStateTests", GameStateTests.new())
     _run_suite("HitFlashTests", HitFlashTests.new())
     _run_suite("PetTests", PetTests.new())
+    _run_suite("SpawnerTests", SpawnerTests.new())
+    _run_suite("AudioTests", AudioTests.new())
     _run_suite("CodexTests", CodexTests.new())
     print("")
     print("%d passed, %d failed" % [_pass_count, _fail_count])

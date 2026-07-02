@@ -249,6 +249,7 @@ func _swing_attack() -> void:
 	attack_hitbox.damage = int(round(base_damage * GameState.get_combat_multiplier()))
 	attack_hitbox.monitorable = true
 	attack_hitbox.visible = true
+	AudioManager.play_sfx("swing")
 
 func _on_attack_landed(_hurtbox: Area2D) -> void:
 	if not GameState.can_trigger_combat_question():

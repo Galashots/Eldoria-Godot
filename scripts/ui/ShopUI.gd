@@ -42,6 +42,7 @@ func _build_gear_rows() -> void:
         _buy_buttons[gear.id] = button
 
 func _on_buy_pressed(gear_id: String) -> void:
+    AudioManager.play_sfx("ui_click")
     GameState.buy_gear(gear_id)
 
 func _on_state_changed(_value = null) -> void:
