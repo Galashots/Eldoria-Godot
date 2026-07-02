@@ -135,17 +135,18 @@ a parallel system).
   over the water region, or a tweened translucent `Polygon2D` overlay) with no imported art;
   §7.1's gentle rule (a soft shimmer, not a churning sea).
 - **Acceptance criteria:**
-  - [ ] A gentle animated shimmer over the lake's water footprint (the existing water/deep-water
+  - [x] A gentle animated shimmer over the lake's water footprint (the existing water/deep-water
         tiles around tile ~(97,58)) — implemented as a small `canvas_item` shader sampling a
         scrolling gradient/sine, or a tweened low-alpha `Polygon2D`/`Sprite2D` overlay sized to
         the lake; no per-frame tile edits.
-  - [ ] The overlay sits under the player/NPC/prop y-sort layer so actors still draw over the
+  - [x] The overlay sits under the player/NPC/prop y-sort layer so actors still draw over the
         water correctly; the existing water-collision (impassible) is unchanged.
-  - [ ] Slow and subtle (kid-audience): a calm shimmer, no strong motion or bright specular flash.
-  - [ ] Placeholder-fallback-safe: if a shader fails to compile the lake still renders as the flat
+  - [x] Slow and subtle (kid-audience): a calm shimmer, no strong motion or bright specular flash.
+  - [x] Placeholder-fallback-safe: if a shader fails to compile the lake still renders as the flat
         water tiles (no crash); if a tweened overlay is used, it degrades to a static overlay.
   - [ ] Verifiable via a live screenshot at the lake (shimmer visible, actors draw correctly over
-        it) plus a headless node-presence assertion.
+        it) plus a headless node-presence assertion. (Headless node-presence assertion done via
+        `tests/lake_tests.gd`; the live screenshot check is left to the conductor's playtest pass.)
 - **Likely files touched:** `scenes/main/Main.tscn` (one shimmer overlay node positioned over the
   lake), possibly `shaders/water_shimmer.gdshader`, a tiny `scripts/fx/` tween script if not a
   shader, `tests/atmosphere_tests.gd` (node presence).
@@ -154,7 +155,10 @@ a parallel system).
   to avoid a `Main.tscn` conflict. Best after the day-warmth pass (shimmer reads with the tint).
   Lower priority than day-warmth (localized to the lake vs. whole-map mood) but a strong visual
   payoff.
-- **Status:** ready
+- **Status:** done — see `docs/CURRENT_STATE.md`'s "Living lake" writeup. Implemented as a
+  `canvas_item` shader (`shaders/water_shimmer.gdshader`) on a `ColorRect` in a new
+  `scenes/fx/LakeShimmer.tscn`, instanced as `World/LakeShimmer` in `Main.tscn`. Covered by
+  `tests/lake_tests.gd` (5 tests, registered in `tests/test_runner.gd`).
 
 ### Count-out-the-coins at the Merchant: bonus-only numeracy on purchase
 - **Goal:** Extend the shipped Yarrow "pay the right coin" pattern to the Merchant's shop: when
