@@ -40,6 +40,7 @@
 [ext_resource type="PackedScene" path="res://scenes/enemies/ElderSlime.tscn" id="36_elder_slime"]
 [ext_resource type="PackedScene" path="res://scenes/props/Bush.tscn" id="38_qcd1j"]
 [ext_resource type="PackedScene" path="res://scenes/props/Dock.tscn" id="39_12hjt"]
+[ext_resource type="PackedScene" path="res://scenes/items/SparkleSpot.tscn" id="40_sparkle"]
 
 [node name="Main" type="Node2D" unique_id=280939621]
 
@@ -206,6 +207,26 @@ position = Vector2(2400, 1550)
 [node name="Dock" type="Node2D" parent="." unique_id=1758201932 instance=ExtResource("39_12hjt")]
 y_sort_enabled = true
 position = Vector2(1552, 976)
+
+[node name="FlowerMeadowSparkle" type="Area2D" parent="." instance=ExtResource("40_sparkle")]
+position = Vector2(1680, 1360)
+place_id = "flower_meadow_sparkle"
+coin_reward = 2
+
+[node name="ForestEdgeSparkle" type="Area2D" parent="." instance=ExtResource("40_sparkle")]
+position = Vector2(288, 1600)
+place_id = "forest_edge_sparkle"
+coin_reward = 2
+
+[node name="LakeShoreSparkle" type="Area2D" parent="." instance=ExtResource("40_sparkle")]
+position = Vector2(1728, 864)
+place_id = "lake_shore_sparkle"
+coin_reward = 1
+
+[node name="RockyBorderSparkle" type="Area2D" parent="." instance=ExtResource("40_sparkle")]
+position = Vector2(3360, 320)
+place_id = "rocky_border_sparkle"
+coin_reward = 2
 
 [connection signal="combat_question_requested" from="Player" to="CombatQuestion" method="show_question"]
 [connection signal="dialogue_requested" from="Player" to="DialogueBox" method="show_dialogue"]
