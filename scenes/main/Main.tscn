@@ -34,6 +34,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/ShopUI.tscn" id="32_shopui"]
 [ext_resource type="Script" path="res://scripts/ui/ShopUI.gd" id="33_shopui_script"]
 [ext_resource type="PackedScene" path="res://scenes/props/StandingStone.tscn" id="34_stone"]
+[ext_resource type="Script" path="res://scripts/enemies/Spawner.gd" id="35_spawner"]
 [ext_resource type="PackedScene" path="res://scenes/props/LoneTree.tscn" id="35_tree"]
 
 [node name="Main" type="Node2D" unique_id=280939621]
@@ -122,6 +123,7 @@ layer = 100
 script = ExtResource("26_gwlw1")
 
 [node name="Enemies" type="Node2D" parent="." unique_id=835954324]
+script = ExtResource("35_spawner")
 
 [node name="MeadowSlime1" type="CharacterBody2D" parent="Enemies" unique_id=841379680 instance=ExtResource("27_ilqpp")]
 y_sort_enabled = true
