@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tools/paint_map.gd" id="1_paint"]
+
+; One-shot runner scene for tools/paint_map.gd - see that script's header
+; comment for why this must run as the project's main scene (autoload
+; bootstrap) rather than via `godot --script`. Never referenced by any
+; shipped gameplay scene.
+
+[node name="PaintMapRunner" type="Node"]
+script = ExtResource("1_paint")

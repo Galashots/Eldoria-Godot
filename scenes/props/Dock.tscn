@@ -1,0 +1,21 @@
+[gd_scene format=3]
+
+; Placeholder depth prop (bootstrap-polygon art, matching StandingStone/LoneTree/Bush).
+; Purely visual: no collision, no script. A short wooden plank walkway reading as a
+; small dock at the lake's sand shore. Authored from the node origin (near-shore end at
+; y~0) upward/outward so y_sort uses the base as the sort key, like the other props.
+
+[node name="Dock" type="Node2D"]
+y_sort_enabled = true
+
+[node name="Planks" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-10, 0, -10, -48, 10, -48, 10, 0)
+color = Color(0.55, 0.4, 0.24, 1)
+
+[node name="PlankLines" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-10, -12, 10, -12, 10, -10, -10, -10)
+color = Color(0.45, 0.32, 0.18, 1)
+
+[node name="PlankLines2" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-10, -28, 10, -28, 10, -26, -10, -26)
+color = Color(0.45, 0.32, 0.18, 1)
