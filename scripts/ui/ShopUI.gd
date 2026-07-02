@@ -12,6 +12,7 @@ extends CanvasLayer
 
 const CoinCounting := preload("res://scripts/core/CoinCounting.gd")
 
+@onready var shop_panel: PanelContainer = $PanelContainer
 @onready var coins_label: Label = $PanelContainer/VBoxContainer/CoinsLabel
 @onready var gear_list: VBoxContainer = $PanelContainer/VBoxContainer/GearList
 @onready var close_button: Button = $PanelContainer/VBoxContainer/CloseButton
@@ -44,6 +45,7 @@ func _ready() -> void:
 
 func open_shop() -> void:
     visible = true
+    shop_panel.visible = true
     coin_count_panel.visible = false
     _refresh()
 
@@ -106,6 +108,9 @@ func _open_coin_count_beat(price: int) -> void:
     coin_count_prompt_label.text = _get_prompt_text(price)
     coin_count_feedback_label.text = ""
     _update_coin_count_total_label()
+    # The two panels share the same screen rect; showing both at once bleeds the shop text
+    # through the counting panel, so the shop hides while the beat is up.
+    shop_panel.visible = false
     coin_count_panel.visible = true
 
 func _get_prompt_text(price: int) -> String:
@@ -150,7 +155,9 @@ func _on_coin_count_confirm_pressed() -> void:
 
     await get_tree().create_timer(1.2).timeout
     coin_count_panel.visible = false
+    shop_panel.visible = visible
 
 func _on_coin_count_skip_pressed() -> void:
     AudioManager.play_sfx("ui_click")
     coin_count_panel.visible = false
+    shop_panel.visible = visible
