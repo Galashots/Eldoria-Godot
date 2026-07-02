@@ -277,6 +277,7 @@ func _spawn_pet() -> void:
 		return
 	_pet_instance = PetScene.instantiate()
 	_pet_instance.follow_target = self
+	_pet_instance.pet_id = GameState.equipped_pet
 	_pet_instance.position = position + Vector2(-20, 12)
 	get_parent().add_child(_pet_instance)
 

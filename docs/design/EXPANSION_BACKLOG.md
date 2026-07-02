@@ -314,7 +314,7 @@ flagged. A genuine 5th quest / new subject remains `blocked: needs-user-input` b
 - **Sequencing:** Independent of every Main.tscn slice (touches pet/enemy/state code) — can run in
   parallel with a FRONT A prop slice. A satisfying systems-payoff slice; lower priority than the
   visible art/game-feel/learning wins above but a clean deepening of three merged systems at once.
-- **Status:** ready
+- **Status:** done
 
 ## Blocked
 

@@ -311,6 +311,20 @@ func _check_and_grant_first_pet() -> void:
     player_damaged.emit(player_hp, get_effective_max_hp())
     pet_unlocked.emit("mossy")
 
+func _check_and_grant_boss_pet() -> void:
+    # Second pet's grant path (expansion backlog): a *different* accomplishment from Mossy's
+    # all-four-quests gate - defeating the Elder Slime mini-boss, called from
+    # ElderSlime._on_died() alongside its award_keepsake("elder_slime_dewdrop") call. Idempotent
+    # (owning it already short-circuits) and does NOT auto-equip, unlike _check_and_grant_first_
+    # pet(): with two pets now owned, the character panel is the moment to choose between them
+    # rather than silently swapping whichever the player had equipped.
+    if owns_pet("dewdrop"):
+        return
+
+    owned_pets.append("dewdrop")
+    pet_unlocked.emit("dewdrop")
+    save_game()
+
 func record_creature_met(creature_id: String) -> void:
     # Idempotent: only the first meeting emits creature_met, matching the bonus-only,
     # you-can-only-gain-entries rule the codex slice requires.

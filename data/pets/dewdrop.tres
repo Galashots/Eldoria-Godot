@@ -4,9 +4,9 @@
 
 [resource]
 script = ExtResource("1_pet_def")
-id = "mossy"
-label = "Mossy"
-rarity = "Rare"
-hp_bonus = 2
-sprite_frame1_path = "res://assets/sprites/pets/mossy_idle1.png"
-sprite_frame2_path = "res://assets/sprites/pets/mossy_idle2.png"
+id = "dewdrop"
+label = "Dewdrop"
+rarity = "Uncommon"
+hp_bonus = 3
+sprite_frame1_path = "res://assets/sprites/pets/dewdrop_idle1.png"
+sprite_frame2_path = "res://assets/sprites/pets/dewdrop_idle2.png"

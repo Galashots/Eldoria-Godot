@@ -101,6 +101,7 @@ static func telegraph_windup_intensity(remaining: float, duration: float) -> flo
 func _on_died() -> void:
 	GameState.record_creature_met("elder_slime")
 	GameState.award_keepsake("elder_slime_dewdrop")
+	GameState._check_and_grant_boss_pet()
 	hurtbox.set_deferred("monitoring", false)
 	contact_hitbox.set_deferred("monitorable", false)
 	_spawn_coin_drop.call_deferred()

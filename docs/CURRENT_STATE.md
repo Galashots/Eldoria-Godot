@@ -469,6 +469,37 @@ coin/item award lands before the pop tween is even created. A new isolated
 rest mid-pop, the peak is never exceeded and stays within the gentle 1.3x cap, clamping past
 duration, the zero-duration divide-by-zero guard, and the two award-timing tests) is
 registered in `tests/test_runner.gd`. Test suite grew to 110.
+**Second pet: Dewdrop, earned by defeating the Elder Slime (expansion backlog): done.** Gives
+the M4 pet roster its second member, earned through a *different* existing accomplishment from
+Mossy's all-four-quests gate, per `docs/design/PETS.md`'s "Adding future pets is additive"
+recipe and NORTH_STAR's "make existing systems pay off together" framing. **Dewdrop**
+(`data/pets/dewdrop.tres`, Uncommon, +3 Max HP — deliberately a different rarity/bonus from
+Mossy's Rare/+2 so the choice between them matters) is granted by
+`GameState._check_and_grant_boss_pet()`, called from `ElderSlime._on_died()` right alongside its
+existing `award_keepsake("elder_slime_dewdrop")` call — the same boss-death beat that already
+awards the keepsake, reused rather than duplicated. The grant is idempotent (owning `dewdrop`
+already short-circuits it) and, unlike Mossy's grant, does **not** auto-equip: with two pets now
+in the roster, silently swapping the player's equipped pet on grant would take away a choice
+rather than add one, so Dewdrop simply becomes available in the character panel's existing Pets
+list (which already looped over `owned_pets` generically, so it needed no changes to handle a
+second pet). `PetDefinition.gd` gained two optional string fields,
+`sprite_frame1_path`/`sprite_frame2_path`, so pet art is now data-driven instead of requiring a
+forked scene per species: `Pet.gd` takes an exported `pet_id: String` (set by `Player.gd`'s
+`_spawn_pet()` before adding the instance to the tree) and, in `_ready()`, builds a fresh 2-frame
+idle-bob `SpriteFrames` from the equipped pet's definition if both paths are set; an empty
+`pet_id` or empty paths leave `Pet.tscn`'s baked-in `SpriteFrames` (Mossy's original art)
+untouched, so Mossy needed no data migration. Dewdrop's art
+(`assets/sprites/pets/dewdrop_idle{1,2}.png`) is a new `assets/sprites/pets/gen_dewdrop.py`
+(pure Pillow, mirroring `gen_mossy.py`'s precedent exactly): a blue/water-family teardrop body
+(sampled near the locked palette's `water`/`water_deep` ramp) with a pale glint highlight and the
+same strong dark outline for grass contrast — hue-separated from both the grass ramp and Mossy's
+mint/teal so the two pets and the ground never fight for attention side by side. No pet combat
+(Dewdrop reuses `Pet.gd`'s follow-only AI unchanged), no schema bump (`owned_pets`' existing
+array coercion already round-trips any pet id), no `Main.tscn`/`project.godot` changes. A new
+isolated `tests/second_pet_tests.gd` (5 tests: boss-death grant fires once and does not
+auto-equip, grant leaves hp/max-hp unchanged, manual equip applies Dewdrop's own +3 bonus without
+auto-healing, both pets coexisting with swap-clamps-hp-correctly in both directions, save/load/
+reset) is registered in `tests/test_runner.gd`. Test suite grew to 107.
 
 ## Implemented files
 
@@ -732,7 +763,7 @@ Open `project.godot` with Godot 4.x standard and press F5.
 Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
 ```
 
-Runs all 20 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
+Runs all 21 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
 (18), `tests/hit_flash_tests.gd` (5), `tests/pet_tests.gd` (5), `tests/spawner_tests.gd` (7),
 `tests/audio_tests.gd` (9), `tests/codex_tests.gd` (4), `tests/elder_slime_tests.gd` (4),
 `tests/keepsake_tests.gd` (4), `tests/map_tests.gd` (5), `tests/campfire_tests.gd` (3),
@@ -740,9 +771,10 @@ Runs all 20 isolated suites registered in `tests/test_runner.gd` - `tests/game_s
 `tests/atmosphere_tests.gd` (3), `tests/lake_tests.gd` (5),
 `tests/comprehension_tests.gd` (7), `tests/particle_tests.gd` (9),
 `tests/pet_sprite_tests.gd` (2), `tests/combat_question_tests.gd` (6),
-`tests/prop_tests.gd` (3), and `tests/pickup_pop_tests.gd` (8) -
+`tests/prop_tests.gd` (3), `tests/pickup_pop_tests.gd` (8), and
+`tests/second_pet_tests.gd` (5) -
 against the real `GameState`/`AudioManager` autoloads, and prints `PASS`/`FAIL` per test plus
-a summary line (**119 tests total**); exits non-zero if anything failed. See
+a summary line (**124 tests total**); exits non-zero if anything failed. See
 `tests/test_runner.gd` for the
 (small, custom, no third-party dependency) runner — it discovers every `test_*` method on
 each registered test class, resets `GameState` via `GameState.reset_state()` before each one
