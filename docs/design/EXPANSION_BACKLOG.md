@@ -220,7 +220,7 @@ out of scope until a future pass has a concrete reason to revisit them).
   that map's layout; building before it lands means guessing region geometry that will move.
   Lower priority than the keepsake/discovery/rest slices (atmosphere, not a progress loop), but
   a strong cohesion payoff once the map is stable.
-- **Status:** ready
+- **Status:** done — see `docs/CURRENT_STATE.md`'s "Region ambience pass" entry.
 
 ## Blocked
 

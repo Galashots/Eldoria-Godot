@@ -287,6 +287,35 @@ check is untouched. `ContentDefinitions.QUEST_SUMMARIES`'s Yarrow `learning_chec
 updated to "Pay Yarrow for the remedy jar" to match. See `docs/design/CURRICULUM_MAP.md` for
 the updated check text and the note that this does not touch the CONFIRM-gated subject table.
 
+**Region ambience pass (expansion backlog): done.** Generalizes the M-audio-pass's single
+global ambient loop into region-aware playback matching the "Epic map pass" regions, per
+`docs/design/NORTH_STAR.md`'s cohesion-over-volume pillar and `RESEARCH_NOTES.md` §8.3/§8.4.
+`AudioManager.gd` now owns two ping-ponged `AudioStreamPlayer`s instead of one; a cheap ~0.5s
+`Timer` poll (`_on_region_poll_timeout()`) reads the player's `global_position` (via
+`get_tree().get_first_node_in_group("player")`, the same lookup precedent `MeadowSlime.gd`/
+`ElderSlime.gd` already use) and looks it up against `REGION_RECTS` — one rectangle per region
+in world-pixel space, hand-derived from `tools/paint_map.gd`'s tile regions (16px tiles) so
+both files describe the same geography: lake, forest edge, village green, flower meadow, and a
+map-spanning rocky-border fallback, checked in that order (first match wins) so lake/forest/
+village/meadow take priority over the outer border rect they sit inside. On a region change,
+`_crossfade_to_region()` starts the new region's track on the idle player at silence and ramps
+both players' `volume_db` over `CROSSFADE_DURATION_SEC` (1.75s) via a pure, unit-tested easing
+function - no hard cut, no silence gap. Four new self-synthesized ambient WAVs extend
+`assets/audio/gen_sfx.py` (same provenance precedent as the original sound pass): `village_
+hearth` (a very soft warm low-tone bed), `meadow_birds` (the meadow pad bed plus a few
+deterministic soft chirps), `forest_wind` (filtered-noise swells via a slowly-modulated
+low-pass cutoff), and `lake_water` (a soft periodic lapping envelope over dark noise) - all
+peak-normalized well under full scale and loop-seam-faded like the existing `ambient_meadow`
+track. The old `ambient_meadow.wav` track is kept and reused as the rocky-border region's
+ambient (rather than deleted), since it already reads as a neutral open-field bed. Two pure,
+unit-tested static functions back this: `AudioManager.region_for_position(pos, region_rects,
+default_region)` (rectangle lookup) and `AudioManager.crossfade_volume_db(t, target_db,
+is_incoming)` (linear-in-dB fade easing, clamped, with -80 dB standing in for silent) — both
+mirroring `coins_increased()`'s pure-static-function precedent. No gameplay change: pure
+atmosphere. Test suite grew to 61 (6 new `AudioTests` cases: in-rect lookups for all 4 named
+regions, first-match-wins on overlap, outside-all-rects fallback, inclusive/exclusive rect
+boundary edges, and the cross-fade easing's endpoints/midpoint/clamping).
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
@@ -378,6 +407,10 @@ the updated check text and the note that this does not touch the CONFIRM-gated s
 - `scripts/enemies/ElderSlime.gd` (boss keepsake addition): `_on_died()` now also calls `GameState.award_keepsake("elder_slime_dewdrop")`.
 - `scripts/ui/CharacterPanel.gd`/`.tscn` (boss keepsake addition): a "Keepsakes" section (`KeepsakesList` `VBoxContainer`) listing each earned keepsake as "Label — fact", refreshed on `GameState.keepsake_awarded`.
 - `tests/keepsake_tests.gd`: a sixth isolated test suite (4 tests) for boss keepsakes, registered in `tests/test_runner.gd`.
+- `scripts/core/AudioManager.gd` (region ambience pass): generalized from one global ambient loop to region-aware playback — `REGION_RECTS` (world-pixel rectangles matching `tools/paint_map.gd`'s tile regions), `REGION_STREAMS` (one loop per region), a ~0.5s `Timer` poll of the player's position, and a two-player cross-fade (`_crossfade_to_region()`) driven by the pure `region_for_position()`/`crossfade_volume_db()` static functions.
+- `assets/audio/gen_sfx.py` (region ambience pass additions): `village_hearth()`, `meadow_birds()`, `forest_wind()`, `lake_water()` — four new self-synthesized, soft, loop-seam-faded ambient beds, one per region (see writeup above).
+- `assets/audio/{village_hearth,meadow_birds,forest_wind,lake_water}.wav`: the generated region ambient tracks.
+- `tests/audio_tests.gd` (region ambience pass additions): 6 new tests for `region_for_position()` (in-rect lookups, first-match-wins on overlap, outside-all-rects fallback, inclusive/exclusive boundary edges) and `crossfade_volume_db()` (endpoints, midpoint, clamping). Suite total is now 61.
 
 ## How to run
 
@@ -389,10 +422,12 @@ Open `project.godot` with Godot 4.x standard and press F5.
 Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
 ```
 
-Runs `tests/game_state_tests.gd`, `tests/hit_flash_tests.gd`, `tests/pet_tests.gd`,
-`tests/codex_tests.gd`, and `tests/elder_slime_tests.gd` against the real `GameState` autoload
-and prints `PASS`/`FAIL` per test plus a summary line (36 tests total); exits non-zero if
-anything failed. See `tests/test_runner.gd` for the
+Runs every registered suite in `tests/test_runner.gd` (`game_state_tests.gd`,
+`hit_flash_tests.gd`, `pet_tests.gd`, `spawner_tests.gd`, `audio_tests.gd`, `codex_tests.gd`,
+`elder_slime_tests.gd`, `keepsake_tests.gd`, `map_tests.gd`) against the real
+`GameState`/`AudioManager` autoloads and prints `PASS`/`FAIL` per test plus a summary line (61
+tests total as of the region ambience pass); exits non-zero if anything failed. See
+`tests/test_runner.gd` for the
 (small, custom, no third-party dependency) runner — it discovers every `test_*` method on
 each registered test class, resets `GameState` via `GameState.reset_state()` before each one
 for isolation, and reports results.
