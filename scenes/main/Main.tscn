@@ -49,6 +49,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/ComprehensionCheck.tscn" id="43_comprehension"]
 [ext_resource type="Script" path="res://scripts/ui/ComprehensionCheck.gd" id="44_comprehension_script"]
 [ext_resource type="PackedScene" path="res://scenes/fx/AmbientParticles.tscn" id="45_ambient_particles"]
+[ext_resource type="PackedScene" path="res://scenes/props/PineTree.tscn" id="46_pine"]
 
 [node name="Main" type="Node2D" unique_id=280939621]
 
@@ -208,6 +209,31 @@ position = Vector2(180, 1700)
 [node name="ForestTree5" type="Node2D" parent="." unique_id=1197823095 instance=ExtResource("35_tree")]
 y_sort_enabled = true
 position = Vector2(340, 2000)
+
+[node name="PineCluster1" type="Node2D" parent="." instance=ExtResource("46_pine")]
+y_sort_enabled = true
+position = Vector2(120, 240)
+scale = Vector2(0.92, 0.92)
+
+[node name="PineCluster2" type="Node2D" parent="." instance=ExtResource("46_pine")]
+y_sort_enabled = true
+position = Vector2(190, 300)
+scale = Vector2(1.08, 1.08)
+
+[node name="PineCluster3" type="Node2D" parent="." instance=ExtResource("46_pine")]
+y_sort_enabled = true
+position = Vector2(80, 360)
+scale = Vector2(1.0, 1.0)
+
+[node name="PineCluster4" type="Node2D" parent="." instance=ExtResource("46_pine")]
+y_sort_enabled = true
+position = Vector2(150, 420)
+scale = Vector2(0.96, 0.96)
+
+[node name="PineCluster5" type="Node2D" parent="." instance=ExtResource("46_pine")]
+y_sort_enabled = true
+position = Vector2(230, 220)
+scale = Vector2(1.04, 1.04)
 
 [node name="BorderStone1" type="Node2D" parent="." unique_id=722862703 instance=ExtResource("34_stone")]
 y_sort_enabled = true

@@ -128,7 +128,13 @@ flagged. A genuine 5th quest / new subject remains `blocked: needs-user-input` b
   slices but will conflict textually with them; land first (it is the strongest single "postcard"
   upgrade because the forest band is the largest under-propped region). Rebase the next Main.tscn
   slice on this one.
-- **Status:** ready
+- **Status:** done — shipped on branch `m4-pets-v2`: `scenes/props/PineTree.tscn` (tall,
+  narrow, three-tiered triangular conifer, no collision/script, `y_sort_enabled`), 5 instances
+  (`PineCluster1`-`5`, scale-varied 0.92-1.08) massed in the empty northern part of the
+  forest-edge band in `Main.tscn`, clear of every existing node and the path corridor. A new
+  `tests/prop_tests.gd` (3 tests, registered in `test_runner.gd`) asserts node presence,
+  `forest_edge` region membership (via `AudioManager.region_for_position()`), and no-collision/
+  y_sort. Suite: 105/105. See `docs/CURRENT_STATE.md`.
 
 ### 2. Expand the combat numeracy pool with a gentle difficulty ramp
 - **Goal:** Grow the tiny 3-item-per-profile `CombatQuestion` pool into a dozen-plus items per

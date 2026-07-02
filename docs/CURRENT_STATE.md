@@ -405,6 +405,26 @@ isolated `tests/pet_sprite_tests.gd` (2 tests: `Body` is a `Sprite2D`/`AnimatedS
 texture/`SpriteFrames` assigned, and `Body` is no longer the old `Polygon2D`) is registered in
 `tests/test_runner.gd`. Test suite grew to 102.
 
+**Forest-edge signature: pine-cluster props (expansion backlog): done.** Gives the west
+forest-edge region its own recognizable silhouette, per NORTH_STAR pillar 1 (deepen the
+*existing* forest-edge region rather than add a new biome) and `RESEARCH_NOTES.md` §10.1 (a
+district reads at a glance from a *recurring* signature prop, not a single tree). A new
+`scenes/props/PineTree.tscn` (bootstrap-polygon art, matching the `StandingStone`/`LoneTree`/
+`Bush` convention: no collision, no script, `y_sort_enabled`) is a tall, narrow, three-tiered
+triangular conifer silhouette — deliberately distinct from `LoneTree`'s rounded canopy —
+colored from the locked shared palette's forest ramp (`STYLE_GUIDE.md`'s `forest_floor`
+`#216633`/`grass_dark`-family greens, with a brown trunk). Five instances (`PineCluster1`-`5`)
+are massed as a natural, unevenly-spaced cluster in the empty northern part of the forest band
+(x 80-230, y 220-420 — clear of `Mira`, the existing `ForestTree1`-`5` `LoneTree` instances, the
+`ForestEdgeSparkle`/`ForestEdgeParticles` props, and the path corridor), each with a slightly
+varied `scale` (0.92-1.08) for a natural, non-repeated feel. Purely visual and additive — no
+existing node moved. A new isolated `tests/prop_tests.gd` (3 tests, registered in
+`tests/test_runner.gd`) asserts every pine node exists in `Main.tscn`, reuses
+`AudioManager.region_for_position()` (the same region-lookup helper the ambience/particle
+passes established) to confirm each pine's position falls inside the `forest_edge`
+`REGION_RECTS` rectangle, and confirms the `PineTree` scene itself carries no collision and is
+`y_sort_enabled`. Test suite grew to 105.
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
@@ -413,6 +433,7 @@ texture/`SpriteFrames` assigned, and `Body` is no longer the old `Polygon2D`) is
 - `scenes/main/Main.tscn`: `World/Ground` `TileMapLayer` (220x140 tiles, 3520x2240px as of the "Epic map pass", `y_sort_enabled` on `World`) replacing the old flat floor/obstacle, player, Elder, Mira, Finn, Yarrow (all `y_sort_enabled`), collectibles (including Silverleaf), HUD, dialogue, character panel, profile selector, learning check, `Enemies` (3 `MeadowSlime` instances), and `CombatQuestion` instances.
 - `tools/paint_map.gd` / `tools/PaintMapRunner.tscn`: the one-shot, deterministic, documented-as-code map repaint tool behind the "Epic map pass" (see writeup above) — not part of any shipped scene, kept for future map iteration.
 - `scenes/props/Bush.tscn` and `scenes/props/Dock.tscn`: two more placeholder-polygon depth props (Epic map pass), matching `StandingStone.tscn`/`LoneTree.tscn`'s convention (no collision, no script, `y_sort_enabled`).
+- `scenes/props/PineTree.tscn`: a tall, narrow, three-tiered triangular conifer placeholder-polygon prop (Forest-edge signature pass), distinct from `LoneTree`'s rounded canopy, colored from the locked shared palette's forest ramp; five instances (`PineCluster1`-`5`) are massed in the forest-edge band in `Main.tscn`. See writeup above.
 - `tests/map_tests.gd`: a fifth isolated test suite (5 tests) for the Epic map pass — see writeup above — registered in `tests/test_runner.gd`.
 - `scripts/core/combat/HealthComponent.gd`, `HitboxComponent.gd`, `HurtboxComponent.gd`: the M2 component architecture. `HealthComponent` tracks hp with a brief post-hit immunity window (`hit_cooldown_sec`) and a `died` signal; `HitboxComponent` is a toggleable damage zone with a `landed` signal so an attacker can react to connecting; `HurtboxComponent` detects overlapping hitboxes by group membership ("hitbox"/"hurtbox" - not a dedicated physics layer, since everything in this project already defaults to layer/mask 1) and auto-discovers a sibling node named "HealthComponent" in `_ready()` rather than relying on a typed node export (a raw `NodePath(...)` literal written into `.tscn` text does not reliably resolve to a `HealthComponent` reference — a real bug caught live, see below). A `HurtboxComponent` never damages its own owner (same-parent check), since an enemy's own contact-damage hitbox and hurtbox occupy the same space. `HealthComponent` also drives a brief **hit-flash** on damage (RESEARCH_NOTES §7.1): it auto-discovers a sibling `Body` sprite and briefly pops its scale (+ tints toward white) so a landed hit reads instantly — a gentle, no-screen-shake "juice" pass added by the expansion loop. The timing easing (`HealthComponent.hit_reaction_intensity()`) is pure and unit-tested in `tests/hit_flash_tests.gd` (a second suite registered in `tests/test_runner.gd`); `Player.gd` reuses the same easing for a soft-red player-hurt flash.
 - `scripts/enemies/MeadowSlime.gd` / `scenes/enemies/MeadowSlime.tscn`: the first monster. Simple idle/wander/chase FSM (aggro radius, home-anchored wander), a `HealthComponent` (3 hp), a `Hurtbox` (receives player hits), and an always-on `ContactHitbox` (deals contact damage to the player). Real art (`assets/sprites/enemies/meadow_slime_idle.png`, via `assets/manifests/meadow_slime_idle.manifest.json`); see `docs/design/MONSTER_CONCEPTS.md`. On death it always spawns its guaranteed 1-coin `CoinPickup`, plus rolls an exported `bonus_coin_chance` (default 12%) for one additional bonus coin via the pure, deterministically-testable `MeadowSlime.rolls_bonus_coin(chance, roll)` — see `docs/design/GEAR_AND_ECONOMY.md`'s "Bonus drop rule".
@@ -666,15 +687,16 @@ Open `project.godot` with Godot 4.x standard and press F5.
 Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
 ```
 
-Runs all 15 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
+Runs all 18 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
 (18), `tests/hit_flash_tests.gd` (5), `tests/pet_tests.gd` (5), `tests/spawner_tests.gd` (7),
 `tests/audio_tests.gd` (9), `tests/codex_tests.gd` (4), `tests/elder_slime_tests.gd` (4),
 `tests/keepsake_tests.gd` (4), `tests/map_tests.gd` (5), `tests/campfire_tests.gd` (3),
 `tests/discovery_tests.gd` (4), `tests/coin_counting_tests.gd` (8),
-`tests/atmosphere_tests.gd` (3), `tests/lake_tests.gd` (5), and
-`tests/comprehension_tests.gd` (7) -
+`tests/atmosphere_tests.gd` (3), `tests/lake_tests.gd` (5),
+`tests/comprehension_tests.gd` (7), `tests/particle_tests.gd` (9),
+`tests/pet_sprite_tests.gd` (2), and `tests/prop_tests.gd` (3) -
 against the real `GameState`/`AudioManager` autoloads, and prints `PASS`/`FAIL` per test plus
-a summary line (**91 tests total**); exits non-zero if anything failed. See
+a summary line (**105 tests total**); exits non-zero if anything failed. See
 `tests/test_runner.gd` for the
 (small, custom, no third-party dependency) runner — it discovers every `test_*` method on
 each registered test class, resets `GameState` via `GameState.reset_state()` before each one

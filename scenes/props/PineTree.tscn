@@ -1,0 +1,28 @@
+[gd_scene format=3]
+
+; Placeholder wayfinding/region-signature prop (bootstrap-polygon art, matching the
+; StandingStone/LoneTree/Bush convention). Purely visual: no collision, no script. A tall,
+; narrow, triangular conifer silhouette (deliberately distinct from LoneTree's rounded
+; canopy) made of three stacked tiers so it reads as a pine at a glance, colored from the
+; locked shared palette (STYLE_GUIDE.md: forest_floor #216633 / grass_dark #288A36).
+; Authored from the node origin (trunk base at y~0) upward so y_sort uses the base as the
+; sort key, like the other props.
+
+[node name="PineTree" type="Node2D"]
+y_sort_enabled = true
+
+[node name="Trunk" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-6, 0, -5, -20, 5, -20, 6, 0)
+color = Color(0.36, 0.24, 0.14, 1)
+
+[node name="TierBottom" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -108, 30, -56, 22, -56, 22, -46, -22, -46, -22, -56, -30, -56)
+color = Color(0.13, 0.4, 0.2, 1)
+
+[node name="TierMiddle" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -138, 24, -92, 18, -92, 18, -82, -18, -82, -18, -92, -24, -92)
+color = Color(0.16, 0.47, 0.24, 1)
+
+[node name="TierTop" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -164, 16, -124, -16, -124)
+color = Color(0.19, 0.54, 0.27, 1)
