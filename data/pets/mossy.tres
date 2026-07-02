@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="PetDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/core/PetDefinition.gd" id="1_pet_def"]
+
+[resource]
+script = ExtResource("1_pet_def")
+id = "mossy"
+label = "Mossy"
+rarity = "Rare"
+hp_bonus = 2

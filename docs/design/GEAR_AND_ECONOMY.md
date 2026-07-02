@@ -59,19 +59,21 @@ framework — revisit that shape only once a second enemy needs the same behavio
   precedent in `docs/design/VISUAL_CONTRACT.md`).
 - Gear stat axes beyond `damage_bonus` (defense, max hp, move speed).
 
-## Faucet depth — flagged for a future economy slice
+## Faucet depth — addressed
 
 Adding the Legendary Dawnbringer Blade (+4, 30 coins) as the aspirational top-of-shop item
-surfaced the real pacing bottleneck: the **coin faucet is thin and non-repeatable within a
-session.** The M1 zone has exactly **3 Meadow Slimes, and they do not respawn** (they
-`queue_free()` on death), so a fresh session yields only ~3 coins from combat. Coins persist
-across sessions, so the shop roster is a *cumulative* goal — but no top-tier item (not even
-the existing 20-coin Oakheart Blade) is reachable "within one session," and Dawnbringer at 30
-is deliberately priced as a multi-session pinnacle with only a modest 20→30 jump so it does
-**not** worsen the grind (per the anti-"pinch point"/anti-scarcity research in
+surfaced the real pacing bottleneck: the **coin faucet was thin and non-repeatable within a
+session.** The M1 zone has exactly **3 Meadow Slimes**, and previously they did not respawn
+(they `queue_free()` on death), so a fresh session yielded only ~3 coins from combat. Coins
+persist across sessions, so the shop roster was a *cumulative* goal — but no top-tier item
+(not even the existing 20-coin Oakheart Blade) was reachable "within one session," and
+Dawnbringer at 30 is deliberately priced as a multi-session pinnacle with only a modest 20→30
+jump so it does **not** worsen the grind (per the anti-"pinch point"/anti-scarcity research in
 `docs/design/RESEARCH_NOTES.md` §6.2).
 
-The natural next economy slice is therefore on the **faucet** side, not another sink: a small,
-*repeatable* coin source (e.g. a modest slime respawn cadence, or a second tiny faucet) so the
-existing roster stays reachable without feeling grindy. Left for the architect to prioritize;
-Dawnbringer is intentionally the last *sink* added until the faucet is widened.
+This is now addressed by the **gentle repeatable coin faucet** slice: `scripts/enemies/
+Spawner.gd` (attached to the `Enemies` node in `Main.tscn`) watches the 3 Meadow Slime spawn
+points and re-instances a fresh slime at the same position a slow, tunable
+`respawn_delay_sec` (default 25s) after one dies, always capped at the original 3 so the zone
+never feels crowded or dangerous. The coin faucet is now repeatable within a session without
+becoming a grind wall.

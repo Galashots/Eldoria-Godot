@@ -130,6 +130,47 @@ branches) without a scene tree or RNG seeding. Scoped to a single exported var o
 `MeadowSlime.gd` rather than a new loot-table framework, since there's still only one enemy.
 Test suite grew to 17 (1 new: the bonus-roll boundary/hit/miss cases).
 
+**Pets (M4 of the Phase 2 roadmap): done.** A deliberately narrow first slice — one species,
+follow-only AI, no pet combat — per `docs/design/NORTH_STAR.md`'s "cohesion over volume"
+pillar; see `docs/design/PETS.md` for the locked rules. `PetDefinition.gd` (mirroring
+`GearDefinition.gd`) backs the pet roster under `data/pets/`; the first and only pet is
+**Mossy** (`data/pets/mossy.tres`, Rare, +2 Max HP), with placeholder polygon art (a mint/teal
+blob with a leaf and eyes) in `scenes/pets/Pet.tscn`. `Pet.gd` is a `CharacterBody2D` with
+follow-only AI (no `HealthComponent`, no combat): it moves toward the player at speed 220
+whenever it's more than 24px away and stops inside that ring, since the player moves at 160.
+Unlocking reuses the exact same gate as the Tier 1 armor grant — completing all four village
+quests — via `GameState._check_and_grant_first_pet()`, called from `complete_quest()`; it
+grants Mossy once, auto-equips it, and heals the player by the bonus amount so the new max hp
+arrives full rather than leaving the player visually damaged. `GameState` gained `owned_pets`/
+`equipped_pet`, `pet_unlocked(pet_id)`/`pet_changed` signals, `equip_pet(id)` (`""` unequips,
+requires ownership, clamps `player_hp` to the new effective max, and deliberately never
+auto-heals on equip/unequip — only the first-grant path heals), `get_equipped_pet_bonus()`,
+and `get_effective_max_hp()` (`PLAYER_MAX_HP` + the equipped pet's bonus), which
+`take_player_damage()`/`heal_player_to_full()`/the HUD's hp readout now use instead of the old
+fixed max. `Player.gd` spawns/despawns the pet as a sibling node on `pet_changed`, and on
+`_ready()` if a loaded save already has a pet equipped. The character panel gained a Pets
+section listing every owned pet ("Label (Rarity) +N Max HP", tinted by rarity color) with an
+Equip/Unequip button each, and the equipped pet is now included in the equipment summary
+line. Save schema bumped to version 3 (`owned_pets`/`equipped_pet`, same `Array[String]` JSON
+coercion pattern already used for `owned_gear`); `_migrate()` stays a no-op since
+`load_game()` already reads every field via `.get()` with defaults. Explicitly deferred (see
+`docs/design/PETS.md`): pet combat, multiple species/a real roster, buying pets, evolution/
+leveling, and real (non-placeholder) art. Test suite grew to 28 (a new, isolated
+`tests/pet_tests.gd` with 5 tests: grant-gate ordering, grant-heal + idempotence, ownership/
+clamp/no-auto-heal on equip, save/load round trip, and reset).
+**Gentle repeatable coin faucet (expansion backlog): done.** `docs/design/GEAR_AND_ECONOMY.md`
+had flagged the real pacing bottleneck: the M1 zone's 3 Meadow Slimes did not respawn, so a
+fresh session yielded only ~3 coins from combat. `scripts/enemies/Spawner.gd`, attached to the
+existing `Enemies` node in `Main.tscn`, fixes this without touching `MeadowSlime.gd`: it
+records each slime's original spawn position on `_ready()`, and when one dies it schedules a
+fresh instance at that position after a slow, tunable `respawn_delay_sec` (default 25s) —
+always capped at the original count of 3 so the zone never feels crowded. The cap/cadence
+decisions live in pure static functions (`Spawner.should_schedule_respawn()`,
+`Spawner.count_due()`), following the same deterministic-testability precedent as
+`MeadowSlime.rolls_bonus_coin()`. `docs/design/GEAR_AND_ECONOMY.md`'s faucet note is updated
+from "flagged" to "addressed". A new isolated `tests/spawner_tests.gd` suite (7 tests) covers
+the cap and due-time math.
+
 ## Implemented files
 
 - `project.godot`: project configuration, main scene, and GameState autoload.
@@ -138,6 +179,7 @@ Test suite grew to 17 (1 new: the bonus-roll boundary/hit/miss cases).
 - `scenes/main/Main.tscn`: `World/Ground` `TileMapLayer` (160x100 tiles, 2560x1600px, `y_sort_enabled` on `World`) replacing the old flat floor/obstacle, player, Elder, Mira, Finn, Yarrow (all `y_sort_enabled`), collectibles (including Silverleaf), HUD, dialogue, character panel, profile selector, learning check, `Enemies` (3 `MeadowSlime` instances), and `CombatQuestion` instances.
 - `scripts/core/combat/HealthComponent.gd`, `HitboxComponent.gd`, `HurtboxComponent.gd`: the M2 component architecture. `HealthComponent` tracks hp with a brief post-hit immunity window (`hit_cooldown_sec`) and a `died` signal; `HitboxComponent` is a toggleable damage zone with a `landed` signal so an attacker can react to connecting; `HurtboxComponent` detects overlapping hitboxes by group membership ("hitbox"/"hurtbox" - not a dedicated physics layer, since everything in this project already defaults to layer/mask 1) and auto-discovers a sibling node named "HealthComponent" in `_ready()` rather than relying on a typed node export (a raw `NodePath(...)` literal written into `.tscn` text does not reliably resolve to a `HealthComponent` reference — a real bug caught live, see below). A `HurtboxComponent` never damages its own owner (same-parent check), since an enemy's own contact-damage hitbox and hurtbox occupy the same space. `HealthComponent` also drives a brief **hit-flash** on damage (RESEARCH_NOTES §7.1): it auto-discovers a sibling `Body` sprite and briefly pops its scale (+ tints toward white) so a landed hit reads instantly — a gentle, no-screen-shake "juice" pass added by the expansion loop. The timing easing (`HealthComponent.hit_reaction_intensity()`) is pure and unit-tested in `tests/hit_flash_tests.gd` (a second suite registered in `tests/test_runner.gd`); `Player.gd` reuses the same easing for a soft-red player-hurt flash.
 - `scripts/enemies/MeadowSlime.gd` / `scenes/enemies/MeadowSlime.tscn`: the first monster. Simple idle/wander/chase FSM (aggro radius, home-anchored wander), a `HealthComponent` (3 hp), a `Hurtbox` (receives player hits), and an always-on `ContactHitbox` (deals contact damage to the player). Real art (`assets/sprites/enemies/meadow_slime_idle.png`, via `assets/manifests/meadow_slime_idle.manifest.json`); see `docs/design/MONSTER_CONCEPTS.md`. On death it always spawns its guaranteed 1-coin `CoinPickup`, plus rolls an exported `bonus_coin_chance` (default 12%) for one additional bonus coin via the pure, deterministically-testable `MeadowSlime.rolls_bonus_coin(chance, roll)` — see `docs/design/GEAR_AND_ECONOMY.md`'s "Bonus drop rule".
+- `scripts/enemies/Spawner.gd`: attached to the `Enemies` node in `Main.tscn` (gentle repeatable coin faucet). Records each Meadow Slime's original spawn position on `_ready()`, and when one dies (`tree_exited`), schedules a fresh instance at the same position after a slow, tunable `respawn_delay_sec` (default 25s) — always capped at the original count of 3 so the zone never crowds. The cap/cadence decisions are pure static functions (`should_schedule_respawn`, `count_due`), deterministically unit-tested in `tests/spawner_tests.gd` without a scene tree, mirroring `MeadowSlime.rolls_bonus_coin()`'s precedent. See `docs/design/GEAR_AND_ECONOMY.md`'s faucet note, now addressed.
 - `scenes/ui/CombatQuestion.tscn` / `scripts/ui/CombatQuestion.gd`: the combat damage-multiplier question. Deliberately separate from `LearningCheck` (no quest coupling, dismisses itself immediately on answer). A small numeracy-only question pool per profile, matching the already-confirmed subject scope in `docs/design/CURRICULUM_MAP.md`.
 - `scenes/player/Player.tscn`: player `Body` (`AnimatedSprite2D`, `sprite_frames` built in code per profile — see `Player.gd`), a hidden empty `Armor` (`AnimatedSprite2D`) scaffold for a future equipment layer, collision shape, camera (`Camera2D` now has `limit_left/top/right/bottom` set to the map bounds and `position_smoothing_enabled` on), an `AttackHitbox` (toggled on for a brief window each swing, repositioned per facing direction), and a `PlayerHurtbox` (always-on, receives enemy hits).
 - `scripts/player/Player.gd` (combat additions): a new `attack` input action (Space or left click, added via the Godot Input Map) swings `AttackHitbox` in the player's current facing direction (`FACING_VECTORS`), gated by an active window + cooldown so it can't be spammed. Landing a hit (the `HitboxComponent.landed` signal) requests a combat question if one isn't on cooldown; taking a hit (`PlayerHurtbox.hit_received`) calls `GameState.take_player_damage()`. On `GameState.player_died`, the player teleports back to wherever it started the scene (captured once in `_ready()` as `_spawn_position`), heals to full, and shows a brief non-punitive dialogue line — no game over screen.
@@ -169,6 +211,8 @@ Test suite grew to 17 (1 new: the bonus-roll boundary/hit/miss cases).
 - `assets/manifests/mage_body_idle_{s,se,e,ne,n}.manifest.json`, `assets/source/generated/mage_body_idle_sheet/source.png` (a single shared 5-panel source sheet, generated in one ChatGPT response and addressed per direction via `sourceCell` on a 5-col grid), and `assets/sprites/characters/mage_body_idle_*.png`: production art for Grade 2 Mage, matching the brown-haired, navy/gold-tunic design from the V2 style reference. Only `_s` (south) is currently wired into `Player.gd`.
 - `assets/manifests/{mage,adventurer}_body_walk{1,2}_{s,se,e,ne,n}.manifest.json` (20 manifests), `assets/source/generated/{mage,adventurer}_body_walk_sheet/source.png` (one shared 5-direction x 2-pose grid sheet per character, generated in one ChatGPT response each, addressed via `sourceCell` on a 5-col x 2-row grid), and `assets/sprites/characters/{mage,adventurer}_body_walk{1,2}_*.png`: the two new mid-stride poses per direction per character that drive the walk-cycle animation (see `Player.gd` above). `walk1`/`walk2` combine with the existing `idle` pose at runtime — no third pose was generated for "neutral", since idle already serves that role.
 - `assets/manifests/{mage,adventurer}_body_idle_tier1_{s,se,e,ne,n}.manifest.json` (10 manifests), `assets/source/generated/{mage,adventurer}_body_idle_tier1_sheet/source.png` (one shared 5-direction grid sheet per character, a ChatGPT in-place edit of the base idle sheet adding leather armor), and `assets/sprites/characters/{mage,adventurer}_body_idle_tier1_*.png`: Tier 1 (Leather) armor art, see `docs/design/ARMOR_TIERS.md`. Normalized as full replacement body sprite sets (not a transparent overlay — see that doc for why the original diff-based overlay plan was dropped). Now wired into `Player.gd`/`GameState.gd`: completing all three quests auto-equips it (see above); no manual equip/unequip UI exists.
+- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). `tests/hit_flash_tests.gd` adds a second, isolated 5-test suite, and `tests/pet_tests.gd` adds a third, isolated 5-test suite (grant-gate ordering, grant-heal + idempotence, ownership/clamp/no-auto-heal on equip, save/load round trip, reset) — both registered in `test_runner.gd`. Suite total is now 28. See "How to run the GDScript test suite" below.
+- `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). `tests/hit_flash_tests.gd` adds a second, isolated 5-test suite registered in `test_runner.gd`. `tests/spawner_tests.gd` adds a third, isolated 7-test suite (the coin-faucet respawn cap/cadence pure logic) registered the same way. See "How to run the GDScript test suite" below.
 - `tests/TestRunner.tscn`, `tests/test_runner.gd`, `tests/game_state_tests.gd`: a small custom headless GDScript test suite for `GameState` (no third-party test framework/addon), 18 tests (16 through M3, plus the Legendary Dawnbringer Blade buy/equip/+4 test, plus `MeadowSlime.rolls_bonus_coin()`'s boundary/hit/miss cases — preloaded directly from `scripts/enemies/MeadowSlime.gd` since it's a pure static function). `tests/hit_flash_tests.gd` adds a second, isolated 5-test suite, and `tests/audio_tests.gd` adds a third, isolated 3-test suite (`AudioManager.coins_increased()`, unknown-name no-op) — both registered in `test_runner.gd`. Suite total is now 26. See "How to run the GDScript test suite" below.
 - `scripts/core/GearDefinition.gd` and `data/gear/{worn_dagger,iron_sword,oakheart_blade,dawnbringer_blade}.tres`: the gear-stats Resource, mirroring `ItemDefinition.gd` — id/label/rarity/damage_bonus/price per weapon (`dawnbringer_blade` is the Legendary top tier added by the expansion loop).
 - `scripts/items/CoinPickup.gd` / `scenes/items/CoinPickup.tscn`: coin pickup, mirroring `Collectible.gd`; spawned (deferred) by `MeadowSlime._on_died()`.
@@ -176,6 +220,12 @@ Test suite grew to 17 (1 new: the bonus-roll boundary/hit/miss cases).
 - `scripts/ui/ShopUI.gd` / `scenes/ui/ShopUI.tscn`: the shop panel, built from `ContentDefinitions.GEAR_DEFINITIONS` at runtime (no per-item scene nodes to maintain). Buy buttons disable once owned or unaffordable.
 - `docs/design/GEAR_AND_ECONOMY.md`: locks the M3 rarity list and weapon roster (id/rarity/damage/price) for future gear additions.
 - `scenes/props/StandingStone.tscn` and `scenes/props/LoneTree.tscn`: two placeholder-polygon wayfinding landmark props (no collision, no script), instanced once each in `Main.tscn` beside the north village fork and the west garden fork so the two main paths are distinguishable from a distance. Added by the expansion loop (map-readability slice).
+- `scripts/core/PetDefinition.gd` and `data/pets/mossy.tres`: the pet-stats Resource, mirroring `GearDefinition.gd` — id/label/rarity/hp_bonus. `mossy` is the first and only pet (Rare, +2 Max HP). See `docs/design/PETS.md`.
+- `scripts/pets/Pet.gd` / `scenes/pets/Pet.tscn`: follow-only pet AI (`CharacterBody2D`, no `HealthComponent`, no combat) — moves toward the player at speed 220 whenever farther than 24px away, stops inside that ring (player speed is 160). Placeholder polygon art (mint/teal blob with a leaf and eyes).
+- `scripts/core/GameState.gd` (pet additions): `owned_pets`/`equipped_pet`, `pet_unlocked(pet_id)`/`pet_changed` signals, `equip_pet(id)` (`""` unequips, requires ownership, clamps `player_hp` to the new effective max, never auto-heals on equip/unequip), `get_equipped_pet_bonus()`, `get_effective_max_hp()` (now used by `take_player_damage()`/`heal_player_to_full()`/the HUD hp readout), and `_check_and_grant_first_pet()` (same all-four-quests gate as the Tier 1 armor grant, called from `complete_quest()`; grants and auto-equips Mossy once, healing by the bonus so the new max arrives full). Save schema bumped to version 3 (`owned_pets`/`equipped_pet`).
+- `scripts/player/Player.gd` (pet addition): spawns/despawns the equipped pet as a sibling node on `GameState.pet_changed`, and on `_ready()` if a loaded save already has a pet equipped.
+- `scripts/ui/CharacterPanel.gd` (pet addition): a new Pets section lists every owned pet ("Label (Rarity) +N Max HP", tinted by rarity color) with an Equip/Unequip button each; the equipped pet is included in the equipment summary line.
+- `docs/design/PETS.md`: locks the M4 pet unlock/equip rules, Mossy's stats, and the follow-AI parameters for future pet additions.
 - **Audio (sound pass v1, expansion backlog): done.** The game previously had zero audio. A
   new `AudioManager` autoload (`scripts/core/AudioManager.gd`, registered in `project.godot`
   after `GameState`) owns every `AudioStreamPlayer` in the game, created in code in its own
@@ -207,6 +257,12 @@ Open `project.godot` with Godot 4.x standard and press F5.
 Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
 ```
 
+Runs `tests/game_state_tests.gd`, `tests/hit_flash_tests.gd`, and `tests/pet_tests.gd`
+against the real `GameState` autoload and prints `PASS`/`FAIL` per test plus a summary line
+(28 tests total); exits non-zero if anything failed. See `tests/test_runner.gd` for the
+(small, custom, no third-party dependency) runner — it discovers every `test_*` method on
+each registered test class, resets `GameState` via `GameState.reset_state()` before each one
+for isolation, and reports results.
 Runs `tests/game_state_tests.gd`, `tests/hit_flash_tests.gd`, and `tests/audio_tests.gd`
 against the real `GameState`/`AudioManager` autoloads and prints `PASS`/`FAIL` per test plus
 a summary line (26 tests total); exits non-zero if anything failed. See
@@ -395,6 +451,26 @@ diagnosed; skip it for now and expect the suite to touch your local save file tr
 - [ ] All 4 NPC quests and Meadow Slime combat still work normally with the Merchant and
       shop present in the zone.
 
+### Pet system regression
+
+- [ ] The instant the fourth quest (Elder, Mira, Finn, or Yarrow, in any order) completes,
+      a Mossy pet appears beside the player and follows automatically — no manual pickup or
+      equip step needed.
+- [ ] The player's max HP increases by 2 the moment Mossy is granted, and the player is
+      healed to the new max (not left at the old max looking "damaged").
+- [ ] The pet keeps its distance while the player stands still and moves to catch up once
+      the player walks away, without overtaking or blocking the player.
+- [ ] Opening the character panel shows Mossy in a Pets section ("Mossy (Rare) +2 Max HP")
+      and the `Equipment:` line includes it.
+- [ ] Clicking Unequip in the character panel removes the pet from the world immediately and
+      returns max HP to the base value (current HP is clamped down if needed, but the player
+      is never auto-healed by equipping or unequipping).
+- [ ] Clicking Equip again respawns the pet beside the player without re-healing or
+      re-granting it.
+- [ ] The equipped pet and max-HP bonus survive a save/reload (relaunching the game resumes
+      with the pet still following).
+- [ ] All 4 NPC quests, combat, and the shop still work normally with Mossy present.
+
 ## Next milestone
 
 A design north-star doc set lives in `docs/design/` (`NORTH_STAR.md`, `CURRICULUM_MAP.md`, `VISUAL_CONTRACT.md`, `RESEARCH_NOTES.md`) to anchor future work. The learning checks now follow its bonus-only rule: each quest completes on item return regardless of answer, and a correct answer adds a bonus via `GameState.award_quest_bonus()`.
@@ -492,9 +568,13 @@ stats `.tres`, `GearDefinition`, landed as flagged, backing a tight three-weapon
 slice (one gear slot, one vendor, manual equip) rather than the full gear/inventory surface —
 see `docs/design/GEAR_AND_ECONOMY.md`.
 
-Next up: **M4 — pets**, per the Phase 2 plan. Real tile art to replace the placeholder
-tileset, Tier 1 walk-cycle armor art, Tier 2 (Bronze) armor, and real coin/gear icon art all
-remain open art backlog items, lower priority than the Phase 2 milestone chain.
+**M4 (pets) is done** (see above): `PetDefinition`, the first and only pet Mossy (Rare, +2 Max
+HP), follow-only AI with no combat, the same all-four-quests auto-grant gate as Tier 1 armor,
+and a Pets section in the character panel — see `docs/design/PETS.md`. Next up per the Phase 2
+plan: **M5 — bigger world & traversal**. Real tile art to replace the placeholder tileset,
+Tier 1 walk-cycle armor art, Tier 2 (Bronze) armor, real coin/gear icon art, and real pet art
+(currently placeholder polygons) all remain open art backlog items, lower priority than the
+Phase 2 milestone chain.
 
 Separately, the autonomous expansion loop (`docs/design/EXPANSION_BACKLOG.md`) has started
 shipping small post-M3 slices on top of the gear/economy loop: the Meadow Slime bonus-chance

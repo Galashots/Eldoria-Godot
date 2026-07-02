@@ -116,6 +116,9 @@ const HURT_FLASH_COLOR := Color(1.0, 0.45, 0.45)
 var _body_base_scale: Vector2 = Vector2.ONE
 var _hurt_flash_remaining: float = 0.0
 
+const PetScene := preload("res://scenes/pets/Pet.tscn")
+var _pet_instance: Node2D = null
+
 func _ready() -> void:
 	add_to_group("player")
 
@@ -133,6 +136,10 @@ func _ready() -> void:
 	_body_base_scale = body.scale
 	attack_hitbox.landed.connect(_on_attack_landed)
 	player_hurtbox.hit_received.connect(_on_player_hurtbox_hit)
+
+	GameState.pet_changed.connect(_on_pet_changed)
+	if GameState.equipped_pet != "":
+		_spawn_pet.call_deferred()
 
 func _build_sprite_frames(idle_directions: Dictionary, walk_directions: Dictionary) -> SpriteFrames:
 	var frames := SpriteFrames.new()
@@ -257,6 +264,27 @@ func _on_player_hurtbox_hit(_damage: int, _hitbox: Area2D) -> void:
 	# Only flash on a real hit (take_player_damage ignores hits during the immunity window).
 	if GameState.player_hp < before:
 		_hurt_flash_remaining = HealthComponent.FLASH_DURATION_SEC
+
+func _on_pet_changed() -> void:
+	# Despawn-then-respawn covers all three cases: initial unlock (auto-equip), manual
+	# unequip, and any future swap between pet species.
+	_despawn_pet()
+	if GameState.equipped_pet != "":
+		_spawn_pet.call_deferred()
+
+func _spawn_pet() -> void:
+	if _pet_instance != null:
+		return
+	_pet_instance = PetScene.instantiate()
+	_pet_instance.follow_target = self
+	_pet_instance.position = position + Vector2(-20, 12)
+	get_parent().add_child(_pet_instance)
+
+func _despawn_pet() -> void:
+	if _pet_instance == null:
+		return
+	_pet_instance.queue_free()
+	_pet_instance = null
 
 func _on_player_died() -> void:
 	position = _spawn_position

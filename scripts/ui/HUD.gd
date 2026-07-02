@@ -14,7 +14,7 @@ func _ready() -> void:
     GameState.combat_streak_changed.connect(_on_combat_streak_changed)
     GameState.coins_changed.connect(_on_coins_changed)
     _update_objective()
-    _update_hp_label(GameState.player_hp, GameState.PLAYER_MAX_HP)
+    _update_hp_label(GameState.player_hp, GameState.get_effective_max_hp())
     _update_coins_label(GameState.coins)
     _update_streak_label(GameState.combat_streak, GameState.get_combat_multiplier())
 
