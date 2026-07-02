@@ -75,42 +75,6 @@ out of scope until a future pass has a concrete reason to revisit them).
      note on conflict-risk against the still-settling map/mini-boss code. The prior pass's
      "Creatures met" codex and Elder Slime slices have shipped/merged and moved to Done. -->
 
-### Boss keepsake: Elder Slime drops a permanent trophy, not just a stat
-- **Goal:** Defeating the Elder Slime mini-boss grants a one-time **keepsake** — a named
-  trophy shown in a "Keepsakes" line of the character panel (e.g. "Elder Slime's Dewdrop") —
-  so the fight leaves behind a memorable, permanent mark of the achievement rather than only
-  coins or a codex tick.
-- **Design rationale:** NORTH_STAR pillar 5 ("every short session yields permanent progress —
-  a keepsake/cosmetic, a codex entry") AND pillar 3 (a quest/fight needs a *visible
-  consequence*) | research: `RESEARCH_NOTES.md` §8.4 — collection/completion satisfaction can
-  come from "just the satisfaction of uncovering/earning something," not a power boost; a boss
-  keepsake makes a mini-boss memorable without a stat arms-race (deepens the just-shipped
-  mini-boss + codex systems together rather than adding a parallel reward track).
-- **Acceptance criteria:**
-  - [ ] `GameState` tracks a persisted set of earned keepsake ids (survives save/load, clears
-        on reset), with an idempotent `award_keepsake(id)` that fires a signal only on first
-        award — mirroring the shipped `creatures_met`/`record_creature_met` shape exactly.
-  - [ ] The Elder Slime's death path calls `award_keepsake("elder_slime_dewdrop")` exactly
-        once (a defeated boss cannot re-drop it; a respawned regular slime never drops it).
-  - [ ] The character panel shows a "Keepsakes" section listing each earned keepsake's label +
-        a one-line flavor string (text-only, reuse the `CREATURE_FACTS`-style plain-dictionary
-        lookup — no `.tres`, per the repo's "more content / second consumer" promotion bar).
-  - [ ] Bonus-only / non-punitive: no stat or difficulty effect; a keepsake can never be lost.
-  - [ ] Covered by an **isolated new test file** (registered in `test_runner.gd`), not by
-        appending to `game_state_tests.gd` — first-award-fires-once, idempotent-repeat,
-        save/load round trip, reset clears.
-- **Likely files touched:** `scripts/core/GameState.gd`, the Elder Slime death path
-  (`scripts/enemies/` variant/subclass), `scripts/core/ContentDefinitions.gd` (keepsake
-  labels/flavor), `scripts/ui/CharacterPanel.gd` (+`.tscn`), new `tests/keepsake_tests.gd` +
-  `tests/test_runner.gd`, `docs/design/MONSTER_CONCEPTS.md` (note the drop).
-- **Curriculum tie-in:** none directly — but "Keepsakes" is the same permanent-progress
-  surface a future per-skill "mastery mark" (`CURRICULUM_MAP.md`'s stealth bridge) could reuse.
-- **Sequencing:** **build after the Elder Slime mini-boss PR merges** — the drop hook lives in
-  that enemy's death path. `GameState`/`ContentDefinitions`/`CharacterPanel` are otherwise
-  free of map/mini-boss churn. Pairs naturally right after the mini-boss lands and is the
-  single best next slice: it completes the mini-boss's payoff loop.
-- **Status:** ready
-
 ### Discovery sparkle-spots: hidden finds across the new region map
 - **Goal:** Scatter a few hidden "sparkle spots" across the new region-distinct map (a
   shimmer in the flower meadow, a hollow at the forest edge, a glint by the lake) that, when
@@ -280,6 +244,19 @@ out of scope until a future pass has a concrete reason to revisit them).
 ---
 
 ## Done
+
+### Boss keepsake: Elder Slime drops a permanent trophy, not just a stat
+- **Goal:** Defeating the Elder Slime mini-boss grants a one-time **keepsake** — a named
+  trophy shown in a "Keepsakes" line of the character panel (e.g. "Elder Slime's Dewdrop") —
+  so the fight leaves behind a memorable, permanent mark of the achievement rather than only
+  coins or a codex tick.
+- **Status:** done — shipped on `slice-boss-keepsake`: `GameState.keepsakes` (Dictionary,
+  save-schema-compatible via `.get()` default) + idempotent `award_keepsake(id)`
+  (`keepsake_awarded` signal fires once) + `has_keepsake(id)`, mirroring
+  `creatures_met`/`record_creature_met` exactly. `ElderSlime._on_died()` now calls
+  `award_keepsake("elder_slime_dewdrop")` alongside its existing codex record.
+  `ContentDefinitions.KEEPSAKE_FACTS` (plain dictionary, one entry) backs a new "Keepsakes"
+  section in `CharacterPanel`. 4 new tests in `tests/keepsake_tests.gd`.
 
 ### Tie loot rarity to specific enemies (Meadow Slime bonus-chance drop)
 - **Goal:** Give the player an occasional *bonus* chance at coins (or, later, a rarity

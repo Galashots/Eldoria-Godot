@@ -39,6 +39,11 @@ watches, so the mini-boss does not respawn and stays a one-per-session encounter
 this system is proven live, using the same prompt shape as Meadow Slime's below with "an
 older, larger, moss-covered version, with a small leaf or twig 'crown'" appended.
 
+On death, the Elder Slime now also awards a one-time permanent **keepsake** ("Elder Slime's
+Dewdrop", `GameState.award_keepsake("elder_slime_dewdrop")`) alongside its existing codex
+entry — a text-only trophy shown in the character panel's "Keepsakes" section, giving the
+fight a lasting, non-stat payoff (see the "Boss keepsake" expansion backlog slice).
+
 ## Bramble Boar (backup / variety for a later monster milestone)
 
 Not yet implemented - a second enemy concept for when M2's roadmap calls for monster
