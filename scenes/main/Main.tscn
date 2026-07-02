@@ -46,6 +46,8 @@
 [ext_resource type="PackedScene" path="res://scenes/items/SparkleSpot.tscn" id="40_sparkle"]
 [ext_resource type="PackedScene" path="res://scenes/ui/VignetteOverlay.tscn" id="43_vignette"]
 [ext_resource type="PackedScene" path="res://scenes/fx/LakeShimmer.tscn" id="43_lake_shimmer"]
+[ext_resource type="PackedScene" path="res://scenes/ui/ComprehensionCheck.tscn" id="43_comprehension"]
+[ext_resource type="Script" path="res://scripts/ui/ComprehensionCheck.gd" id="44_comprehension_script"]
 
 [node name="Main" type="Node2D" unique_id=280939621]
 
@@ -176,6 +178,11 @@ layer = 91
 visible = false
 script = ExtResource("29_04n4k")
 
+[node name="ComprehensionCheck" type="CanvasLayer" parent="." instance=ExtResource("43_comprehension")]
+layer = 92
+visible = false
+script = ExtResource("44_comprehension_script")
+
 [node name="ShopUI" type="CanvasLayer" parent="." unique_id=1780306344 instance=ExtResource("32_shopui")]
 layer = 85
 visible = false
@@ -253,6 +260,7 @@ coin_reward = 2
 [connection signal="dialogue_requested" from="Player" to="DialogueBox" method="show_dialogue"]
 [connection signal="dialogue_requested" from="Elder" to="DialogueBox" method="show_dialogue"]
 [connection signal="learning_check_requested" from="Elder" to="LearningCheck" method="show_check"]
+[connection signal="comprehension_check_requested" from="Elder" to="ComprehensionCheck" method="show_check"]
 [connection signal="dialogue_requested" from="Mira" to="DialogueBox" method="show_dialogue"]
 [connection signal="learning_check_requested" from="Mira" to="LearningCheck" method="show_check"]
 [connection signal="dialogue_requested" from="Finn" to="DialogueBox" method="show_dialogue"]
@@ -261,5 +269,6 @@ coin_reward = 2
 [connection signal="learning_check_requested" from="Yarrow" to="LearningCheck" method="show_check"]
 [connection signal="shop_requested" from="Merchant" to="ShopUI" method="open_shop"]
 [connection signal="dialogue_requested" from="LearningCheck" to="DialogueBox" method="show_dialogue"]
+[connection signal="dialogue_requested" from="ComprehensionCheck" to="DialogueBox" method="show_dialogue"]
 [connection signal="dialogue_requested" from="Campfire" to="DialogueBox" method="show_dialogue"]
 [connection signal="rested" from="Campfire" to="RestFadeOverlay" method="play_rest_fade"]

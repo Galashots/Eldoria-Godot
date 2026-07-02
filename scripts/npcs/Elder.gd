@@ -1,7 +1,15 @@
 extends StaticBody2D
 
+## Elder Rowan also offers an optional, bonus-only "what did you notice?" reading-comprehension
+## question (see scripts/ui/ComprehensionCheck.gd) once the golden-star quest is done and the
+## child has unlocked at least one codex/keepsake entry with an unanswered question. It never
+## replaces or blocks the existing "Thank you again" line's meaning - it's just offered instead
+## when there's something new to ask about, per docs/design/CURRICULUM_MAP.md's reading-
+## comprehension bonus lane (not CONFIRM-gated - same already-confirmed literacy competency).
+
 signal dialogue_requested(speaker_name: String, line: String)
 signal learning_check_requested(speaker_name: String, question: String, choices: Array, correct_answer: String)
+signal comprehension_check_requested(speaker_name: String, entry_id: String)
 
 @export var display_name: String = "Elder Rowan"
 
@@ -32,6 +40,10 @@ func _interact() -> void:
     var line: String
 
     if GameState.elder_quest_completed:
+        var entry_id := _find_eligible_comprehension_entry()
+        if entry_id != "":
+            comprehension_check_requested.emit(display_name, entry_id)
+            return
         line = "Thank you again. Eldoria shines brighter today."
     elif GameState.has_item("golden_star"):
         _request_learning_check()
@@ -55,6 +67,10 @@ func _request_learning_check() -> void:
     else:
         GameState.complete_elder_quest()
         dialogue_requested.emit(display_name, "You found it! The village is grateful.")
+
+func _find_eligible_comprehension_entry() -> String:
+    var unlocked_ids: Array = GameState.creatures_met.keys() + GameState.keepsakes.keys()
+    return ComprehensionCheck.find_eligible_entry(unlocked_ids, GameState.comprehension_answered, GameState.selected_profile)
 
 func _on_body_entered(body: Node2D) -> void:
     if GameState.selected_profile == "":
