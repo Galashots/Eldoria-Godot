@@ -465,6 +465,38 @@ boundary edges, and the cross-fade easing's endpoints/midpoint/clamping).
   `tests/discovery_tests.gd` (4 tests: first-discovery records + signal fires once, repeat
   discovery stays idempotent, save/load round trip, reset clears) is registered in
   `tests/test_runner.gd`.
+- `shaders/water_shimmer.gdshader`, `scenes/fx/LakeShimmer.tscn`, `tests/lake_tests.gd`: the
+  "Living lake" animated water shimmer (see writeup below).
+
+**Living lake: animated water shimmer on the merged map's lake (expansion backlog): done.**
+Per `docs/design/RESEARCH_NOTES.md` §9.1/§7.1 and the art-direction one-pager's "gentle
+motion" lever (`docs/art/STYLE_GUIDE.md`): a small `canvas_item` shader
+(`shaders/water_shimmer.gdshader`) draws a slow, low-alpha, sine-based crossed-ripple
+highlight pattern (two offset sine waves, `smoothstep`-thresholded to keep only the brightest
+crests as soft highlight bands, with a slow "breathing" alpha modulation) over a `ColorRect`
+sized to the lake's exact world-space bounding box (416x320 at `(1344, 768)`, matching
+`tools/paint_map.gd`'s `_paint_lake` footprint: tile rect x:84..110, y:48..68). The overlay
+lives in a new reusable scene, `scenes/fx/LakeShimmer.tscn` (a `Node2D` + child `ColorRect`
+with the `ShaderMaterial`), instanced once as `World/LakeShimmer` in `Main.tscn`, positioned
+as the next sibling immediately after `Ground` so it always draws on top of the water tiles;
+`y_sort_enabled` is explicitly set to `false` on the instance so it never participates in
+`World`'s y-sort against `Ground` (whose node origin sits far above the lake in world space,
+which would otherwise invert draw order) — it simply stays in tree order, under `Ground` in
+the node list but drawn after it, and the whole `World` node still draws before every
+Player/NPC/prop sibling of `Main`, so actors always draw over the water correctly. Alpha is
+tuned low (peak highlight alpha `0.10`, on top of an already-near-invisible `0.02`-alpha flat
+`ColorRect` fallback color) and the ripple scroll speed is slow (`0.06`) — calm and readable
+for a Grade 2 audience, never a bright specular flash or busy motion. Placeholder-fallback-safe
+by construction: a `ColorRect` always renders its own flat `color` even if the `ShaderMaterial`
+fails to compile, so the lake never goes blank or crashes — worst case it just loses the
+animated highlight and shows the barely-there flat tint. No gameplay/collision change; the
+existing `LakeShoreSparkle` discovery pickup (inside the lake's bounding box) is confirmed
+unmoved and not obscured (the overlay's alpha is far too low to visually block anything). A
+new isolated `tests/lake_tests.gd` (5 tests: `World/LakeShimmer` node presence, its position
+matches the lake's footprint, its `Overlay` `ColorRect` covers the 416x320 bounding box with a
+`ShaderMaterial` and a near-invisible fallback color, `y_sort_enabled == false`, and
+`LakeShoreSparkle` is still present at its original position) is registered in
+`tests/test_runner.gd`.
 
 **Count-out-the-coins at the Merchant (expansion backlog): done.** Extends the shipped Yarrow
 "pay the right coin" reframe (`docs/design/RESEARCH_NOTES.md` §9.2, the §8.2 precedent) to the
@@ -528,14 +560,14 @@ Open `project.godot` with Godot 4.x standard and press F5.
 Godot_v4.7-stable_win64_console.exe --headless --path . res://tests/TestRunner.tscn
 ```
 
-Runs all 13 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
+Runs all 14 isolated suites registered in `tests/test_runner.gd` - `tests/game_state_tests.gd`
 (18), `tests/hit_flash_tests.gd` (5), `tests/pet_tests.gd` (5), `tests/spawner_tests.gd` (7),
 `tests/audio_tests.gd` (9), `tests/codex_tests.gd` (4), `tests/elder_slime_tests.gd` (4),
 `tests/keepsake_tests.gd` (4), `tests/map_tests.gd` (5), `tests/campfire_tests.gd` (3),
-`tests/discovery_tests.gd` (4), `tests/coin_counting_tests.gd` (8), and
-`tests/atmosphere_tests.gd` (3) -
+`tests/discovery_tests.gd` (4), `tests/coin_counting_tests.gd` (8),
+`tests/atmosphere_tests.gd` (3), and `tests/lake_tests.gd` (5) -
 against the real `GameState`/`AudioManager` autoloads, and prints `PASS`/`FAIL` per test plus
-a summary line (**79 tests total**); exits non-zero if anything failed. See
+a summary line (**84 tests total**); exits non-zero if anything failed. See
 `tests/test_runner.gd` for the
 (small, custom, no third-party dependency) runner — it discovers every `test_*` method on
 each registered test class, resets `GameState` via `GameState.reset_state()` before each one

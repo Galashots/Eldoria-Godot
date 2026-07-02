@@ -13,6 +13,7 @@ const CampfireTests := preload("res://tests/campfire_tests.gd")
 const DiscoveryTests := preload("res://tests/discovery_tests.gd")
 const CoinCountingTests := preload("res://tests/coin_counting_tests.gd")
 const AtmosphereTests := preload("res://tests/atmosphere_tests.gd")
+const LakeTests := preload("res://tests/lake_tests.gd")
 
 var _pass_count := 0
 var _fail_count := 0
@@ -32,6 +33,7 @@ func _ready() -> void:
     _run_suite("DiscoveryTests", DiscoveryTests.new())
     _run_suite("CoinCountingTests", CoinCountingTests.new())
     _run_suite("AtmosphereTests", AtmosphereTests.new())
+    _run_suite("LakeTests", LakeTests.new())
     print("")
     print("%d passed, %d failed" % [_pass_count, _fail_count])
     get_tree().quit(1 if _fail_count > 0 else 0)
