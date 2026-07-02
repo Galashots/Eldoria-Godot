@@ -75,42 +75,6 @@ out of scope until a future pass has a concrete reason to revisit them).
      note on conflict-risk against the still-settling map/mini-boss code. The prior pass's
      "Creatures met" codex and Elder Slime slices have shipped/merged and moved to Done. -->
 
-### Discovery sparkle-spots: hidden finds across the new region map
-- **Goal:** Scatter a few hidden "sparkle spots" across the new region-distinct map (a
-  shimmer in the flower meadow, a hollow at the forest edge, a glint by the lake) that, when
-  found and touched, give a small bonus (a coin or two) and record a permanent "Places
-  discovered" entry — turning the new map's regions into a curiosity/exploration reward loop.
-- **Design rationale:** NORTH_STAR pillar 1 ("cohesion over volume" — deepen the *existing*
-  new map instead of adding a biome) AND pillar 5 (permanent world-knowledge per session) |
-  research: `RESEARCH_NOTES.md` §8.3 — rewarding curiosity (secret groves, sparkle spots,
-  optional finds) is one of the cheapest, strongest joy loops, and optional exploration
-  **rewards the curious without punishing those who miss it** (a perfect fit for the
-  bonus-only rule); §8.4 — the payoff can be the discovery itself, not power.
-- **Acceptance criteria:**
-  - [ ] 3–5 sparkle-spot pickups placed across *distinct regions* of the new map (each in a
-        different region so it showcases the map pass), reusing the existing `Collectible`/
-        `CoinPickup` machinery — no new pickup framework.
-  - [ ] Touching one gives a small additive bonus (a coin or two) AND records a permanent
-        "Places discovered" entry in `GameState` (persisted, save/load-safe via `.get()`
-        default, cleared on reset) — mirroring the `creatures_met` codex shape.
-  - [ ] The character panel shows a "Places discovered" section (label + one-line flavor,
-        text-only) with a "none yet" empty state, matching the other panel sections.
-  - [ ] Bonus-only / non-punitive: a missed sparkle spot never blocks or penalizes anything;
-        there is no timer, no completion pressure, no "you missed one" nag.
-  - [ ] Placeholder art only (a small polygon shimmer/glint, matching the bootstrap-art
-        precedent) — no production art required to prove the loop.
-  - [ ] Covered by an isolated test file for the discovery-tracking logic (record-once,
-        idempotent, save/load, reset), registered in `test_runner.gd`.
-- **Likely files touched:** `scripts/core/GameState.gd`, `scripts/items/` (a small
-  `SparkleSpot` reusing `Collectible.gd`, or a variant), `scenes/items/` + `scenes/main/Main.tscn`
-  (placements), `scripts/core/ContentDefinitions.gd` (place labels/flavor),
-  `scripts/ui/CharacterPanel.gd` (+`.tscn`), new `tests/discovery_tests.gd` + `test_runner.gd`.
-- **Curriculum tie-in:** none — pure systems (a discovery/exploration loop).
-- **Sequencing:** **build after the region-map PR merges** — placements reference the new
-  regions and edit `Main.tscn`, which the map pass heavily rewrites; building before it lands
-  would guarantee a placement conflict. `GameState`/`CharacterPanel` are otherwise free.
-- **Status:** ready
-
 ### Diegetic session-end "rest" beat: a cozy campfire that banks the session
 - **Goal:** Add a single cozy in-fiction "rest" spot (a campfire or bedroll in the village)
   the child can walk up to and choose to rest at; resting shows a warm "You rest by the fire —
@@ -249,6 +213,23 @@ out of scope until a future pass has a concrete reason to revisit them).
 ---
 
 ## Done
+
+### Discovery sparkle-spots: hidden finds across the new region map
+- **Goal:** Scatter a few hidden "sparkle spots" across the new region-distinct map (a
+  shimmer in the flower meadow, a hollow at the forest edge, a glint by the lake) that, when
+  found and touched, give a small bonus (a coin or two) and record a permanent "Places
+  discovered" entry — turning the new map's regions into a curiosity/exploration reward loop.
+- **Status:** done: `GameState.places_discovered` (Dictionary, save-schema-compatible via
+  `.get()` default) + idempotent `discover_place(id)` (`place_discovered` signal fires once) +
+  `has_discovered_place(id)`, mirroring `creatures_met`/`record_creature_met` exactly. A new
+  `scripts/items/SparkleSpot.gd` / `scenes/items/SparkleSpot.tscn` pickup (pale-gold star
+  polygon shimmer) mirrors `Collectible.gd`/`CoinPickup.gd`'s pickup shape, awarding a small
+  coin bonus (1-2) and recording the discovery on touch. Four spots placed in `Main.tscn`,
+  each in a distinct region: `FlowerMeadowSparkle` (flower meadow), `ForestEdgeSparkle`
+  (forest edge), `LakeShoreSparkle` (lake sand shore), `RockyBorderSparkle` (rocky border
+  corner) — all clear of existing NPC/item/path/prop positions.
+  `ContentDefinitions.PLACE_FACTS` (plain dictionary, 4 entries) backs a new "Places
+  discovered" section in `CharacterPanel`. 4 new tests in `tests/discovery_tests.gd`.
 
 ### Boss keepsake: Elder Slime drops a permanent trophy, not just a stat
 - **Goal:** Defeating the Elder Slime mini-boss grants a one-time **keepsake** — a named
