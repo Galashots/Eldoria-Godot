@@ -31,3 +31,45 @@ layout_mode = 2
 [node name="CloseButton" type="Button" parent="PanelContainer/VBoxContainer"]
 layout_mode = 2
 text = "Close"
+
+[node name="CoinCountPanel" type="PanelContainer" parent="."]
+visible = false
+offset_left = 460.0
+offset_top = 360.0
+offset_right = 860.0
+offset_bottom = 660.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CoinCountPanel"]
+layout_mode = 2
+
+[node name="PromptLabel" type="Label" parent="CoinCountPanel/VBoxContainer"]
+layout_mode = 2
+autowrap_mode = 2
+text = "Count out the coins!"
+horizontal_alignment = 1
+
+[node name="TotalLabel" type="Label" parent="CoinCountPanel/VBoxContainer"]
+layout_mode = 2
+text = "Your coins: 0"
+horizontal_alignment = 1
+
+[node name="CoinButtons" type="HBoxContainer" parent="CoinCountPanel/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="ResetButton" type="Button" parent="CoinCountPanel/VBoxContainer"]
+layout_mode = 2
+text = "Start Over"
+
+[node name="ConfirmButton" type="Button" parent="CoinCountPanel/VBoxContainer"]
+layout_mode = 2
+text = "Confirm"
+
+[node name="SkipButton" type="Button" parent="CoinCountPanel/VBoxContainer"]
+layout_mode = 2
+text = "Skip"
+
+[node name="FeedbackLabel" type="Label" parent="CoinCountPanel/VBoxContainer"]
+layout_mode = 2
+autowrap_mode = 2
+horizontal_alignment = 1

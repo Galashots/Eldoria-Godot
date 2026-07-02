@@ -84,6 +84,15 @@ table above.
 **Realignment note:** implemented — each quest completes on item return; the check is the
 bonus step, not a gate.
 
+**Count-out-the-coins at the Merchant (expansion backlog, format-only change):** extends the
+same Yarrow "pay the right coin" reframe to the `ShopUI` weapon purchase flow, per
+`docs/design/RESEARCH_NOTES.md` §9.2's intrinsic-integration principle. Buying a weapon always
+completes first; an optional bonus beat then lets the child count out coins matching the
+price (G2: any set of coins summing to the price; G5: the fewest-coins solution). Same
+already-confirmed G2/G5 money/number-sense competency as Yarrow's check — no new subject, no
+new quest — so this also does **not** touch the CONFIRM-gated subject table above. Skipping or
+answering wrong never blocks or undoes the purchase; a correct answer adds one bonus coin.
+
 ## Stealth assessment (future direction, not now)
 
 The curriculum guide's stronger model is *evidence-centered / stealth* assessment — infer
